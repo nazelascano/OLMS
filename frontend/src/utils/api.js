@@ -79,7 +79,8 @@ api.interceptors.response.use(
 
 // API helper functions
 export const authAPI = {
-  login: (idToken) => api.post("/auth/login", { idToken }),
+  login: (usernameOrEmail, password) =>
+    api.post("/auth/login", { usernameOrEmail, password }),
   logout: () => api.post("/auth/logout"),
   getProfile: () => api.get("/auth/profile"),
   updateProfile: (data) => api.put("/auth/profile", data),
