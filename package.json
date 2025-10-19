@@ -1,0 +1,29 @@
+{
+    "name": "olms-online-library-management",
+    "version": "1.0.0",
+    "description": "Online Library Management System with React frontend and Node.js backend",
+    "main": "index.js",
+    "scripts": {
+        "start": "node start.js",
+        "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+        "server:dev": "cd backend && npm run dev",
+        "client:dev": "cd frontend && npm run dev",
+        "server:start": "cd backend && npm start",
+        "client:build": "cd frontend && npm run build",
+        "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+        "build": "cd frontend && npm run build",
+    "test": "cd frontend && npm test"
+    },
+    "keywords": [
+        "library-management",
+        "react",
+        "nodejs",
+        "mongodb",
+        "jwt-auth"
+    ],
+    "author": "OLMS Development Team",
+    "license": "MIT",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

@@ -1,0 +1,101 @@
+[
+  {
+    "_id": "mgnhicbwhxfy9",
+    "username": "admin",
+    "email": "admin@olms.com",
+    "password": "$2b$10$nv4CLyvm7eQyen2IeIs8RenqcitZHDZGBF.U86/bGQEiEbVh.SZTa",
+    "firstName": "System",
+    "lastName": "Administrator",
+    "role": "admin",
+    "isActive": true,
+    "profile": {
+      "phone": "000-000-0000",
+      "address": "System",
+      "dateOfBirth": "1990-01-01T00:00:00.000Z"
+    },
+    "library": {
+      "cardNumber": "ADMIN-001",
+      "membershipDate": "2025-10-12T09:10:58.796Z",
+      "borrowingLimit": 999,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalFines": 0,
+      "totalReturned": 0
+    },
+    "createdAt": "2025-10-12T09:10:58.796Z",
+    "updatedAt": "2025-10-19T03:07:20.483Z",
+    "lastLoginAt": "2025-10-19T02:47:15.125Z",
+    "lastActivityAt": "2025-10-19T03:07:20.482Z"
+  },
+  {
+    "libraryCardNumber": "LIB-25-0001",
+    "username": "nascaño",
+    "firstName": "Nazel",
+    "lastName": "Ascaño",
+    "middleName": "Ignacio",
+    "email": "",
+    "phoneNumber": "",
+    "studentId": "12345678",
+    "lrn": "123456789012",
+    "grade": "Grade 7",
+    "section": "A",
+    "department": "",
+    "barangay": "Barangay 1",
+    "municipality": "Quezon City",
+    "province": "Philippines",
+    "fullAddress": "",
+    "parentGuardianName": "ertyuiop[;ljkghftyuyiuhijo",
+    "parentOccupation": "",
+    "parentAddress": "",
+    "parentPhone": "",
+    "parentEmail": "",
+    "role": "student",
+    "isActive": true,
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalFines": 0,
+      "totalReturned": 1
+    },
+    "password": "$2b$10$VGebBBttNbjZxFZlvzjDPebnu9TI.TvUAmkXsCcJA.oEX9eI.0Vhm",
+    "_id": "mgniuxw0uslme",
+    "createdAt": "2025-10-12T09:48:46.260Z",
+    "updatedAt": "2025-10-18T01:03:43.429Z",
+    "lastLoginAt": "2025-10-12T09:49:31.891Z",
+    "lastActivityAt": "2025-10-12T09:49:52.776Z"
+  },
+  {
+    "firstName": "Mary",
+    "lastName": "Smith",
+    "middleName": "Cruz",
+    "email": "mary.smith@student.example.edu",
+    "phoneNumber": "09111222333",
+    "studentId": "2024002",
+    "lrn": "123456789013",
+    "grade": "Grade 10",
+    "section": "B",
+    "barangay": "Barangay 2",
+    "municipality": "Manila",
+    "province": "Metro Manila",
+    "fullAddress": "789 Pine St Barangay 2 Manila",
+    "parentGuardianName": "Bob Smith",
+    "parentPhone": "09444555666",
+    "username": "mary",
+    "libraryCardNumber": "LIB-25-0002",
+    "password": "$2b$10$QCLJJ8Afi78JTLg01p2bKeGXiWeBTICk7pK9Mwg5LOPs1AIfNS80a",
+    "role": "student",
+    "isActive": true,
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalFines": 0,
+      "totalReturned": 0
+    },
+    "_id": "mgvyco71noo6f",
+    "createdAt": "2025-10-18T07:24:37.117Z",
+    "updatedAt": "2025-10-18T07:24:37.117Z"
+  }
+]

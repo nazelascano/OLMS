@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: olms-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "18"
+      - key: NPM_VERSION
+        value: "10"
+      - key: FRONTEND_URL
+        value: "https://your-frontend-domain.vercel.app"
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: "olms"
+      - key: JWT_SECRET
+        sync: false
+      - key: EMAIL_SERVICE
+        value: "gmail"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: USE_OFFLINE_DB
+        value: "false"
+    healthCheckPath: /health
+    autoDeploy: true

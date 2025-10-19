@@ -1,0 +1,82 @@
+[
+  {
+    "id": "MAX_BORROW_DAYS",
+    "value": 14,
+    "type": "number",
+    "category": "library",
+    "description": "Maximum number of days for regular book borrowing",
+    "createdAt": "2025-10-06T14:33:34.215Z",
+    "updatedAt": "2025-10-06T14:33:34.216Z",
+    "_id": "mgf8e32gdynpg"
+  },
+  {
+    "id": "FINE_PER_DAY",
+    "value": 5,
+    "type": "number",
+    "category": "library",
+    "description": "Fine amount per day for overdue books",
+    "createdAt": "2025-10-06T14:33:34.231Z",
+    "updatedAt": "2025-10-06T14:33:34.232Z",
+    "_id": "mgf8e32w3kehw"
+  },
+  {
+    "id": "SCHOOL_YEAR_START",
+    "value": "2024-08-01",
+    "type": "string",
+    "category": "library",
+    "description": "School year start date",
+    "createdAt": "2025-10-06T14:33:34.233Z",
+    "updatedAt": "2025-10-06T14:33:34.234Z",
+    "_id": "mgf8e32y0oixy"
+  },
+  {
+    "id": "SCHOOL_YEAR_END",
+    "value": "2025-05-31",
+    "type": "string",
+    "category": "library",
+    "description": "School year end date",
+    "createdAt": "2025-10-06T14:33:34.236Z",
+    "updatedAt": "2025-10-06T14:33:34.236Z",
+    "_id": "mgf8e330kczij"
+  },
+  {
+    "id": "LIBRARY_NAME",
+    "value": "ONHS Library",
+    "type": "string",
+    "category": "library",
+    "description": "Library name for receipts",
+    "createdAt": "2025-10-06T14:33:34.238Z",
+    "updatedAt": "2025-10-06T14:33:34.239Z",
+    "_id": "mgf8e333lldsx"
+  },
+  {
+    "id": "LIBRARY_ADDRESS",
+    "value": "School Address",
+    "type": "string",
+    "category": "library",
+    "description": "Library address for receipts",
+    "createdAt": "2025-10-06T14:33:34.241Z",
+    "updatedAt": "2025-10-06T14:33:34.248Z",
+    "_id": "mgf8e33ccjfiq"
+  },
+  {
+    "id": "ENABLE_FINES",
+    "value": true,
+    "type": "boolean",
+    "category": "library",
+    "description": "Enable or disable fine system",
+    "createdAt": "2025-10-06T14:33:34.254Z",
+    "updatedAt": "2025-10-06T14:33:34.254Z",
+    "_id": "mgf8e33iwn35h"
+  },
+  {
+    "id": "MAX_BOOKS_PER_TRANSACTION",
+    "value": 10,
+    "type": "number",
+    "category": "library",
+    "description": "Maximum number of books per transaction",
+    "createdAt": "2025-10-06T14:33:34.258Z",
+    "updatedAt": "2025-10-06T14:33:34.258Z",
+    "_id": "mgf8e33m6aq0q"
+  }
+]

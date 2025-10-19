@@ -1,0 +1,507 @@
+// Student Import Dialog Component
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Alert,
+  LinearProgress,
+  Chip,
+  IconButton,
+} from "@mui/material";
+import { CloudUpload, GetApp, Check, Error, Close } from "@mui/icons-material";
+import { studentsAPI } from "../../utils/api";
+import toast from "react-hot-toast";
+
+const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
+  const [file, setFile] = useState(null);
+  const [csvData, setCsvData] = useState([]);
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState(null);
+  const [step, setStep] = useState(1); // 1: Upload, 2: Preview, 3: Results
+  const [existingStudents, setExistingStudents] = useState([]);
+  const [importSuccessful, setImportSuccessful] = useState(false);
+
+  const handleFileUpload = async (event) => {
+    const uploadedFile = event.target.files[0];
+    if (uploadedFile && uploadedFile.type === "text/csv") {
+      setFile(uploadedFile);
+
+      try {
+        // Fetch existing students first
+        const existingStudentsResponse = await studentsAPI.getAll();
+        setExistingStudents(existingStudentsResponse.data.students || []);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const rows = text.split("\n").filter((row) => row.trim());
+          const headers = rows[0].split(",").map((h) => h.trim());
+
+          const data = rows.slice(1).map((row, index) => {
+            const values = row
+              .split(",")
+              .map((v) => v.trim().replace(/"/g, ""));
+            const student = {};
+            headers.forEach((header, i) => {
+              student[header.toLowerCase().replace(/\s+/g, "")] =
+                values[i] || "";
+            });
+            student.rowIndex = index + 2; // +2 because of 0-based index and header row
+            return student;
+          });
+
+          setCsvData(data);
+          setStep(2);
+        };
+        reader.readAsText(uploadedFile);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Failed to load student data");
+      }
+    } else {
+      toast.error("Please upload a valid CSV file");
+    }
+  };
+
+  const downloadTemplate = () => {
+    const template = `firstName,lastName,middleName,email,phoneNumber,studentId,lrn,grade,section,barangay,municipality,province,fullAddress,parentGuardianName,parentPhone
+John,Doe,Santos,john.doe@student.example.edu,09123456789,2024001,123456789012,Grade 9,A,Barangay 1,Quezon City,Metro Manila,"123 Main St Barangay 1 Quezon City",Jane Doe,09987654321
+Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,Grade 10,B,Barangay 2,Manila,Metro Manila,"789 Pine St Barangay 2 Manila",Bob Smith,09444555666`;
+
+    const blob = new Blob([template], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = "student_import_template.csv";
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const validateStudentData = (student, existingStudents = []) => {
+    const errors = [];
+
+    // Required fields
+    if (!student.firstname) errors.push("First name required");
+    if (!student.lastname) errors.push("Last name required");
+    if (!student.email) errors.push("Email required");
+    if (!student.studentid) errors.push("Student ID required");
+    if (!student.lrn) errors.push("LRN required");
+    if (!student.grade) errors.push("Grade required");
+    if (!student.section) errors.push("Section required");
+
+    // Email validation
+    if (student.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(student.email)) {
+      errors.push("Invalid email format");
+    }
+
+    // LRN validation (should be 12 digits)
+    if (student.lrn && !/^\d{12}$/.test(student.lrn)) {
+      errors.push("Invalid LRN (must be 12 digits)");
+    }
+
+    // Check for duplicate LRN in existing students
+    if (student.lrn && existingStudents.some((s) => s.lrn === student.lrn)) {
+      errors.push("LRN already exists in system");
+    }
+
+    // Check for duplicate Student ID in existing students
+    if (
+      student.studentid &&
+      existingStudents.some((s) => s.studentId === student.studentid)
+    ) {
+      errors.push("Student ID already exists in system");
+    }
+
+    // Grade validation
+    const validGrades = [
+      "Grade 7",
+      "Grade 8",
+      "Grade 9",
+      "Grade 10",
+      "Grade 11",
+      "Grade 12",
+    ];
+    if (student.grade && !validGrades.includes(student.grade)) {
+      errors.push("Invalid grade (must be Grade 7-12)");
+    }
+
+    // Section validation
+    const validSections = ["A", "B", "C", "D", "E"];
+    if (student.section && !validSections.includes(student.section)) {
+      errors.push("Invalid section (must be A-E)");
+    }
+
+    return errors;
+  };
+
+  const handleImport = async () => {
+    setImporting(true);
+
+    try {
+      // Track LRNs and Student IDs within the CSV to detect duplicates
+      const csvLRNs = new Set();
+      const csvStudentIds = new Set();
+
+      // Validate data
+      const validStudents = [];
+      const invalidStudents = [];
+
+      csvData.forEach((student) => {
+        const errors = validateStudentData(student, existingStudents);
+
+        // Check for duplicates within the CSV file itself
+        if (student.lrn && csvLRNs.has(student.lrn)) {
+          errors.push("Duplicate LRN in CSV file");
+        }
+        if (student.studentid && csvStudentIds.has(student.studentid)) {
+          errors.push("Duplicate Student ID in CSV file");
+        }
+
+        if (errors.length === 0) {
+          // Add to tracking sets
+          if (student.lrn) csvLRNs.add(student.lrn);
+          if (student.studentid) csvStudentIds.add(student.studentid);
+
+          validStudents.push({
+            // Basic Information
+            firstName: student.firstname || student.firstName,
+            lastName: student.lastname || student.lastName,
+            middleName: student.middlename || student.middleName || "",
+            email: student.email,
+            phoneNumber: student.phonenumber || student.phoneNumber || "",
+
+            // Academic Information
+            studentId: student.studentid || student.studentId,
+            lrn: student.lrn, // Learner Reference Number (used as password)
+            grade: student.grade,
+            section: student.section,
+
+            // Address Information
+            barangay: student.barangay || "",
+            municipality: student.municipality || "",
+            province: student.province || "",
+            fullAddress: student.fulladdress || student.fullAddress || "",
+
+            // Parent/Guardian Information
+            parentGuardianName:
+              student.parentguardianname ||
+              student.parentGuardianName ||
+              student.parentname ||
+              student.parentName ||
+              "",
+            parentPhone: student.parentphone || student.parentPhone || "",
+            username: (student.firstname || student.firstName.charAt(0) + student.lastname || student.lastName.lastName).toLowerCase(),
+          });
+        } else {
+          invalidStudents.push({
+            ...student,
+            errors,
+          });
+        }
+      });
+
+      if (validStudents.length === 0) {
+        toast.error("No valid students found in the import file");
+        setImporting(false);
+        return;
+      }
+
+      // Import valid students
+      const response = await studentsAPI.bulkImport(validStudents);
+
+      setImportResults({
+        success: response.data.results.success,
+        errors: response.data.results.errors,
+        details: response.data.results.details,
+        invalidStudents,
+      });
+
+      setStep(3);
+
+      if (response.data.results && response.data.results.success > 0) {
+        toast.success(
+          `Successfully imported ${response.data.results.success} students`,
+        );
+        setImportSuccessful(true);
+      }
+
+      if (response.data.results.errors > 0) {
+        toast.warning(
+          `${response.data.results.errors} students failed to import`,
+        );
+      }
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error("Failed to import students");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleClose = () => {
+    const wasSuccessful = importSuccessful;
+
+    // Reset all state
+    setFile(null);
+    setCsvData([]);
+    setImportResults(null);
+    setStep(1);
+    setExistingStudents([]);
+    setImportSuccessful(false);
+
+    // Close the dialog first
+    onClose();
+
+    // Then trigger refresh if import was successful
+    if (wasSuccessful && onImportComplete) {
+      onImportComplete();
+    }
+  };
+
+  const renderUploadStep = () => (
+    <Box>
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          Upload a CSV file with student data.Download the template below to see
+          the required format.{" "}
+        </Typography>{" "}
+      </Alert>
+      <Box display="flex" gap={2} mb={3}>
+        <Button
+          variant="outlined"
+          startIcon={<GetApp />}
+          onClick={downloadTemplate}
+        >
+          Download Template{" "}
+        </Button>{" "}
+      </Box>
+      <Paper
+        sx={{
+          border: "2px dashed #ccc",
+          borderRadius: 2,
+          p: 4,
+          textAlign: "center",
+          cursor: "pointer",
+          "&:hover": { borderColor: "#22C55E" },
+        }}
+        onClick={() => document.getElementById("csv-file-input").click()}
+      >
+        <CloudUpload sx={{ fontSize: 48, color: "#666", mb: 2 }} />{" "}
+        <Typography variant="h6" gutterBottom>
+          Click to upload CSV file{" "}
+        </Typography>{" "}
+        <Typography variant="body2" color="text.secondary">
+          Supported format: CSV files only{" "}
+        </Typography>{" "}
+        <input
+          id="csv-file-input"
+          type="file"
+          accept=".csv"
+          style={{ display: "none" }}
+          onChange={handleFileUpload}
+        />{" "}
+      </Paper>
+      {file && (
+        <Box mt={2}>
+          <Typography variant="body2">
+            Selected file: <strong> {file.name} </strong>{" "}
+          </Typography>{" "}
+        </Box>
+      )}{" "}
+    </Box>
+  );
+
+  const renderPreviewStep = () => {
+    // Track duplicates within CSV
+    const csvLRNs = new Set();
+    const csvStudentIds = new Set();
+    const duplicatesInCSV = new Set();
+
+    // First pass: identify duplicates
+    csvData.forEach((student) => {
+      if (student.lrn) {
+        if (csvLRNs.has(student.lrn)) {
+          duplicatesInCSV.add(student.lrn);
+        }
+        csvLRNs.add(student.lrn);
+      }
+      if (student.studentid) {
+        if (csvStudentIds.has(student.studentid)) {
+          duplicatesInCSV.add(student.studentid);
+        }
+        csvStudentIds.add(student.studentid);
+      }
+    });
+
+    return (
+      <Box>
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            Found {csvData.length}
+            students in the CSV file.Review the data below and click Import to
+            proceed.{" "}
+          </Typography>{" "}
+        </Alert>
+        <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell> Name </TableCell> <TableCell> Email </TableCell>{" "}
+                <TableCell> Student ID </TableCell> <TableCell> LRN </TableCell>{" "}
+                <TableCell> Grade </TableCell> <TableCell> Section </TableCell>{" "}
+                <TableCell> Status </TableCell>{" "}
+              </TableRow>{" "}
+            </TableHead>{" "}
+            <TableBody>
+              {" "}
+              {csvData.map((student, index) => {
+                const errors = validateStudentData(student, existingStudents);
+
+                // Check for duplicates within CSV
+                if (student.lrn && duplicatesInCSV.has(student.lrn)) {
+                  errors.push("Duplicate LRN in CSV file");
+                }
+                if (
+                  student.studentid &&
+                  duplicatesInCSV.has(student.studentid)
+                ) {
+                  errors.push("Duplicate Student ID in CSV file");
+                }
+
+                const isValid = errors.length === 0;
+
+                return (
+                  <TableRow key={index}>
+                    <TableCell>
+                      {" "}
+                      {student.firstname || student.firstName}{" "}
+                      {student.lastname || student.lastName}{" "}
+                    </TableCell>{" "}
+                    <TableCell> {student.email} </TableCell>{" "}
+                    <TableCell>
+                      {" "}
+                      {student.studentid || student.studentId}{" "}
+                    </TableCell>{" "}
+                    <TableCell> {student.lrn} </TableCell>{" "}
+                    <TableCell> {student.grade} </TableCell>{" "}
+                    <TableCell> {student.section} </TableCell>{" "}
+                    <TableCell>
+                      <Chip
+                        label={isValid ? "Valid" : "Invalid"}
+                        color={isValid ? "success" : "error"}
+                        size="small"
+                        icon={isValid ? <Check /> : <Error />}
+                      />{" "}
+                    </TableCell>{" "}
+                  </TableRow>
+                );
+              })}{" "}
+            </TableBody>{" "}
+          </Table>{" "}
+        </TableContainer>{" "}
+      </Box>
+    );
+  };
+
+  const renderResultsStep = () => (
+    <Box>
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          Import completed!{importResults.success}
+          students imported successfully, {importResults.errors}
+          failed.{" "}
+        </Typography>{" "}
+      </Alert>
+      {importResults.details && importResults.details.length > 0 && (
+        <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell> Student ID </TableCell>{" "}
+                <TableCell> Status </TableCell>{" "}
+                <TableCell> Message </TableCell>{" "}
+              </TableRow>{" "}
+            </TableHead>{" "}
+            <TableBody>
+              {" "}
+              {importResults.details.map((detail, index) => (
+                <TableRow key={index}>
+                  <TableCell> {detail.studentId} </TableCell>{" "}
+                  <TableCell>
+                    <Chip
+                      label={detail.status === "success" ? "Success" : "Error"}
+                      color={detail.status === "success" ? "success" : "error"}
+                      size="small"
+                    />
+                  </TableCell>{" "}
+                  <TableCell>
+                    {" "}
+                    {detail.error || "Imported successfully"}{" "}
+                  </TableCell>{" "}
+                </TableRow>
+              ))}{" "}
+            </TableBody>{" "}
+          </Table>{" "}
+        </TableContainer>
+      )}{" "}
+    </Box>
+  );
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6"> Import Students </Typography>{" "}
+          <IconButton onClick={handleClose}>
+            <Close />
+          </IconButton>{" "}
+        </Box>{" "}
+      </DialogTitle>
+      <DialogContent>
+        {" "}
+        {importing && <LinearProgress sx={{ mb: 2 }} />}
+        {step === 1 && renderUploadStep()} {step === 2 && renderPreviewStep()}{" "}
+        {step === 3 && renderResultsStep()}{" "}
+      </DialogContent>
+      <DialogActions>
+        {" "}
+        {step === 2 && (
+          <>
+            <Button onClick={() => setStep(1)}> Back </Button>{" "}
+            <Button
+              variant="contained"
+              onClick={handleImport}
+              disabled={importing || csvData.length === 0}
+            >
+              {importing
+                ? "Importing..."
+                : `Import ${csvData.length} Students`}{" "}
+            </Button>{" "}
+          </>
+        )}{" "}
+        {step === 3 && (
+          <Button variant="contained" onClick={handleClose}>
+            Done{" "}
+          </Button>
+        )}{" "}
+      </DialogActions>{" "}
+    </Dialog>
+  );
+};
+
+export default StudentImportDialog;

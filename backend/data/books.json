@@ -1,0 +1,582 @@
+[
+  {
+    "id": "book_1759815783043_sei18pb7v",
+    "title": "Test Book Title",
+    "author": "Test Author",
+    "isbn": "978-0123456789",
+    "publisher": "Test Publisher",
+    "publishedYear": 2024,
+    "category": "Fiction",
+    "description": "A test book for CRUD operations",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 2,
+    "availableCopies": 2,
+    "copies": [
+      {
+        "copyId": "978-0123456789-MGG4VON8-ZZD4",
+        "status": "available",
+        "condition": "good",
+        "location": "test-library",
+        "createdAt": "2025-10-07T05:43:03.044Z",
+        "updatedAt": "2025-10-19T03:07:20.485Z",
+        "createdBy": "mgex1wgwp3019",
+        "updatedBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0123456789-MGG4VON8-E4UI",
+        "status": "available",
+        "condition": "good",
+        "location": "test-library",
+        "createdAt": "2025-10-07T05:43:03.044Z",
+        "updatedAt": "2025-10-07T05:43:03.044Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-07T05:43:03.044Z",
+    "updatedAt": "2025-10-19T03:07:20.486Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgg4vonar2cha"
+  },
+  {
+    "id": "book_1760074029889_qasd7r6ae",
+    "title": "Test Book - Requirements Check",
+    "author": "Test Author",
+    "isbn": "TEST-4593",
+    "publisher": "Test Publisher",
+    "publishedYear": null,
+    "category": "Test Category",
+    "description": "",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "TEST-4593-MGKEMT6Q-3TLX",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:27:09.890Z",
+        "updatedAt": "2025-10-10T05:27:09.890Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:27:09.890Z",
+    "updatedAt": "2025-10-10T05:27:09.891Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkemt6rl39ao"
+  },
+  {
+    "id": "book_1760074423364_ufvkqq61a",
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "isbn": "978-0743273565",
+    "publisher": "Scribner",
+    "publishedYear": null,
+    "category": "Classic Literature",
+    "description": "A classic American novel",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0743273565-MGKEV8SK-JRED",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:43.364Z",
+        "updatedAt": "2025-10-10T05:44:10.766Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:43.365Z",
+    "updatedAt": "2025-10-10T05:44:10.767Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev8slp05my"
+  },
+  {
+    "id": "book_1760074423518_j9v8dx9tu",
+    "title": "To Kill a Mockingbird",
+    "author": "Harper Lee",
+    "isbn": "978-0061120084",
+    "publisher": "Harper Perennial",
+    "publishedYear": null,
+    "category": "Classic Literature",
+    "description": "A novel about racial injustice",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0061120084-MGKEV8WV-0LR5",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:43.519Z",
+        "updatedAt": "2025-10-10T05:44:11.106Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:43.519Z",
+    "updatedAt": "2025-10-10T05:44:11.107Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev8ww15d3y"
+  },
+  {
+    "id": "book_1760074423678_t4wrz3dro",
+    "title": "1984",
+    "author": "George Orwell",
+    "isbn": "978-0451524935",
+    "publisher": "Signet Classic",
+    "publishedYear": null,
+    "category": "Science Fiction",
+    "description": "A dystopian novel",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0451524935-MGKEV91A-080Q",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:43.678Z",
+        "updatedAt": "2025-10-10T05:44:09.482Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:43.678Z",
+    "updatedAt": "2025-10-10T05:44:09.483Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev91a2j3oq"
+  },
+  {
+    "id": "book_1760074423807_s5m6stux8",
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "isbn": "978-0141439518",
+    "publisher": "Penguin Classics",
+    "publishedYear": null,
+    "category": "Romance",
+    "description": "A romantic novel",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0141439518-MGKEV94V-S6DO",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:43.807Z",
+        "updatedAt": "2025-10-10T05:44:10.232Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:43.807Z",
+    "updatedAt": "2025-10-10T05:44:10.233Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev94w1gey0"
+  },
+  {
+    "id": "book_1760074423945_dotoi42e1",
+    "title": "The Catcher in the Rye",
+    "author": "J.D. Salinger",
+    "isbn": "978-0316769174",
+    "publisher": "Little Brown",
+    "publishedYear": null,
+    "category": "Classic Literature",
+    "description": "A story about teenage rebellion",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "978-0316769174-MGKEV98P-19NE",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:43.946Z",
+        "updatedAt": "2025-10-10T05:33:43.946Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:43.946Z",
+    "updatedAt": "2025-10-10T05:33:43.947Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev98ra1koc"
+  },
+  {
+    "id": "book_1760074424092_gyo2vhswy",
+    "title": "Harry Potter and the Sorcerers Stone",
+    "author": "J.K. Rowling",
+    "isbn": "978-0590353427",
+    "publisher": "Scholastic",
+    "publishedYear": null,
+    "category": "Fantasy",
+    "description": "The first Harry Potter book",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0590353427-MGKEV9CS-BV1W",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.092Z",
+        "updatedAt": "2025-10-10T05:44:09.728Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.092Z",
+    "updatedAt": "2025-10-10T05:44:09.729Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9ctjh9hz"
+  },
+  {
+    "id": "book_1760074424228_6d6msmwml",
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "isbn": "978-0547928227",
+    "publisher": "Houghton Mifflin",
+    "publishedYear": null,
+    "category": "Fantasy",
+    "description": "A fantasy novel",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0547928227-MGKEV9GK-LRCL",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.228Z",
+        "updatedAt": "2025-10-10T05:44:09.980Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.228Z",
+    "updatedAt": "2025-10-10T05:44:09.981Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9glk6knh"
+  },
+  {
+    "id": "book_1760074424360_iiue297m0",
+    "title": "Introduction to Algorithms",
+    "author": "Thomas H. Cormen",
+    "isbn": "978-0262033848",
+    "publisher": "MIT Press",
+    "publishedYear": null,
+    "category": "Computer Science",
+    "description": "Textbook on algorithms",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "978-0262033848-MGKEV9K8-I074",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.360Z",
+        "updatedAt": "2025-10-16T02:11:05.020Z",
+        "createdBy": "mgex1wgwp3019",
+        "updatedBy": "mgnhicbwhxfy9"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.360Z",
+    "updatedAt": "2025-10-16T02:11:05.022Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9k9iwz53"
+  },
+  {
+    "id": "book_1760074424513_m9yw6i6kn",
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "isbn": "978-0132350884",
+    "publisher": "Prentice Hall",
+    "publishedYear": null,
+    "category": "Computer Science",
+    "description": "Software craftsmanship handbook",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0132350884-MGKEV9OH-8QTV",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.513Z",
+        "updatedAt": "2025-10-10T05:44:08.747Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.513Z",
+    "updatedAt": "2025-10-10T05:44:08.748Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9oicsbov"
+  },
+  {
+    "id": "book_1760074424658_oekbs34bx",
+    "title": "The Art of War",
+    "author": "Sun Tzu",
+    "isbn": "978-1599869773",
+    "publisher": "Filiquarian",
+    "publishedYear": null,
+    "category": "Philosophy",
+    "description": "Ancient military treatise",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "978-1599869773-MGKEV9SI-7LKZ",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.658Z",
+        "updatedAt": "2025-10-10T05:33:44.658Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.658Z",
+    "updatedAt": "2025-10-10T05:33:44.658Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9siz638c"
+  },
+  {
+    "id": "book_1760074424790_xx609fnbq",
+    "title": "Sapiens A Brief History",
+    "author": "Yuval Noah Harari",
+    "isbn": "978-0062316110",
+    "publisher": "Harper",
+    "publishedYear": null,
+    "category": "History",
+    "description": "A narrative history of humanity",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "978-0062316110-MGKEV9W6-OOR0",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.790Z",
+        "updatedAt": "2025-10-10T05:33:44.790Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.790Z",
+    "updatedAt": "2025-10-10T05:33:44.791Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9w7vteyf"
+  },
+  {
+    "id": "book_1760074424911_fn353vxfy",
+    "title": "Educated",
+    "author": "Tara Westover",
+    "isbn": "978-0399590504",
+    "publisher": "Random House",
+    "publishedYear": null,
+    "category": "Biography",
+    "description": "A memoir about education",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "978-0399590504-MGKEV9ZJ-J10U",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:44.911Z",
+        "updatedAt": "2025-10-10T05:33:44.911Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:44.911Z",
+    "updatedAt": "2025-10-10T05:33:44.912Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkev9zkp5qt8"
+  },
+  {
+    "id": "book_1760074425043_b41ngcrzw",
+    "title": "Atomic Habits",
+    "author": "James Clear",
+    "isbn": "978-0735211292",
+    "publisher": "Avery",
+    "publishedYear": null,
+    "category": "Self-Help",
+    "description": "How to build good habits",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0735211292-MGKEVA37-KTYR",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:45.043Z",
+        "updatedAt": "2025-10-10T05:44:10.496Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:45.043Z",
+    "updatedAt": "2025-10-10T05:44:10.498Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkeva39z0zu9"
+  },
+  {
+    "id": "book_1760074425177_wsqd0gw4a",
+    "title": "The Lean Startup",
+    "author": "Eric Ries",
+    "isbn": "978-0307887894",
+    "publisher": "Crown Business",
+    "publishedYear": null,
+    "category": "Business",
+    "description": "Continuous innovation guide",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 0,
+    "copies": [
+      {
+        "copyId": "978-0307887894-MGKEVA6X-JYH8",
+        "status": "borrowed",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:45.177Z",
+        "updatedAt": "2025-10-10T05:44:09.247Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:45.177Z",
+    "updatedAt": "2025-10-10T05:44:09.249Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkeva6ys595m"
+  },
+  {
+    "id": "book_1760074425325_53t5yfvrk",
+    "title": "Thinking Fast and Slow",
+    "author": "Daniel Kahneman",
+    "isbn": "978-0374533557",
+    "publisher": "Farrar Straus",
+    "publishedYear": null,
+    "category": "Psychology",
+    "description": "How we think",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "978-0374533557-MGKEVAB1-6EFG",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-10T05:33:45.325Z",
+        "updatedAt": "2025-10-10T05:33:45.325Z",
+        "createdBy": "mgex1wgwp3019"
+      }
+    ],
+    "createdAt": "2025-10-10T05:33:45.325Z",
+    "updatedAt": "2025-10-10T05:33:45.326Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mgkevab274pzw"
+  },
+  {
+    "id": "book_1760574927177_vhnin6uky",
+    "title": "The Pragmatic Programmer",
+    "author": "Andrew Hunt",
+    "isbn": "978-0201616224",
+    "publisher": "Addison-Wesley",
+    "publishedYear": 1999,
+    "category": "Software Development",
+    "description": "Classic developer book",
+    "coverImage": "",
+    "status": "active",
+    "totalCopies": 6,
+    "availableCopies": 6,
+    "copies": [
+      {
+        "copyId": "978-0201616224-MGSOUS0A-HFOK",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-16T00:35:27.178Z",
+        "updatedAt": "2025-10-18T01:03:43.422Z",
+        "createdBy": "mgnhicbwhxfy9",
+        "updatedBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MGSOUS0A-G2OJ",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-16T00:35:27.178Z",
+        "updatedAt": "2025-10-16T00:35:27.178Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MGSOUS0A-KHMY",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-16T00:35:27.178Z",
+        "updatedAt": "2025-10-16T00:35:27.178Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MGSPMW0U-G8Y2",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-16T00:57:18.750Z",
+        "updatedAt": "2025-10-16T00:57:18.750Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MGSPMW0U-95QV",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-16T00:57:18.750Z",
+        "updatedAt": "2025-10-16T00:57:18.750Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MGSPMW0U-GA7B",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-16T00:57:18.750Z",
+        "updatedAt": "2025-10-16T00:57:18.750Z",
+        "createdBy": "mgnhicbwhxfy9"
+      }
+    ],
+    "createdAt": "2025-10-16T00:35:27.178Z",
+    "updatedAt": "2025-10-18T01:03:43.423Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "_id": "mgsous0bcn99t",
+    "updatedBy": "mgnhicbwhxfy9"
+  }
+]

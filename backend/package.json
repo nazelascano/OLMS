@@ -1,0 +1,37 @@
+{
+    "name": "olms-backend",
+    "version": "1.0.0",
+    "description": "OLMS Backend API with Express.js and MongoDB",
+    "main": "server.js",
+    "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+    },
+    "keywords": [
+        "express",
+        "mongodb",
+        "library-api"
+    ],
+    "author": "OLMS Backend Team",
+    "license": "MIT",
+    "dependencies": {
+    "bcrypt": "^6.0.0",
+        "cors": "^2.8.5",
+        "csv-parser": "^3.0.0",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "express-rate-limit": "^6.10.0",
+        "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.29.4",
+    "mongodb": "^6.3.0",
+        "morgan": "^1.10.0",
+        "multer": "^1.4.5-lts.1",
+        "pdf-lib": "^1.17.1",
+        "qrcode": "^1.5.3",
+        "validator": "^13.11.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    }
+}

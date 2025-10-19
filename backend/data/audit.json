@@ -1,0 +1,162 @@
+[
+  {
+    "timestamp": "2025-10-19T02:47:15.142Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-10-18T08:19:27.723Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.6899",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mgx3vttympokd",
+    "_id": "mgx3vttympokd",
+    "createdAt": "2025-10-19T02:47:15.142Z",
+    "updatedAt": "2025-10-19T02:47:15.142Z"
+  },
+  {
+    "timestamp": "2025-10-19T03:06:06.944Z",
+    "action": "RETURN",
+    "entity": "transaction",
+    "entityId": "trans_1760081060079_80u31icib",
+    "resource": "transaction",
+    "resourceId": "trans_1760081060079_80u31icib",
+    "description": "Returned 1 item(s) for transaction trans_1760081060079_80u31icib",
+    "details": {
+      "transactionId": "trans_1760081060079_80u31icib",
+      "result": {
+        "returnedItems": 1,
+        "fineAmount": 5,
+        "daysOverdue": 1
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 14,
+      "returnRequest": {
+        "transactionId": "trans_1760081060079_80u31icib",
+        "providedReturnDate": null,
+        "hasNotes": true
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "returnedItems": 1,
+      "providedReturnDate": null,
+      "notes": "Manual return verification"
+    },
+    "status": "Completed",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.6899",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/trans_1760081060079_80u31icib/return",
+    "id": "mgx4k34wt3z95",
+    "_id": "mgx4k34wt3z95",
+    "createdAt": "2025-10-19T03:06:06.944Z",
+    "updatedAt": "2025-10-19T03:06:06.944Z"
+  },
+  {
+    "timestamp": "2025-10-19T03:06:27.051Z",
+    "action": "RETURN",
+    "entity": "transaction",
+    "entityId": "trans_1760081060079_80u31icib",
+    "resource": "transaction",
+    "resourceId": "trans_1760081060079_80u31icib",
+    "description": "Return request failed: no items to return for transaction trans_1760081060079_80u31icib",
+    "details": {
+      "transactionId": "trans_1760081060079_80u31icib"
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 3,
+      "returnRequest": {
+        "transactionId": "trans_1760081060079_80u31icib",
+        "providedReturnDate": "2025-10-18T00:00:00.000Z",
+        "hasNotes": true
+      }
+    },
+    "status": "NoItemsToReturn",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.6899",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/trans_1760081060079_80u31icib/return",
+    "id": "mgx4kinfnb505",
+    "_id": "mgx4kinfnb505",
+    "createdAt": "2025-10-19T03:06:27.051Z",
+    "updatedAt": "2025-10-19T03:06:27.051Z"
+  },
+  {
+    "timestamp": "2025-10-19T03:07:20.492Z",
+    "action": "RETURN",
+    "entity": "transaction",
+    "entityId": "trans_1760081060079_80u31icib",
+    "resource": "transaction",
+    "resourceId": "trans_1760081060079_80u31icib",
+    "description": "Returned 1 item(s) for transaction trans_1760081060079_80u31icib",
+    "details": {
+      "transactionId": "trans_1760081060079_80u31icib",
+      "result": {
+        "returnedItems": 1,
+        "fineAmount": 0,
+        "daysOverdue": 0
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 7,
+      "returnRequest": {
+        "transactionId": "trans_1760081060079_80u31icib",
+        "providedReturnDate": "2025-10-19T00:00:00.000Z",
+        "hasNotes": true
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "returnedItems": 1,
+      "providedReturnDate": "2025-10-19T00:00:00.000Z",
+      "notes": "Manual return verification"
+    },
+    "status": "Completed",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.6899",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/trans_1760081060079_80u31icib/return",
+    "id": "mgx4lnvwnozoz",
+    "_id": "mgx4lnvwnozoz",
+    "createdAt": "2025-10-19T03:07:20.492Z",
+    "updatedAt": "2025-10-19T03:07:20.492Z"
+  }
+]

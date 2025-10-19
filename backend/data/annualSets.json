@@ -1,0 +1,32 @@
+[
+  {
+    "id": "annual_1760769590746_6xck4n",
+    "name": "Grade 7-A",
+    "gradeLevel": "Grade 7",
+    "section": "A",
+    "department": "Junior High",
+    "academicYear": "2024-2025",
+    "description": "",
+    "books": [
+      {
+        "bookId": "book_1760574927177_vhnin6uky",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      },
+      {
+        "bookId": "book_1760074424360_iiue297m0",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      }
+    ],
+    "createdAt": "2025-10-18T06:39:50.746Z",
+    "updatedAt": "2025-10-18T06:39:50.747Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mgvwr3dnukd14"
+  }
+]

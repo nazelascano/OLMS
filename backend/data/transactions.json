@@ -1,0 +1,467 @@
+[
+  {
+    "id": "trans_1760081060079_80u31icib",
+    "userId": "mgfdmmif38s76",
+    "items": [
+      {
+        "copyId": "978-0123456789-MGG4VON8-ZZD4",
+        "bookId": "mgg4vonar2cha",
+        "isbn": "978-0123456789",
+        "status": "returned",
+        "returnedAt": "2025-10-19T00:00:00.000Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-10-05T00:00:00.000Z",
+    "dueDate": "2025-10-19T00:00:00.000Z",
+    "returnDate": "2025-10-19T00:00:00.000Z",
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-05T00:00:00.000Z",
+    "updatedAt": "2025-10-19T03:07:20.487Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060085_ivxqt1wmp",
+    "returnNotes": "Manual return verification",
+    "returnedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "trans_1760081060085_zp0glavha",
+    "userId": "mgfg021jvftif",
+    "items": [
+      {
+        "copyId": "TEST-4593-MGKEMT6Q-3TLX",
+        "bookId": "mgkemt6rl39ao",
+        "isbn": "TEST-4593",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-06T00:00:00.000Z",
+    "dueDate": "2025-10-20T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-06T00:00:00.000Z",
+    "updatedAt": "2025-10-06T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_0eu9zl1ji"
+  },
+  {
+    "id": "trans_1760081060086_lpwmtb0ej",
+    "userId": "mgfg0246e6lns",
+    "items": [
+      {
+        "copyId": "978-0743273565-MGKEV8SK-JRED",
+        "bookId": "mgkev8slp05my",
+        "isbn": "978-0743273565",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-07T00:00:00.000Z",
+    "dueDate": "2025-10-21T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-07T00:00:00.000Z",
+    "updatedAt": "2025-10-07T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_ljlh425ue"
+  },
+  {
+    "id": "trans_1760081060086_8hxctwu6i",
+    "userId": "mgg4voti2m1t0",
+    "items": [
+      {
+        "copyId": "978-0061120084-MGKEV8WV-0LR5",
+        "bookId": "mgkev8ww15d3y",
+        "isbn": "978-0061120084",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-08T00:00:00.000Z",
+    "dueDate": "2025-10-22T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-08T00:00:00.000Z",
+    "updatedAt": "2025-10-08T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_ma34ognnr"
+  },
+  {
+    "id": "trans_1760081060086_p4swl7l65",
+    "userId": "mgkewjn9lxs0j",
+    "items": [
+      {
+        "copyId": "978-0451524935-MGKEV91A-080Q",
+        "bookId": "mgkev91a2j3oq",
+        "isbn": "978-0451524935",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-09T00:00:00.000Z",
+    "dueDate": "2025-10-23T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-09T00:00:00.000Z",
+    "updatedAt": "2025-10-09T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_4kkd5rdkp"
+  },
+  {
+    "id": "trans_1760081060086_uin6kswg2",
+    "userId": "mgkewjtdlljpe",
+    "items": [
+      {
+        "copyId": "978-0141439518-MGKEV94V-S6DO",
+        "bookId": "mgkev94w1gey0",
+        "isbn": "978-0141439518",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-10T00:00:00.000Z",
+    "dueDate": "2025-10-24T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-10T00:00:00.000Z",
+    "updatedAt": "2025-10-10T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_qbbfdf5dq"
+  },
+  {
+    "id": "trans_1760081060086_zr3ops3eu",
+    "userId": "mgkewjyzy17yc",
+    "items": [
+      {
+        "copyId": "978-0316769174-MGKEV98P-19NE",
+        "bookId": "mgkev98ra1koc",
+        "isbn": "978-0316769174",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-11T00:00:00.000Z",
+    "dueDate": "2025-10-25T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-11T00:00:00.000Z",
+    "updatedAt": "2025-10-11T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_w4vwdnvrx"
+  },
+  {
+    "id": "trans_1760081060086_m0szkjmfl",
+    "userId": "mgkewk4hc42wo",
+    "items": [
+      {
+        "copyId": "978-0590353427-MGKEV9CS-BV1W",
+        "bookId": "mgkev9ctjh9hz",
+        "isbn": "978-0590353427",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-12T00:00:00.000Z",
+    "dueDate": "2025-10-26T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-12T00:00:00.000Z",
+    "updatedAt": "2025-10-12T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_fmh0stg9c"
+  },
+  {
+    "id": "trans_1760081060086_mi928e9fu",
+    "userId": "mgkewk9q2k5vu",
+    "items": [
+      {
+        "copyId": "978-0547928227-MGKEV9GK-LRCL",
+        "bookId": "mgkev9glk6knh",
+        "isbn": "978-0547928227",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-13T00:00:00.000Z",
+    "dueDate": "2025-10-27T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-13T00:00:00.000Z",
+    "updatedAt": "2025-10-13T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_n8ggctdd5"
+  },
+  {
+    "id": "trans_1760081060086_ob2fn6ki8",
+    "userId": "mgkewkfkk00hm",
+    "items": [
+      {
+        "copyId": "978-0262033848-MGKEV9K8-I074",
+        "bookId": "mgkev9k9iwz53",
+        "isbn": "978-0262033848",
+        "status": "returned",
+        "returnedAt": "2025-10-16T02:11:05.020Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-10-14T00:00:00.000Z",
+    "dueDate": "2025-10-28T00:00:00.000Z",
+    "returnDate": "2025-10-16T02:11:05.020Z",
+    "fineAmount": 0,
+    "notes": "Currently borrowed - not overdue",
+    "renewalCount": 0,
+    "createdAt": "2025-10-14T00:00:00.000Z",
+    "updatedAt": "2025-10-16T02:11:05.026Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_ervi4rxgc",
+    "returnNotes": "",
+    "returnedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "trans_1760081060086_s5x0ok2kw",
+    "userId": "mgkewkl5cmchv",
+    "items": [
+      {
+        "copyId": "978-0132350884-MGKEV9OH-8QTV",
+        "bookId": "mgkev9oicsbov",
+        "isbn": "978-0132350884",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-09-15T00:00:00.000Z",
+    "dueDate": "2025-09-29T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "OVERDUE - past due date",
+    "renewalCount": 0,
+    "createdAt": "2025-09-15T00:00:00.000Z",
+    "updatedAt": "2025-09-15T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_sj7nsg5vi"
+  },
+  {
+    "id": "trans_1760081060086_2ww8jnkmr",
+    "userId": "mgkewkqpim8vz",
+    "items": [
+      {
+        "copyId": "978-1599869773-MGKEV9SI-7LKZ",
+        "bookId": "mgkev9siz638c",
+        "isbn": "978-1599869773",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-09-18T00:00:00.000Z",
+    "dueDate": "2025-10-02T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "OVERDUE - past due date",
+    "renewalCount": 0,
+    "createdAt": "2025-09-18T00:00:00.000Z",
+    "updatedAt": "2025-09-18T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_1qhypxzh7"
+  },
+  {
+    "id": "trans_1760081060086_e21fseq1d",
+    "userId": "mgkewkwgkjlmk",
+    "items": [
+      {
+        "copyId": "978-0062316110-MGKEV9W6-OOR0",
+        "bookId": "mgkev9w7vteyf",
+        "isbn": "978-0062316110",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-09-21T00:00:00.000Z",
+    "dueDate": "2025-10-05T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "OVERDUE - past due date",
+    "renewalCount": 0,
+    "createdAt": "2025-09-21T00:00:00.000Z",
+    "updatedAt": "2025-09-21T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060086_3wos50bob"
+  },
+  {
+    "id": "trans_1760081060087_8e5u4qrk0",
+    "userId": "mgkewl2p6tjly",
+    "items": [
+      {
+        "copyId": "978-0399590504-MGKEV9ZJ-J10U",
+        "bookId": "mgkev9zkp5qt8",
+        "isbn": "978-0399590504",
+        "status": "returned"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-09-20T00:00:00.000Z",
+    "dueDate": "2025-10-04T00:00:00.000Z",
+    "returnDate": "2025-09-30T00:00:00.000Z",
+    "fineAmount": 0,
+    "notes": "Returned on time",
+    "renewalCount": 0,
+    "createdAt": "2025-09-20T00:00:00.000Z",
+    "updatedAt": "2025-09-30T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060087_9le055qi1"
+  },
+  {
+    "id": "trans_1760081060087_j42158x8x",
+    "userId": "mgfdmmif38s76",
+    "items": [
+      {
+        "copyId": "978-0735211292-MGKEVA37-KTYR",
+        "bookId": "mgkeva39z0zu9",
+        "isbn": "978-0735211292",
+        "status": "returned"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-09-22T00:00:00.000Z",
+    "dueDate": "2025-10-06T00:00:00.000Z",
+    "returnDate": "2025-10-02T00:00:00.000Z",
+    "fineAmount": 0,
+    "notes": "Returned on time",
+    "renewalCount": 0,
+    "createdAt": "2025-09-22T00:00:00.000Z",
+    "updatedAt": "2025-10-02T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060087_wxl1u2y9g"
+  },
+  {
+    "id": "trans_1760081060087_kzqvafzp4",
+    "userId": "mgfg021jvftif",
+    "items": [
+      {
+        "copyId": "978-0307887894-MGKEVA6X-JYH8",
+        "bookId": "mgkeva6ys595m",
+        "isbn": "978-0307887894",
+        "status": "returned"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-09-24T00:00:00.000Z",
+    "dueDate": "2025-10-08T00:00:00.000Z",
+    "returnDate": "2025-10-04T00:00:00.000Z",
+    "fineAmount": 0,
+    "notes": "Returned on time",
+    "renewalCount": 0,
+    "createdAt": "2025-09-24T00:00:00.000Z",
+    "updatedAt": "2025-10-04T00:00:00.000Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060087_3xdeiyd08"
+  },
+  {
+    "id": "trans_1760081060088_g7c42sm5h",
+    "userId": "mgfdmmif38s76",
+    "items": [
+      {
+        "copyId": "978-0374533557-MGKEVAB1-6EFG",
+        "bookId": "mgkevab274pzw",
+        "isbn": "978-0374533557",
+        "status": "missing"
+      }
+    ],
+    "type": "regular",
+    "status": "missing",
+    "borrowDate": "2025-08-01T00:00:00.000Z",
+    "dueDate": "2025-08-15T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 50,
+    "notes": "Book reported as lost/missing",
+    "renewalCount": 0,
+    "createdAt": "2025-08-01T00:00:00.000Z",
+    "updatedAt": "2025-10-10T07:24:20.088Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060088_bd0txa5q6"
+  },
+  {
+    "id": "trans_1760081060088_pr7q930ye",
+    "userId": "mgfg021jvftif",
+    "items": [
+      {
+        "copyId": "978-0123456789-MGG4VON8-ZZD4",
+        "bookId": "mgg4vonar2cha",
+        "isbn": "978-0123456789",
+        "status": "missing"
+      }
+    ],
+    "type": "regular",
+    "status": "missing",
+    "borrowDate": "2025-08-06T00:00:00.000Z",
+    "dueDate": "2025-08-20T00:00:00.000Z",
+    "returnDate": null,
+    "fineAmount": 50,
+    "notes": "Book reported as lost/missing",
+    "renewalCount": 0,
+    "createdAt": "2025-08-06T00:00:00.000Z",
+    "updatedAt": "2025-10-10T07:24:20.088Z",
+    "createdBy": "mgex1wgwp3019",
+    "_id": "mg_1760081060088_0xrmc1jk8"
+  },
+  {
+    "id": "trans_1760741853123_fdiztz8gn",
+    "userId": "mgniuxw0uslme",
+    "items": [
+      {
+        "copyId": "978-0201616224-MGSOUS0A-HFOK",
+        "bookId": "book_1760574927177_vhnin6uky",
+        "isbn": "978-0201616224",
+        "status": "returned",
+        "returnedAt": "2025-10-18T01:03:16.354Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-10-17T22:57:33.108Z",
+    "dueDate": "2025-10-31T22:57:33.108Z",
+    "returnDate": "2025-10-18T01:03:16.354Z",
+    "fineAmount": 0,
+    "notes": "",
+    "renewalCount": 0,
+    "createdAt": "2025-10-17T22:57:33.131Z",
+    "updatedAt": "2025-10-18T01:03:43.426Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "_id": "mgvg8kwgdddku",
+    "returnNotes": "",
+    "returnedBy": "mgnhicbwhxfy9"
+  }
+]
