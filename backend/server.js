@@ -33,13 +33,35 @@ const envOrigins = [process.env.FRONTEND_URL, process.env.CORS_ALLOWED_ORIGINS]
     .filter(Boolean);
 const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
+const staticOriginPatterns = [/\.vercel\.app$/];
+
+const envOriginPatternValues = (process.env.CORS_ALLOWED_ORIGIN_PATTERNS || '')
+    .split(',')
+    .map(pattern => pattern.trim())
+    .filter(Boolean);
+
+const allowedOriginPatterns = [
+    ...staticOriginPatterns,
+    ...envOriginPatternValues.map(pattern => {
+        try {
+            return new RegExp(pattern);
+        } catch (error) {
+            console.warn(`Invalid CORS origin pattern: ${pattern}`, error.message);
+            return null;
+        }
+    }).filter(Boolean)
+];
+
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) {
             return callback(null, true);
         }
 
-        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        const isAllowedByList = allowedOrigins.includes('*') || allowedOrigins.includes(origin);
+        const isAllowedByPattern = allowedOriginPatterns.some(pattern => pattern.test(origin));
+
+        if (isAllowedByList || isAllowedByPattern) {
             return callback(null, true);
         }
 
