@@ -89,7 +89,19 @@ const LoginPage = () => {
         minHeight: "100vh",
         display: "flex",
         alignItems: "stretch",
-        background: "#FFFFFF",
+        backgroundColor: "#FFFFFF",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "48%",
+          backgroundColor: "#305FB7",
+          display: { xs: "block", md: "none" },
+          zIndex: 0,
+        },
         overflow: "hidden",
       }}
     >
@@ -99,6 +111,7 @@ const LoginPage = () => {
           minHeight: "100vh",
           position: "relative",
           flexDirection: { xs: "column", md: "row" },
+          zIndex: 1,
         }}
       >
         {" "}
