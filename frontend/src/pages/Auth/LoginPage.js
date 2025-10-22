@@ -176,20 +176,14 @@ const LoginPage = () => {
         >
           <Box
             sx={{
-              width: "100%",
-              maxWidth: { xs: 360, sm: 400 },
-              padding: { xs: 0.5, sm: 2 },
-              backgroundColor: { xs: "#FFFFFF", md: "transparent" },
-              borderRadius: { xs: 3, md: 0 },
-              boxShadow: {
-                xs: "0 12px 24px rgba(15, 23, 42, 0.16)",
-                md: "none",
-              },
-              mx: { xs: "auto", md: 0 },
-              mt: { xs: 4, md: 0 },
-              mb: { xs: 4, md: 0 },
-              position: "relative",
+              display: { xs: "flex", md: "none" },
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              color: "#FFFFFF",
+              mb: 2,
               zIndex: 3,
+              gap: 1,
             }}
           >
             <Box
@@ -197,13 +191,38 @@ const LoginPage = () => {
               src={logo}
               alt="School Logo"
               sx={{
-                display: { xs: "block", md: "none" },
-                width: { xs: 120, sm: 140 },
+                width: 120,
                 height: "auto",
-                mx: "auto",
-                mb: 2,
               }}
             />
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontFamily: "Inknut Antiqua, serif",
+                letterSpacing: "0.02em",
+              }}
+            >
+              The School of Choice
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: { xs: 360, sm: 400 },
+              padding: { xs: 3, sm: 3, md: 2 },
+              backgroundColor: { xs: "#FFFFFF", md: "transparent" },
+              borderRadius: { xs: 3, md: 0 },
+              boxShadow: {
+                xs: "0 12px 24px rgba(15, 23, 42, 0.16)",
+                md: "none",
+              },
+              mx: { xs: "auto", md: 0 },
+              mt: { xs: 0, md: 0 },
+              mb: { xs: 0, md: 0 },
+              position: "relative",
+              zIndex: 3,
+            }}
+          >
             {/* Header */}{" "}
             <Typography
               variant="h4"
@@ -214,7 +233,6 @@ const LoginPage = () => {
                 color: "#333333",
                 textAlign: "center",
                 fontSize: { xs: "1.4rem", sm: "1.6rem", md: "2rem" },
-                backgroundColor: { xs: "transparent", md: "inherit" },
               }}
             >
               Online Library Management{" "}
