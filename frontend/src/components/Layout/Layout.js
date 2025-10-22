@@ -457,7 +457,7 @@ const Layout = () => {
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", width: "100%" }}>
       {/* Sidebar - Desktop */}
       {!isMobile && <Sidebar />}
       {/* Mobile Sidebar Drawer */}
@@ -499,7 +499,8 @@ const Layout = () => {
           flexGrow: 1,
           ml: isMobile ? 0 : "240px", // Sidebar width only on desktop
           minHeight: "100vh",
-          background: "linear-gradient(135deg, #305FB7 0%, #4F7BC9 100%)",
+          minWidth: 0,
+          backgroundColor: "#305FB7",
         }}
       >
         {/* Header */}
@@ -512,10 +513,13 @@ const Layout = () => {
             borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
             borderRadius: 0,
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           <Toolbar
             sx={{
+              width: "100%",
               px: { xs: 2, md: 3 },
               py: { xs: 1.25, md: 1 },
               minHeight: "64px !important",
