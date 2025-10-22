@@ -181,6 +181,18 @@ const LoginPage = () => {
               zIndex: 3,
             }}
           >
+            <Box
+              component="img"
+              src={logo}
+              alt="School Logo"
+              sx={{
+                display: { xs: "block", md: "none" },
+                width: { xs: 120, sm: 140 },
+                height: "auto",
+                mx: "auto",
+                mb: 2,
+              }}
+            />
             {/* Header */}{" "}
             <Typography
               variant="h4"
