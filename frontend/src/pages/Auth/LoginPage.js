@@ -93,7 +93,14 @@ const LoginPage = () => {
         overflow: "hidden",
       }}
     >
-      <Grid container sx={{ minHeight: "100vh", position: "relative" }}>
+      <Grid
+        container
+        sx={{
+          minHeight: "100vh",
+          position: "relative",
+          flexDirection: { xs: "column", md: "row" },
+        }}
+      >
         {" "}
         {/* Left Side - Blue Background with Logo */}{" "}
         <Grid
@@ -102,7 +109,7 @@ const LoginPage = () => {
           md={6}
           sx={{
             background: "linear-gradient(135deg, #305FB7 0%, #4F7BC9 100%)",
-            display: "flex",
+            display: { xs: "none", md: "flex" },
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
@@ -118,8 +125,8 @@ const LoginPage = () => {
             src={logo}
             alt="School Logo"
             sx={{
-              width: 350,
-              height: 350,
+              width: { md: 280, lg: 320 },
+              height: "auto",
               mb: 3,
               display: "block",
             }}
@@ -132,7 +139,7 @@ const LoginPage = () => {
               textAlign: "center",
               color: "white",
               textShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              fontSize: "1.8rem",
+              fontSize: { md: "1.5rem", lg: "1.8rem" },
             }}
           >
             The School of Choice{" "}
@@ -148,7 +155,7 @@ const LoginPage = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 4,
+            padding: { xs: 3, sm: 4, md: 6 },
             position: "relative",
             "&::before": {
               content: '""',
@@ -161,14 +168,15 @@ const LoginPage = () => {
               borderTopLeftRadius: "50px",
               borderBottomLeftRadius: "50px",
               zIndex: 2,
+              display: { xs: "none", md: "block" },
             },
           }}
         >
           <Box
             sx={{
               width: "100%",
-              maxWidth: 320,
-              padding: 2,
+              maxWidth: { xs: 360, sm: 400 },
+              padding: { xs: 0.5, sm: 2 },
               position: "relative",
               zIndex: 3,
             }}
@@ -182,7 +190,7 @@ const LoginPage = () => {
                 fontWeight: 700,
                 color: "#333333",
                 textAlign: "center",
-                fontSize: { xs: "1.5rem", md: "2rem" },
+                fontSize: { xs: "1.4rem", sm: "1.6rem", md: "2rem" },
               }}
             >
               Online Library Management{" "}
@@ -249,7 +257,7 @@ const LoginPage = () => {
                 />{" "}
               </Box>
               {/* Password Field */}{" "}
-              <Box sx={{ mb: 3.5 }}>
+              <Box sx={{ mb: 3 }}>
                 <Typography
                   variant="body2"
                   sx={{
@@ -317,7 +325,13 @@ const LoginPage = () => {
                 />{" "}
               </Box>
               {/* Login Button */}{" "}
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: { xs: 2, sm: 3 },
+                }}
+              >
                 <Button
                   type="submit"
                   variant="outlined"

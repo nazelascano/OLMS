@@ -77,7 +77,7 @@ const AdminDashboard = () => {
         border: "none",
         borderRadius: "6px",
         boxShadow: "0 1px 4px rgba(0, 0, 0, 0.08)",
-        height: "70px",
+        height: { xs: "auto", sm: "70px" },
         "&:hover": {
           boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
           transition: "all 0.2s ease",
@@ -89,8 +89,10 @@ const AdminDashboard = () => {
           p: 1.5,
           height: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: { xs: "flex-start", sm: "space-between" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 0.75,
         }}
       >
         <Typography
@@ -109,7 +111,7 @@ const AdminDashboard = () => {
           sx={{
             fontWeight: 700,
             color: "#111827",
-            fontSize: "1.8rem",
+            fontSize: { xs: "1.5rem", sm: "1.8rem" },
             lineHeight: 1,
           }}
         >
@@ -133,7 +135,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: { xs: 1.5, md: 2 } }}>
       {/* Statistics Cards in 2x3 Grid matching Figma */}
       <Grid container spacing={2} mb={3}>
         {/* First Row */}
@@ -158,10 +160,7 @@ const AdminDashboard = () => {
           <StatCard title="Visitors" value={stats?.visitors} />
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            title="New Students this S.Y"
-            value={stats?.newStudents}
-          />
+          <StatCard title="New Students this S.Y" value={stats?.newStudents} />
         </Grid>
       </Grid>
       {/* Charts and Tables Row */}{" "}
@@ -224,7 +223,7 @@ const AdminDashboard = () => {
                   </Typography>{" "}
                 </Box>{" "}
               </Box>{" "}
-              <Box sx={{ height: 180 }}>
+              <Box sx={{ height: { xs: 220, md: 180 } }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -280,7 +279,7 @@ const AdminDashboard = () => {
               >
                 Overdue 's History{" "}
               </Typography>{" "}
-              <TableContainer sx={{ maxHeight: 220 }}>
+              <TableContainer sx={{ maxHeight: 220, overflowX: "auto" }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -399,8 +398,8 @@ const AdminDashboard = () => {
               >
                 Recent Check - outs{" "}
               </Typography>{" "}
-              <TableContainer>
-                <Table>
+              <TableContainer sx={{ overflowX: "auto" }}>
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell

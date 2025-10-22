@@ -197,6 +197,14 @@ export const auditAPI = {
     }),
 };
 
+export const searchAPI = {
+  global: (params) => api.get("/search", { params }),
+};
+
+export const notificationsAPI = {
+  getAll: (params) => api.get("/notifications", { params }),
+};
+
 // File upload helper
 export const uploadFile = async (file, endpoint, onProgress) => {
   const formData = new FormData();

@@ -24,8 +24,27 @@ app.use((req, res, next) => {
 
 // Security middleware
 // app.use(helmet());
+
+// Configure CORS to support both deployed and local development origins
+const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+const envOrigins = [process.env.FRONTEND_URL, process.env.CORS_ALLOWED_ORIGINS]
+    .filter(Boolean)
+    .flatMap(origins => origins.split(',').map(origin => origin.trim()))
+    .filter(Boolean);
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: (origin, callback) => {
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true
 }));
 
@@ -54,6 +73,8 @@ const settingsRoutes = require('./routes/settings');
 const auditRoutes = require('./routes/audit');
 const departmentRoutes = require('./routes/departments');
 const annualSetsRoutes = require('./routes/annualSets');
+const searchRoutes = require('./routes/search');
+const notificationRoutes = require('./routes/notifications');
 
 // Route middleware
 app.use('/api/auth', authRoutes);
@@ -66,6 +87,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/annual-sets', annualSetsRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/notifications', notificationRoutes);
 // app.use('/api/transactions', transactionRoutes);
 // app.use('/api/reports', reportRoutes);
 // app.use('/api/settings', settingsRoutes);
