@@ -89,19 +89,8 @@ const LoginPage = () => {
         minHeight: "100vh",
         display: "flex",
         alignItems: "stretch",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: { xs: "#305FB7", md: "#FFFFFF" },
         position: "relative",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "48%",
-          backgroundColor: "#305FB7",
-          display: { xs: "block", md: "none" },
-          zIndex: 0,
-        },
         overflow: "hidden",
       }}
     >
@@ -164,7 +153,7 @@ const LoginPage = () => {
           xs={12}
           md={6}
           sx={{
-            backgroundColor: "#FFFFFF",
+            backgroundColor: { xs: "transparent", md: "#FFFFFF" },
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -190,6 +179,15 @@ const LoginPage = () => {
               width: "100%",
               maxWidth: { xs: 360, sm: 400 },
               padding: { xs: 0.5, sm: 2 },
+              backgroundColor: { xs: "#FFFFFF", md: "transparent" },
+              borderRadius: { xs: 3, md: 0 },
+              boxShadow: {
+                xs: "0 12px 24px rgba(15, 23, 42, 0.16)",
+                md: "none",
+              },
+              mx: { xs: "auto", md: 0 },
+              mt: { xs: 4, md: 0 },
+              mb: { xs: 4, md: 0 },
               position: "relative",
               zIndex: 3,
             }}
@@ -216,6 +214,7 @@ const LoginPage = () => {
                 color: "#333333",
                 textAlign: "center",
                 fontSize: { xs: "1.4rem", sm: "1.6rem", md: "2rem" },
+                backgroundColor: { xs: "transparent", md: "inherit" },
               }}
             >
               Online Library Management{" "}
