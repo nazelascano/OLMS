@@ -1,9 +1,25 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
+const DEFAULT_BASE_URL = "http://localhost:5001/api";
+
+const normalizeBaseUrl = (value) => {
+  const fallback = DEFAULT_BASE_URL;
+  if (!value) {
+    return fallback;
+  }
+
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (trimmed.toLowerCase().endsWith("/api")) {
+    return trimmed;
+  }
+
+  return `${trimmed}/api`;
+};
+
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5001/api",
+  baseURL: normalizeBaseUrl(process.env.REACT_APP_API_URL),
   timeout: 30000,
 });
 
