@@ -16,6 +16,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Chip,
   List,
   ListItem,
   ListItemText,
@@ -36,9 +37,14 @@ import {
   Delete,
   Add,
   Schedule,
+  Group,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/api";
+import { api, settingsAPI } from "../../utils/api";
+import {
+  ensureUserAttributes,
+  normalizeStringList,
+} from "../../utils/userAttributes";
 
 const TabPanel = ({ children, value, index }) => {
   if (value !== index) {
@@ -282,10 +288,16 @@ const SettingsPage = () => {
 
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState("");
+  const [userAttributes, setUserAttributes] = useState(() =>
+    ensureUserAttributes(),
+  );
+  const [newDepartment, setNewDepartment] = useState("");
+  const [newGradeLevel, setNewGradeLevel] = useState("");
 
   useEffect(() => {
     fetchAllSettings();
     fetchCategories();
+    fetchUserAttributes();
   }, []);
 
   const fetchAllSettings = async () => {
@@ -315,6 +327,16 @@ const SettingsPage = () => {
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
+    }
+  };
+
+  const fetchUserAttributes = async () => {
+    try {
+      const response = await settingsAPI.getUserAttributes();
+      setUserAttributes(ensureUserAttributes(response.data));
+    } catch (error) {
+      console.error("Error fetching user attributes:", error);
+      setUserAttributes(ensureUserAttributes());
     }
   };
 
@@ -348,6 +370,15 @@ const SettingsPage = () => {
     saveSettings("system", mergeSystemSettings(systemSettings));
   };
 
+  const handleUserAttributesSave = () => {
+    const sanitized = {
+      departments: normalizeStringList(userAttributes.departments),
+      gradeLevels: normalizeStringList(userAttributes.gradeLevels),
+    };
+
+    saveSettings("user-attributes", sanitized);
+  };
+
   const handleAddCategory = async () => {
     if (!newCategory.trim()) return;
 
@@ -360,6 +391,52 @@ const SettingsPage = () => {
       setError("Failed to add category");
       console.error("Error adding category:", error);
     }
+  };
+
+  const handleAddDepartment = () => {
+    const value = newDepartment.trim();
+    if (!value) return;
+
+    setUserAttributes((prev) => {
+      if (prev.departments.some((item) => item.toLowerCase() === value.toLowerCase())) {
+        return prev;
+      }
+      return {
+        ...prev,
+        departments: [...prev.departments, value],
+      };
+    });
+    setNewDepartment("");
+  };
+
+  const handleRemoveDepartment = (value) => {
+    setUserAttributes((prev) => ({
+      ...prev,
+      departments: prev.departments.filter((item) => item !== value),
+    }));
+  };
+
+  const handleAddGradeLevel = () => {
+    const value = newGradeLevel.trim();
+    if (!value) return;
+
+    setUserAttributes((prev) => {
+      if (prev.gradeLevels.some((item) => item.toLowerCase() === value.toLowerCase())) {
+        return prev;
+      }
+      return {
+        ...prev,
+        gradeLevels: [...prev.gradeLevels, value],
+      };
+    });
+    setNewGradeLevel("");
+  };
+
+  const handleRemoveGradeLevel = (value) => {
+    setUserAttributes((prev) => ({
+      ...prev,
+      gradeLevels: prev.gradeLevels.filter((item) => item !== value),
+    }));
   };
 
   const handleDeleteCategory = async (categoryId) => {
@@ -469,6 +546,7 @@ const SettingsPage = () => {
           <Tab label="Borrowing Rules" icon={<Schedule />} />
           <Tab label="Notifications" icon={<Notifications />} />
           <Tab label="System" icon={<Computer />} />
+          <Tab label="User Fields" icon={<Group />} />
           <Tab label="Categories" icon={<Edit />} />
         </Tabs>
 
@@ -1296,6 +1374,129 @@ const SettingsPage = () => {
         </TabPanel>
 
         <TabPanel value={currentTab} index={4}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Card elevation={1}>
+                <CardHeader
+                  title="Departments"
+                  subheader="Update the selectable departments for users and students"
+                />
+                <CardContent>
+                  <Stack spacing={2}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Add Department"
+                        value={newDepartment}
+                        onChange={(event) => setNewDepartment(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            handleAddDepartment();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={handleAddDepartment}
+                        disabled={!newDepartment.trim()}
+                      >
+                        Add
+                      </Button>
+                    </Stack>
+                    {userAttributes.departments.length === 0 ? (
+                      <Typography color="text.secondary">
+                        No departments configured. Add at least one option.
+                      </Typography>
+                    ) : (
+                      <Stack direction="row" flexWrap="wrap" spacing={1}>
+                        {userAttributes.departments.map((department) => (
+                          <Chip
+                            key={department}
+                            label={department}
+                            onDelete={() => handleRemoveDepartment(department)}
+                            sx={{ mb: 1 }}
+                            color="primary"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card elevation={1}>
+                <CardHeader
+                  title="Grade Levels"
+                  subheader="Manage grade and year level choices"
+                />
+                <CardContent>
+                  <Stack spacing={2}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Add Grade Level"
+                        value={newGradeLevel}
+                        onChange={(event) => setNewGradeLevel(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            handleAddGradeLevel();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={handleAddGradeLevel}
+                        disabled={!newGradeLevel.trim()}
+                      >
+                        Add
+                      </Button>
+                    </Stack>
+                    {userAttributes.gradeLevels.length === 0 ? (
+                      <Typography color="text.secondary">
+                        No grade levels configured. Add at least one option.
+                      </Typography>
+                    ) : (
+                      <Stack direction="row" flexWrap="wrap" spacing={1}>
+                        {userAttributes.gradeLevels.map((gradeLevel) => (
+                          <Chip
+                            key={gradeLevel}
+                            label={gradeLevel}
+                            onDelete={() => handleRemoveGradeLevel(gradeLevel)}
+                            sx={{ mb: 1 }}
+                            color="secondary"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12}>
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  variant="contained"
+                  startIcon={<Save />}
+                  onClick={handleUserAttributesSave}
+                  disabled={loading}
+                >
+                  Save User Fields
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={currentTab} index={5}>
           <Card elevation={1}>
             <CardHeader
               title="Book Categories"

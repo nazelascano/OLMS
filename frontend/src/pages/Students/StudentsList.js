@@ -23,12 +23,14 @@ import {
   Select,
   MenuItem,
   Avatar,
+  Alert,
 } from "@mui/material";
 import { Search, PersonAdd, GetApp, Person } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
-import { api, studentsAPI } from "../../utils/api";
+import { api, studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
 import StudentImportDialog from "./StudentImportDialog";
+import { ensureUserAttributes } from "../../utils/userAttributes";
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -42,16 +44,14 @@ const StudentsList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [userAttributes, setUserAttributes] = useState(() =>
+    ensureUserAttributes(),
+  );
+  const [attributeError, setAttributeError] = useState("");
 
-  const grades = [
-    "Grade 7",
-    "Grade 8",
-    "Grade 9",
-    "Grade 10",
-    "Grade 11",
-    "Grade 12",
-  ];
   const sections = ["A", "B", "C", "D", "E"];
+  const gradeOptions = userAttributes.gradeLevels;
+  const hasGradeOptions = gradeOptions.length > 0;
 
   useEffect(() => {
     fetchStudents();
@@ -60,6 +60,44 @@ const StudentsList = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state?.refresh]);
+
+  useEffect(() => {
+    setGradeFilter((previous) => {
+      if (!previous) {
+        return previous;
+      }
+
+      return gradeOptions.includes(previous) ? previous : "";
+    });
+  }, [gradeOptions]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAttributes = async () => {
+      try {
+        const response = await settingsAPI.getUserAttributes();
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes(response.data));
+          setAttributeError("");
+        }
+      } catch (error) {
+        console.error("Failed to load user attribute options:", error);
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes());
+          setAttributeError(
+            "Failed to load department and grade options. Using defaults.",
+          );
+        }
+      }
+    };
+
+    loadAttributes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const fetchStudents = async () => {
     try {
@@ -241,14 +279,20 @@ const StudentsList = () => {
               value={gradeFilter}
               onChange={(e) => setGradeFilter(e.target.value)}
               label="Grade"
+              disabled={!hasGradeOptions}
             >
               <MenuItem value=""> All Grades </MenuItem>{" "}
-              {grades.map((grade) => (
-                <MenuItem key={grade} value={grade}>
-                  {" "}
-                  {grade}{" "}
+              {hasGradeOptions ? (
+                gradeOptions.map((grade) => (
+                  <MenuItem key={grade} value={grade}>
+                    {grade}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem value="" disabled>
+                  No grade options available
                 </MenuItem>
-              ))}{" "}
+              )}{" "}
             </Select>{" "}
           </FormControl>{" "}
           <FormControl sx={{ minWidth: 120 }}>
@@ -267,6 +311,11 @@ const StudentsList = () => {
             </Select>{" "}
           </FormControl>{" "}
         </Box>{" "}
+        {attributeError && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {attributeError}
+          </Alert>
+        )}
       </Box>
   {/* Students Table */}
       {filteredStudents.length === 0 ? (

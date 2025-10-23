@@ -1,5 +1,5 @@
 // Student Import Dialog Component
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -21,8 +21,9 @@ import {
   IconButton,
 } from "@mui/material";
 import { CloudUpload, GetApp, Check, Error, Close } from "@mui/icons-material";
-import { studentsAPI } from "../../utils/api";
+import { studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
+import { ensureUserAttributes } from "../../utils/userAttributes";
 
 const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [file, setFile] = useState(null);
@@ -32,6 +33,45 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [step, setStep] = useState(1); // 1: Upload, 2: Preview, 3: Results
   const [existingStudents, setExistingStudents] = useState([]);
   const [importSuccessful, setImportSuccessful] = useState(false);
+  const [userAttributes, setUserAttributes] = useState(() =>
+    ensureUserAttributes(),
+  );
+  const [attributeError, setAttributeError] = useState("");
+
+  const gradeOptions = userAttributes.gradeLevels;
+  const sections = ["A", "B", "C", "D", "E"];
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadAttributes = async () => {
+      try {
+        const response = await settingsAPI.getUserAttributes();
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes(response.data));
+          setAttributeError("");
+        }
+      } catch (error) {
+        console.error("Failed to load user attribute options:", error);
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes());
+          setAttributeError(
+            "Failed to load department and grade options. Using defaults.",
+          );
+        }
+      }
+    };
+
+    loadAttributes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open]);
 
   const handleFileUpload = async (event) => {
     const uploadedFile = event.target.files[0];
@@ -76,9 +116,13 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   };
 
   const downloadTemplate = () => {
+    const sampleGradePrimary = gradeOptions[0] || "Grade 9";
+    const sampleGradeSecondary = gradeOptions[1] || gradeOptions[0] || "Grade 10";
+    const sampleSectionPrimary = sections[0] || "A";
+    const sampleSectionSecondary = sections[1] || sections[0] || "A";
     const template = `firstName,lastName,middleName,email,phoneNumber,studentId,lrn,grade,section,barangay,municipality,province,fullAddress,parentGuardianName,parentPhone
-John,Doe,Santos,john.doe@student.example.edu,09123456789,2024001,123456789012,Grade 9,A,Barangay 1,Quezon City,Metro Manila,"123 Main St Barangay 1 Quezon City",Jane Doe,09987654321
-Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,Grade 10,B,Barangay 2,Manila,Metro Manila,"789 Pine St Barangay 2 Manila",Bob Smith,09444555666`;
+John,Doe,Santos,john.doe@student.example.edu,09123456789,2024001,123456789012,${sampleGradePrimary},${sampleSectionPrimary},Barangay 1,Quezon City,Metro Manila,"123 Main St Barangay 1 Quezon City",Jane Doe,09987654321
+Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,${sampleGradeSecondary},${sampleSectionSecondary},Barangay 2,Manila,Metro Manila,"789 Pine St Barangay 2 Manila",Bob Smith,09444555666`;
 
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -128,21 +172,25 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     }
 
     // Grade validation
-    const validGrades = [
-      "Grade 7",
-      "Grade 8",
-      "Grade 9",
-      "Grade 10",
-      "Grade 11",
-      "Grade 12",
-    ];
-    if (student.grade && !validGrades.includes(student.grade)) {
-      errors.push("Invalid grade (must be Grade 7-12)");
+    const normalizedGrade = (student.grade || "").trim();
+    if (
+      normalizedGrade &&
+      !gradeOptions.some(
+        (grade) => grade.toLowerCase() === normalizedGrade.toLowerCase(),
+      )
+    ) {
+      errors.push("Invalid grade (must match the configured list)");
     }
 
     // Section validation
-    const validSections = ["A", "B", "C", "D", "E"];
-    if (student.section && !validSections.includes(student.section)) {
+    const normalizedSection = (student.section || "").trim();
+    if (
+      normalizedSection &&
+      !sections.some(
+        (section) =>
+          section.toLowerCase() === normalizedSection.toLowerCase(),
+      )
+    ) {
       errors.push("Invalid section (must be A-E)");
     }
 
@@ -263,6 +311,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     setStep(1);
     setExistingStudents([]);
     setImportSuccessful(false);
+    setAttributeError("");
 
     // Close the dialog first
     onClose();
@@ -277,10 +326,15 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
         <Typography variant="body2">
-          Upload a CSV file with student data.Download the template below to see
-          the required format.{" "}
-        </Typography>{" "}
+          Upload a CSV file with student data. Download the template below to see
+          the required format.
+        </Typography>
       </Alert>
+      {gradeOptions.length > 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Available grade levels: {gradeOptions.join(", ")}
+        </Typography>
+      )}
       <Box display="flex" gap={2} mb={3}>
         <Button
           variant="outlined"
@@ -473,10 +527,15 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
         </Box>{" "}
       </DialogTitle>
       <DialogContent>
-        {" "}
         {importing && <LinearProgress sx={{ mb: 2 }} />}
-        {step === 1 && renderUploadStep()} {step === 2 && renderPreviewStep()}{" "}
-        {step === 3 && renderResultsStep()}{" "}
+        {attributeError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {attributeError}
+          </Alert>
+        )}
+        {step === 1 && renderUploadStep()}
+        {step === 2 && renderPreviewStep()}
+        {step === 3 && renderResultsStep()}
       </DialogContent>
       <DialogActions>
         {" "}

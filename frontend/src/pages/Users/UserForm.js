@@ -31,40 +31,13 @@ import {
   VisibilityOff,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/api";
+import { api, settingsAPI } from "../../utils/api";
+import { ensureUserAttributes } from "../../utils/userAttributes";
 
 const ROLE_OPTIONS = [
-  { value: "student", label: "Student" },
   { value: "staff", label: "Staff" },
   { value: "librarian", label: "Librarian" },
   { value: "admin", label: "Administrator" },
-];
-
-const DEPARTMENTS = [
-  "Computer Science",
-  "Engineering",
-  "Mathematics",
-  "Science",
-  "Arts",
-  "Business",
-  "Education",
-  "Medicine",
-  "Law",
-  "Other",
-];
-
-const GRADE_LEVELS = [
-  "Grade 7",
-  "Grade 8",
-  "Grade 9",
-  "Grade 10",
-  "Grade 11",
-  "Grade 12",
-  "College Freshman",
-  "College Sophomore",
-  "College Junior",
-  "College Senior",
-  "Graduate",
 ];
 
 const DEFAULT_FORM_DATA = {
@@ -96,6 +69,36 @@ const UserForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [userAttributes, setUserAttributes] = useState(() =>
+    ensureUserAttributes(),
+  );
+  const [userAttributesError, setUserAttributesError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAttributes = async () => {
+      try {
+        const response = await settingsAPI.getUserAttributes();
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes(response.data));
+          setUserAttributesError("");
+        }
+      } catch (attributesError) {
+        console.error("Failed to load user attribute options:", attributesError);
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes());
+          setUserAttributesError("Failed to load latest department and grade options. Using defaults.");
+        }
+      }
+    };
+
+    loadAttributes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isEditing) {
@@ -136,6 +139,61 @@ const UserForm = () => {
 
     loadUser();
   }, [id, isEditing]);
+
+  useEffect(() => {
+    if (formData.role !== "student") {
+      setFormData((prev) => {
+        if (!prev.studentId && !prev.department && !prev.gradeLevel) {
+          return prev;
+        }
+        return {
+          ...prev,
+          studentId: "",
+          department: "",
+          gradeLevel: "",
+        };
+      });
+    }
+  }, [formData.role]);
+
+  useEffect(() => {
+    setFormData((prev) => {
+      const allowedDepartments = userAttributes.departments || [];
+      const allowedGradeLevels = userAttributes.gradeLevels || [];
+
+      let nextDepartment = prev.department;
+      let nextGradeLevel = prev.gradeLevel;
+
+      if (
+        nextDepartment &&
+        allowedDepartments.length > 0 &&
+        !allowedDepartments.includes(nextDepartment)
+      ) {
+        nextDepartment = "";
+      }
+
+      if (
+        nextGradeLevel &&
+        allowedGradeLevels.length > 0 &&
+        !allowedGradeLevels.includes(nextGradeLevel)
+      ) {
+        nextGradeLevel = "";
+      }
+
+      if (
+        nextDepartment !== prev.department ||
+        nextGradeLevel !== prev.gradeLevel
+      ) {
+        return {
+          ...prev,
+          department: nextDepartment,
+          gradeLevel: nextGradeLevel,
+        };
+      }
+
+      return prev;
+    });
+  }, [userAttributes]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -231,6 +289,9 @@ const UserForm = () => {
   };
 
   const canManageUsers = user?.role === "admin" || user?.role === "librarian";
+  const isStudentRole = formData.role === "student";
+  const hasDepartmentOptions = userAttributes.departments.length > 0;
+  const hasGradeLevelOptions = userAttributes.gradeLevels.length > 0;
 
   if (!canManageUsers) {
     return (
@@ -256,6 +317,12 @@ const UserForm = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+        </Alert>
+      )}
+
+      {userAttributesError && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {userAttributesError}
         </Alert>
       )}
 
@@ -412,6 +479,96 @@ const UserForm = () => {
             </Card>
           </Grid>
 
+          {isStudentRole && (
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Student Details
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Student ID"
+                        name="studentId"
+                        value={formData.studentId}
+                        onChange={handleChange}
+                        error={Boolean(validationErrors.studentId)}
+                        helperText={validationErrors.studentId}
+                        required
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      {hasDepartmentOptions ? (
+                        <TextField
+                          select
+                          fullWidth
+                          label="Department"
+                          name="department"
+                          value={formData.department}
+                          onChange={handleChange}
+                          error={Boolean(validationErrors.department)}
+                          helperText={validationErrors.department}
+                        >
+                          {userAttributes.departments.map((department) => (
+                            <MenuItem key={department} value={department}>
+                              {department}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label="Department"
+                          name="department"
+                          value={formData.department}
+                          onChange={handleChange}
+                          error={Boolean(validationErrors.department)}
+                          helperText={validationErrors.department}
+                          placeholder="Enter department"
+                        />
+                      )}
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      {hasGradeLevelOptions ? (
+                        <TextField
+                          select
+                          fullWidth
+                          label="Grade Level"
+                          name="gradeLevel"
+                          value={formData.gradeLevel}
+                          onChange={handleChange}
+                          error={Boolean(validationErrors.gradeLevel)}
+                          helperText={validationErrors.gradeLevel}
+                        >
+                          {userAttributes.gradeLevels.map((gradeLevel) => (
+                            <MenuItem key={gradeLevel} value={gradeLevel}>
+                              {gradeLevel}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label="Grade Level"
+                          name="gradeLevel"
+                          value={formData.gradeLevel}
+                          onChange={handleChange}
+                          error={Boolean(validationErrors.gradeLevel)}
+                          helperText={validationErrors.gradeLevel}
+                          placeholder="Enter grade level"
+                        />
+                      )}
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
           <Grid item xs={12}>
             <Card>
               <CardContent>
@@ -482,75 +639,6 @@ const UserForm = () => {
               </CardContent>
             </Card>
           </Grid>
-
-          {formData.role === "student" && (
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Academic Information
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
-                      <TextField
-                        fullWidth
-                        label="Student ID"
-                        name="studentId"
-                        value={formData.studentId}
-                        onChange={handleChange}
-                        error={Boolean(validationErrors.studentId)}
-                        helperText={validationErrors.studentId}
-                        required
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <School />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={4}>
-                      <FormControl fullWidth>
-                        <InputLabel>Department</InputLabel>
-                        <Select
-                          name="department"
-                          value={formData.department}
-                          onChange={handleChange}
-                          label="Department"
-                        >
-                          {DEPARTMENTS.map((dept) => (
-                            <MenuItem key={dept} value={dept}>
-                              {dept}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} md={4}>
-                      <FormControl fullWidth>
-                        <InputLabel>Grade Level</InputLabel>
-                        <Select
-                          name="gradeLevel"
-                          value={formData.gradeLevel}
-                          onChange={handleChange}
-                          label="Grade Level"
-                        >
-                          {GRADE_LEVELS.map((grade) => (
-                            <MenuItem key={grade} value={grade}>
-                              {grade}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
 
           <Grid item xs={12}>
             <Card>

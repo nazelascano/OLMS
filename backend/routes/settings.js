@@ -1,10 +1,16 @@
 const express = require('express');
 const { verifyToken, requireAdmin, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
+const {
+    DEFAULT_DEPARTMENTS,
+    DEFAULT_GRADE_LEVELS,
+    normalizeStringList
+} = require('../utils/userAttributes');
 const router = express.Router();
 
 const LIBRARY_CATEGORY = 'library';
 const SYSTEM_CATEGORY = 'system';
 const NOTIFICATION_CATEGORY = 'notifications';
+const USER_CATEGORY = 'user';
 const DEFAULT_OPERATING_HOURS = {
     monday: { open: '08:00', close: '18:00', closed: false },
     tuesday: { open: '08:00', close: '18:00', closed: false },
@@ -197,6 +203,26 @@ router.get('/notifications', verifyToken, requireLibrarian, async(req, res) => {
     }
 });
 
+router.get('/user-attributes', verifyToken, requireLibrarian, async(req, res) => {
+    try {
+        const [departmentsSetting, gradeLevelsSetting] = await Promise.all([
+            req.dbAdapter.findOneInCollection('settings', { id: 'USER_DEPARTMENTS' }),
+            req.dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_LEVELS' })
+        ]);
+
+        const departments = normalizeStringList(departmentsSetting?.value, DEFAULT_DEPARTMENTS);
+        const gradeLevels = normalizeStringList(gradeLevelsSetting?.value, DEFAULT_GRADE_LEVELS);
+
+        res.json({
+            departments,
+            gradeLevels
+        });
+    } catch (error) {
+        console.error('Get user attributes settings error:', error);
+        res.status(500).json({ message: 'Failed to fetch user attributes' });
+    }
+});
+
 router.get('/system', verifyToken, requireLibrarian, async(req, res) => {
     try {
         const settings = await req.dbAdapter.findInCollection('settings', {});
@@ -380,6 +406,51 @@ router.put('/notifications', verifyToken, requireAdmin, logAction('UPDATE', 'set
             description: `Notification settings update failed: ${error.message}`
         });
         res.status(500).json({ message: 'Failed to save notification settings' });
+    }
+});
+
+router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 'settings-user-attributes'), async(req, res) => {
+    try {
+        const {
+            departments = [],
+            gradeLevels = []
+        } = req.body || {};
+
+        const normalizedDepartments = normalizeStringList(departments, DEFAULT_DEPARTMENTS);
+        const normalizedGradeLevels = normalizeStringList(gradeLevels, DEFAULT_GRADE_LEVELS);
+
+        await Promise.all([
+            updateOrCreateSetting(req.dbAdapter, req.user.id, {
+                id: 'USER_DEPARTMENTS',
+                value: normalizedDepartments,
+                type: 'array',
+                category: USER_CATEGORY,
+                description: 'Configured department options for users and students'
+            }),
+            updateOrCreateSetting(req.dbAdapter, req.user.id, {
+                id: 'USER_GRADE_LEVELS',
+                value: normalizedGradeLevels,
+                type: 'array',
+                category: USER_CATEGORY,
+                description: 'Configured grade level options for users and students'
+            })
+        ]);
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Updated',
+            description: 'Updated user attribute settings'
+        });
+
+        res.json({ message: 'User attributes saved successfully' });
+    } catch (error) {
+        console.error('Update user attributes settings error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: `User attributes update failed: ${error.message}`
+        });
+        res.status(500).json({ message: 'Failed to save user attributes' });
     }
 });
 

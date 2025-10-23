@@ -27,7 +27,8 @@ import {
   ArrowBack,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
-import { api, studentsAPI } from "../../utils/api";
+import { api, studentsAPI, settingsAPI } from "../../utils/api";
+import { ensureUserAttributes } from "../../utils/userAttributes";
 import toast from "react-hot-toast";
 
 const StudentForm = () => {
@@ -76,17 +77,17 @@ const StudentForm = () => {
   const [success, setSuccess] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
   const [nextLibraryCard, setNextLibraryCard] = useState("");
-
-  const grades = [
-    "Grade 7",
-    "Grade 8",
-    "Grade 9",
-    "Grade 10",
-    "Grade 11",
-    "Grade 12",
-  ];
+  const [userAttributes, setUserAttributes] = useState(() =>
+    ensureUserAttributes(),
+  );
+  const [attributeError, setAttributeError] = useState("");
 
   const sections = ["A", "B", "C", "D", "E"];
+
+  const gradeOptions = userAttributes.gradeLevels;
+  const departmentOptions = userAttributes.departments;
+  const hasGradeOptions = gradeOptions.length > 0;
+  const hasDepartmentOptions = departmentOptions.length > 0;
 
   useEffect(() => {
     if (isEditing) {
@@ -101,6 +102,58 @@ const StudentForm = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEditing, nextLibraryCard]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAttributes = async () => {
+      try {
+        const response = await settingsAPI.getUserAttributes();
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes(response.data));
+          setAttributeError("");
+        }
+      } catch (attributesError) {
+        console.error("Failed to load user attribute options:", attributesError);
+        if (isMounted) {
+          setUserAttributes(ensureUserAttributes());
+          setAttributeError(
+            "Failed to load department and grade options. Using defaults.",
+          );
+        }
+      }
+    };
+
+    loadAttributes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setFormData((prev) => {
+      const updates = {};
+
+      if (
+        prev.grade &&
+        gradeOptions.length > 0 &&
+        !gradeOptions.includes(prev.grade)
+      ) {
+        updates.grade = "";
+      }
+
+      if (
+        prev.department &&
+        departmentOptions.length > 0 &&
+        !departmentOptions.includes(prev.department)
+      ) {
+        updates.department = "";
+      }
+
+      return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
+    });
+  }, [gradeOptions, departmentOptions]);
 
   const fetchNextLibraryCard = async () => {
     try {
@@ -272,6 +325,11 @@ const StudentForm = () => {
           {success}{" "}
         </Alert>
       )}
+      {attributeError && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          {attributeError}
+        </Alert>
+      )}
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           {" "}
@@ -343,24 +401,37 @@ const StudentForm = () => {
                     />
                   </Grid>{" "}
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Grade"
-                      name="grade"
-                      select
-                      value={formData.grade}
-                      onChange={handleChange}
-                      error={!!validationErrors.grade}
-                      helperText={validationErrors.grade}
-                      required
-                    >
-                      {grades.map((grade) => (
-                        <MenuItem key={grade} value={grade}>
-                          {" "}
-                          {grade}{" "}
-                        </MenuItem>
-                      ))}{" "}
-                    </TextField>{" "}
+                      {hasGradeOptions ? (
+                        <TextField
+                          fullWidth
+                          label="Grade"
+                          name="grade"
+                          select
+                          value={formData.grade}
+                          onChange={handleChange}
+                          error={!!validationErrors.grade}
+                          helperText={validationErrors.grade}
+                          required
+                        >
+                          {gradeOptions.map((grade) => (
+                            <MenuItem key={grade} value={grade}>
+                              {grade}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label="Grade"
+                          name="grade"
+                          value={formData.grade}
+                          onChange={handleChange}
+                          error={!!validationErrors.grade}
+                          helperText={validationErrors.grade}
+                          placeholder="Enter grade"
+                          required
+                        />
+                      )}
                   </Grid>
                   {/* Row 2: Student ID and Section */}{" "}
                   <Grid item xs={12} sm={6}>
@@ -401,6 +472,37 @@ const StudentForm = () => {
                         </Typography>
                       )}{" "}
                     </FormControl>{" "}
+                  </Grid>{" "}
+                  <Grid item xs={12} sm={6}>
+                    {hasDepartmentOptions ? (
+                      <TextField
+                        select
+                        fullWidth
+                        label="Department"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleChange}
+                        error={!!validationErrors.department}
+                        helperText={validationErrors.department}
+                      >
+                        {departmentOptions.map((department) => (
+                          <MenuItem key={department} value={department}>
+                            {department}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    ) : (
+                      <TextField
+                        fullWidth
+                        label="Department"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleChange}
+                        error={!!validationErrors.department}
+                        helperText={validationErrors.department}
+                        placeholder="Enter department"
+                      />
+                    )}
                   </Grid>{" "}
                 </Grid>{" "}
               </CardContent>{" "}

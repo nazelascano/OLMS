@@ -195,6 +195,8 @@ export const settingsAPI = {
   getByCategory: (category) => api.get(`/settings/category/${category}`),
   update: (key, value) => api.put(`/settings/${key}`, { value }),
   updateMultiple: (settings) => api.put("/settings/bulk", { settings }),
+  getUserAttributes: () => api.get("/settings/user-attributes"),
+  updateUserAttributes: (data) => api.put("/settings/user-attributes", data),
 };
 
 export const auditAPI = {
