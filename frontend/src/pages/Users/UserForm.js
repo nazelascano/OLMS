@@ -26,7 +26,6 @@ import {
   Person,
   Phone,
   Save,
-  School,
   Visibility,
   VisibilityOff,
 } from "@mui/icons-material";
@@ -118,10 +117,6 @@ const UserForm = () => {
           lastName: userData.lastName || "",
           password: "",
           confirmPassword: "",
-          role: userData.role || "student",
-          studentId: userData.studentId || "",
-          department: userData.department || "",
-          gradeLevel: userData.gradeLevel || "",
           phoneNumber: userData.phoneNumber || userData.profile?.phone || "",
           address: userData.address || userData.profile?.address || "",
           isActive:
@@ -141,19 +136,6 @@ const UserForm = () => {
   }, [id, isEditing]);
 
   useEffect(() => {
-    if (formData.role !== "student") {
-      setFormData((prev) => {
-        if (!prev.studentId && !prev.department && !prev.gradeLevel) {
-          return prev;
-        }
-        return {
-          ...prev,
-          studentId: "",
-          department: "",
-          gradeLevel: "",
-        };
-      });
-    }
   }, [formData.role]);
 
   useEffect(() => {
@@ -289,10 +271,7 @@ const UserForm = () => {
   };
 
   const canManageUsers = user?.role === "admin" || user?.role === "librarian";
-  const isStudentRole = formData.role === "student";
-  const hasDepartmentOptions = userAttributes.departments.length > 0;
-  const hasGradeLevelOptions = userAttributes.gradeLevels.length > 0;
-
+  
   if (!canManageUsers) {
     return (
       <Box>
@@ -478,96 +457,6 @@ const UserForm = () => {
               </CardContent>
             </Card>
           </Grid>
-
-          {isStudentRole && (
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Student Details
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Student ID"
-                        name="studentId"
-                        value={formData.studentId}
-                        onChange={handleChange}
-                        error={Boolean(validationErrors.studentId)}
-                        helperText={validationErrors.studentId}
-                        required
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      {hasDepartmentOptions ? (
-                        <TextField
-                          select
-                          fullWidth
-                          label="Department"
-                          name="department"
-                          value={formData.department}
-                          onChange={handleChange}
-                          error={Boolean(validationErrors.department)}
-                          helperText={validationErrors.department}
-                        >
-                          {userAttributes.departments.map((department) => (
-                            <MenuItem key={department} value={department}>
-                              {department}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <TextField
-                          fullWidth
-                          label="Department"
-                          name="department"
-                          value={formData.department}
-                          onChange={handleChange}
-                          error={Boolean(validationErrors.department)}
-                          helperText={validationErrors.department}
-                          placeholder="Enter department"
-                        />
-                      )}
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      {hasGradeLevelOptions ? (
-                        <TextField
-                          select
-                          fullWidth
-                          label="Grade Level"
-                          name="gradeLevel"
-                          value={formData.gradeLevel}
-                          onChange={handleChange}
-                          error={Boolean(validationErrors.gradeLevel)}
-                          helperText={validationErrors.gradeLevel}
-                        >
-                          {userAttributes.gradeLevels.map((gradeLevel) => (
-                            <MenuItem key={gradeLevel} value={gradeLevel}>
-                              {gradeLevel}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <TextField
-                          fullWidth
-                          label="Grade Level"
-                          name="gradeLevel"
-                          value={formData.gradeLevel}
-                          onChange={handleChange}
-                          error={Boolean(validationErrors.gradeLevel)}
-                          helperText={validationErrors.gradeLevel}
-                          placeholder="Enter grade level"
-                        />
-                      )}
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
 
           <Grid item xs={12}>
             <Card>
