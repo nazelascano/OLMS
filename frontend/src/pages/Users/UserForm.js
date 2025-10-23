@@ -197,16 +197,16 @@ const UserForm = () => {
     const errors = {};
 
     if (!formData.username.trim()) errors.username = "Username is required";
-    if (!formData.email.trim()) errors.email = "Email is required";
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
     if (!formData.role) errors.role = "Role is required";
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim() === "") {
     if (formData.email && !emailRegex.test(formData.email)) {
       errors.email = "Please enter a valid email address";
     }
-
+  }
     if (!isEditing || formData.password) {
       if (!formData.password) {
         errors.password = "Password is required";
