@@ -176,37 +176,6 @@ const LoginPage = () => {
         >
           <Box
             sx={{
-              display: { xs: "flex", md: "none" },
-              flexDirection: "column",
-              alignItems: "center",
-              textAlign: "center",
-              color: "#FFFFFF",
-              mb: 2,
-              zIndex: 3,
-              gap: 1,
-            }}
-          >
-            <Box
-              component="img"
-              src={logo}
-              alt="School Logo"
-              sx={{
-                width: 120,
-                height: "auto",
-              }}
-            />
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontFamily: "Inknut Antiqua, serif",
-                letterSpacing: "0.02em",
-              }}
-            >
-              The School of Choice
-            </Typography>
-          </Box>
-          <Box
-            sx={{
               width: "100%",
               maxWidth: { xs: 360, sm: 400 },
               padding: { xs: 3, sm: 3, md: 2 },
@@ -223,6 +192,37 @@ const LoginPage = () => {
               zIndex: 3,
             }}
           >
+            <Box
+              sx={{
+                display: { xs: "flex", md: "none" },
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                color: "#FFFFFF",
+                mb: 2.5,
+                zIndex: 4,
+              }}
+            >
+              <Box
+                component="img"
+                src={logo}
+                alt="School Logo"
+                sx={{
+                  width: 115,
+                  height: "auto",
+                  mb: 1.5,
+                }}
+              />
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontFamily: "Inknut Antiqua, serif",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                The School of Choice
+              </Typography>
+            </Box>
             {/* Header */}{" "}
             <Typography
               variant="h4"
