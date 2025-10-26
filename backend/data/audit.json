@@ -246,5 +246,36 @@
     "_id": "mh5ohjf5oy261",
     "createdAt": "2025-10-25T02:46:09.809Z",
     "updatedAt": "2025-10-25T02:46:09.809Z"
+  },
+  {
+    "timestamp": "2025-10-26T04:29:50.746Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-10-25T02:39:23.076Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mh77mq6yh4tql",
+    "_id": "mh77mq6yh4tql",
+    "createdAt": "2025-10-26T04:29:50.746Z",
+    "updatedAt": "2025-10-26T04:29:50.746Z"
   }
 ]
