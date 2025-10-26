@@ -18,7 +18,6 @@ import {
   DialogActions,
   Fab,
   InputAdornment,
-  CircularProgress,
 } from "@mui/material";
 import {
   Add,
@@ -35,6 +34,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
 import toast from "react-hot-toast";
 import BookImportDialog from "./BookImportDialog";
+import { PageLoading } from "../../components/Loading";
 
 const BooksList = () => {
   const navigate = useNavigate();
@@ -110,20 +110,7 @@ const BooksList = () => {
   };
 
   if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="60vh"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading books"
-      >
-        <CircularProgress aria-hidden="true" />
-        <Typography sx={{ ml: 2 }}>Loading books...</Typography>
-      </Box>
-    );
+    return <PageLoading message="Loading books..." />;
   }
 
   return (

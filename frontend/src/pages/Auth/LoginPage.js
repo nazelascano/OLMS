@@ -16,14 +16,13 @@ import logo from "../../assets/images/logo.png";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginLoading } = useAuth();
 
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -43,7 +42,6 @@ const LoginPage = () => {
       return;
     }
 
-    setLoading(true);
     setError("");
 
     try {
@@ -73,8 +71,6 @@ const LoginPage = () => {
     } catch (error) {
       console.error("Login error:", error);
       setError("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -254,7 +250,7 @@ const LoginPage = () => {
                   onChange={handleChange}
                   required
                   autoComplete="username"
-                  disabled={loading}
+                  disabled={loginLoading}
                   error={Boolean(error && !formData.username)}
                   aria-describedby={error && !formData.username ? "username-error" : undefined}
                   aria-invalid={Boolean(error && !formData.username)}
@@ -314,7 +310,7 @@ const LoginPage = () => {
                   onChange={handleChange}
                   required
                   autoComplete="current-password"
-                  disabled={loading}
+                  disabled={loginLoading}
                   error={Boolean(error && !formData.password)}
                   aria-describedby={error && !formData.password ? "password-error" : undefined}
                   aria-invalid={Boolean(error && !formData.password)}
@@ -355,7 +351,7 @@ const LoginPage = () => {
                           aria-label="toggle password visibility"
                           onClick={handleTogglePasswordVisibility}
                           edge="end"
-                          disabled={loading}
+                          disabled={loginLoading}
                         >
                           {showPassword ? (
                             <VisibilityOff />
@@ -411,12 +407,12 @@ const LoginPage = () => {
                       borderColor: "#9CA3AF",
                     },
                   }}
-                  disabled={loading}
+                  disabled={loginLoading}
                   startIcon={
-                    loading && <CircularProgress size={20} color="inherit" />
+                    loginLoading && <CircularProgress size={20} color="inherit" />
                   }
                 >
-                  {loading ? "Signing In..." : "LOGIN"}{" "}
+                  {loginLoading ? "Signing In..." : "LOGIN"}{" "}
                 </Button>{" "}
               </Box>{" "}
             </Box>{" "}

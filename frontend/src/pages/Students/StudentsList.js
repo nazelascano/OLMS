@@ -17,7 +17,6 @@ import {
   DialogContent,
   DialogActions,
   InputAdornment,
-  CircularProgress,
   FormControl,
   InputLabel,
   Select,
@@ -31,6 +30,7 @@ import { api, studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
 import StudentImportDialog from "./StudentImportDialog";
 import { ensureUserAttributes } from "../../utils/userAttributes";
+import { PageLoading } from "../../components/Loading";
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -201,16 +201,7 @@ const StudentsList = () => {
   };
 
   if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="60vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <PageLoading message="Loading students..." />;
   }
 
   return (

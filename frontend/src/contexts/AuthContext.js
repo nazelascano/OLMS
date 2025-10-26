@@ -14,6 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      setLoginLoading(true);
       const { data } = await authAPI.login(username, password);
 
       setAuthToken(data.token);
@@ -49,6 +51,8 @@ export const AuthProvider = ({ children }) => {
       const message =
         error?.response?.data?.message || error?.message || "Login failed";
       return { success: false, error: message };
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -133,6 +137,7 @@ export const AuthProvider = ({ children }) => {
     user,
     authToken,
     loading,
+    loginLoading,
     login,
     logout,
     getAuthHeaders,

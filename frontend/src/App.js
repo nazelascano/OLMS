@@ -1,8 +1,9 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Box, ThemeProvider, CssBaseline } from "@mui/material";
+import { ThemeProvider, CssBaseline } from "@mui/material";
 import customTheme from "./theme/customTheme";
 import { useAuth } from "./contexts/AuthContext";
+import Loading from "./components/Loading";
 
 // Layout Components
 import Layout from "./components/Layout/Layout";
@@ -54,19 +55,7 @@ function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading application"
-      >
-        <div>Loading application...</div>
-      </Box>
-    );
+    return <Loading type="fullscreen" message="Loading application..." />;
   }
 
   // Redirect to appropriate dashboard based on role

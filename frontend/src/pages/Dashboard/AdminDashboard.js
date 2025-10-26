@@ -11,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
 } from "@mui/material";
 import { reportsAPI } from "../../utils/api";
 import {
@@ -22,6 +21,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import { PageLoading } from "../../components/Loading";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -123,20 +123,7 @@ const AdminDashboard = () => {
   );
 
   if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="400px"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading dashboard data"
-      >
-        <CircularProgress sx={{ color: "#305FB7" }} aria-hidden="true" />
-        <Typography sx={{ ml: 2 }}>Loading dashboard data...</Typography>
-      </Box>
-    );
+    return <PageLoading message="Loading dashboard data..." />;
   }
 
   return (
