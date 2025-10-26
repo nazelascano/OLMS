@@ -139,7 +139,7 @@ const Sidebar = ({ onItemClick }) => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <img
             src={logo}
-            alt="ONHS Library Management System - Home"
+            alt="ONHS Library Management System Logo - Navigate to Dashboard"
             style={{
               width: "32px",
               height: "32px",

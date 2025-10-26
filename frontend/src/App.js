@@ -60,8 +60,11 @@ function App() {
         justifyContent="center"
         alignItems="center"
         minHeight="100vh"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading application"
       >
-        <div> Loading... </div>{" "}
+        <div>Loading application...</div>
       </Box>
     );
   }

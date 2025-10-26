@@ -6,7 +6,11 @@ const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div> Loading... </div>;
+    return (
+      <div role="status" aria-live="polite" aria-label="Authenticating user">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {

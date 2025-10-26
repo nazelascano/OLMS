@@ -116,8 +116,12 @@ const BooksList = () => {
         justifyContent="center"
         alignItems="center"
         minHeight="60vh"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading books"
       >
-        <CircularProgress />
+        <CircularProgress aria-hidden="true" />
+        <Typography sx={{ ml: 2 }}>Loading books...</Typography>
       </Box>
     );
   }

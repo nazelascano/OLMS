@@ -169,17 +169,13 @@ const Layout = () => {
   const [notificationsError, setNotificationsError] = useState("");
   const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
   const [notificationsFetchedAt, setNotificationsFetchedAt] = useState(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const [liveRegionMessage, setLiveRegionMessage] = useState("");
 
-  // Announce search results to screen readers
+  // Reset focused index when search results change
   useEffect(() => {
-    if (searchResults.length > 0 && !searchLoading) {
-      const totalResults = searchResults.reduce((sum, section) => sum + section.items.length, 0);
-      setLiveRegionMessage(`${totalResults} search results found`);
-    } else if (searchValue.trim() && !searchLoading && searchResults.length === 0) {
-      setLiveRegionMessage("No search results found");
-    }
-  }, [searchResults, searchLoading, searchValue]);
+    setFocusedIndex(-1);
+  }, [searchResults]);
 
   // Announce notifications to screen readers
   useEffect(() => {
@@ -231,26 +227,44 @@ const Layout = () => {
 
   const handleSearchClose = () => {
     setSearchOpen(false);
+    setFocusedIndex(-1);
   };
 
   const handleSearchKeyDown = (event) => {
-    if (event.key === "Escape") {
-      setSearchOpen(false);
-      return;
-    }
+    if (!searchResults.length) return;
 
-    if (event.key === "ArrowDown" && searchResults.length > 0) {
-      event.preventDefault();
-      // Focus first result (would need to implement proper focus management)
-      return;
-    }
+    const totalItems = searchResults.reduce((sum, section) => sum + section.items.length, 0);
 
-    if (event.key === "Enter") {
-      event.preventDefault();
-      const firstItem = searchResults[0]?.items?.[0];
-      if (firstItem) {
-        handleSearchResultClick(firstItem);
-      }
+    switch (event.key) {
+      case "Escape":
+        setSearchOpen(false);
+        setFocusedIndex(-1);
+        break;
+      case "ArrowDown":
+        event.preventDefault();
+        setFocusedIndex(prev => (prev < totalItems - 1 ? prev + 1 : 0));
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setFocusedIndex(prev => (prev > 0 ? prev - 1 : totalItems - 1));
+        break;
+      case "Enter":
+        event.preventDefault();
+        if (focusedIndex >= 0) {
+          let currentIndex = 0;
+          for (const section of searchResults) {
+            for (const item of section.items) {
+              if (currentIndex === focusedIndex) {
+                handleSearchResultClick(item);
+                return;
+              }
+              currentIndex++;
+            }
+          }
+        }
+        break;
+      default:
+        break;
     }
   };
 
@@ -1048,55 +1062,72 @@ const Layout = () => {
                                 {SEARCH_SECTION_LABELS[section.key] || section.key}
                               </Typography>
                             </Box>
-                            {section.items.map((item) => (
-                              <ListItemButton
-                                key={`${section.key}-${item.id}`}
-                                onClick={() => handleSearchResultClick(item)}
-                                alignItems="flex-start"
-                                sx={{ px: 2, py: 1.25, gap: 1.5 }}
-                              >
-                                <ListItemIcon
+                            {section.items.map((item, itemIndex) => {
+                              let globalIndex = 0;
+                              for (let i = 0; i < searchResults.indexOf(section); i++) {
+                                globalIndex += searchResults[i].items.length;
+                              }
+                              globalIndex += itemIndex;
+                              const isFocused = globalIndex === focusedIndex;
+
+                              return (
+                                <ListItemButton
+                                  key={`${section.key}-${item.id}`}
+                                  onClick={() => handleSearchResultClick(item)}
+                                  alignItems="flex-start"
                                   sx={{
-                                    minWidth: 32,
-                                    color: "#2563EB",
-                                    mt: 0.25,
+                                    px: 2,
+                                    py: 1.25,
+                                    gap: 1.5,
+                                    backgroundColor: isFocused ? '#EEF2FF' : 'transparent',
+                                    '&:hover': {
+                                      backgroundColor: isFocused ? '#E0E7FF' : '#F8FAFC',
+                                    },
                                   }}
                                 >
-                                  {renderSectionIcon(section.key)}
-                                </ListItemIcon>
-                                <ListItemText
-                                  primary={item.primary}
-                                  primaryTypographyProps={{
-                                    variant: "body2",
-                                    fontWeight: 600,
-                                    color: "text.primary",
-                                  }}
-                                  secondary={
-                                    item.secondary ? (
-                                      <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                        sx={{ display: "block", mt: 0.25 }}
-                                      >
-                                        {item.secondary}
-                                      </Typography>
-                                    ) : null
-                                  }
-                                />
-                                {item.chip ? (
-                                  <Chip
-                                    label={item.chip}
-                                    size="small"
+                                  <ListItemIcon
                                     sx={{
-                                      fontSize: "0.65rem",
-                                      height: 18,
-                                      backgroundColor: "#EFF6FF",
-                                      color: "#1D4ED8",
+                                      minWidth: 32,
+                                      color: "#2563EB",
+                                      mt: 0.25,
                                     }}
+                                  >
+                                    {renderSectionIcon(section.key)}
+                                  </ListItemIcon>
+                                  <ListItemText
+                                    primary={item.primary}
+                                    primaryTypographyProps={{
+                                      variant: "body2",
+                                      fontWeight: 600,
+                                      color: "text.primary",
+                                    }}
+                                    secondary={
+                                      item.secondary ? (
+                                        <Typography
+                                          variant="caption"
+                                          color="text.secondary"
+                                          sx={{ display: "block", mt: 0.25 }}
+                                        >
+                                          {item.secondary}
+                                        </Typography>
+                                      ) : null
+                                    }
                                   />
-                                ) : null}
-                              </ListItemButton>
-                            ))}
+                                  {item.chip ? (
+                                    <Chip
+                                      label={item.chip}
+                                      size="small"
+                                      sx={{
+                                        fontSize: "0.65rem",
+                                        height: 18,
+                                        backgroundColor: "#EFF6FF",
+                                        color: "#1D4ED8",
+                                      }}
+                                    />
+                                  ) : null}
+                                </ListItemButton>
+                              );
+                            })}
                             {index < searchResults.length - 1 ? <Divider /> : null}
                           </Box>
                         ))}

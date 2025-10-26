@@ -129,8 +129,12 @@ const AdminDashboard = () => {
         justifyContent="center"
         alignItems="center"
         height="400px"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading dashboard data"
       >
-        <CircularProgress sx={{ color: "#305FB7" }} />
+        <CircularProgress sx={{ color: "#305FB7" }} aria-hidden="true" />
+        <Typography sx={{ ml: 2 }}>Loading dashboard data...</Typography>
       </Box>
     );
   }
@@ -290,6 +294,7 @@ const AdminDashboard = () => {
                     <TableRow>
                       <TableCell
                         scope="col"
+                        id="overdue-student-id-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -302,6 +307,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="overdue-title-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -314,6 +320,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="overdue-due-date-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -332,6 +339,7 @@ const AdminDashboard = () => {
                         <TableRow key={index}>
                           <TableCell
                             scope="row"
+                            headers="overdue-student-id-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -342,6 +350,7 @@ const AdminDashboard = () => {
                             #{book.studentId}
                           </TableCell>
                           <TableCell
+                            headers="overdue-title-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -353,6 +362,7 @@ const AdminDashboard = () => {
                             {book.title}
                           </TableCell>
                           <TableCell
+                            headers="overdue-due-date-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -413,6 +423,7 @@ const AdminDashboard = () => {
                     <TableRow>
                       <TableCell
                         scope="col"
+                        id="checkout-student-id-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -425,6 +436,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="checkout-title-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -437,6 +449,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="checkout-author-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -449,6 +462,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="checkout-student-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -461,6 +475,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="checkout-issued-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -473,6 +488,7 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell
                         scope="col"
+                        id="checkout-returned-header"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -490,6 +506,7 @@ const AdminDashboard = () => {
                       recentCheckouts.map((checkout, index) => (
                         <TableRow key={index}>
                           <TableCell
+                            headers="checkout-student-id-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -500,6 +517,7 @@ const AdminDashboard = () => {
                             {checkout.studentId ? `#${checkout.studentId}` : 'N/A'}
                           </TableCell>
                           <TableCell
+                            headers="checkout-title-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -511,6 +529,7 @@ const AdminDashboard = () => {
                             {checkout.title}
                           </TableCell>
                           <TableCell
+                            headers="checkout-author-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -521,6 +540,7 @@ const AdminDashboard = () => {
                             {checkout.author}
                           </TableCell>
                           <TableCell
+                            headers="checkout-student-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -531,6 +551,7 @@ const AdminDashboard = () => {
                             {checkout.student}
                           </TableCell>
                           <TableCell
+                            headers="checkout-issued-header"
                             sx={{
                               py: 1,
                               border: "none",
@@ -541,6 +562,7 @@ const AdminDashboard = () => {
                             {checkout.recordDate ? new Date(checkout.recordDate).toLocaleDateString() : 'N/A'}
                           </TableCell>
                           <TableCell
+                            headers="checkout-returned-header"
                             sx={{
                               py: 1,
                               border: "none",

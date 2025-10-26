@@ -190,7 +190,7 @@ const LoginPage = () => {
             <Box
               component="img"
               src={logo}
-              alt="School Logo"
+              alt="ONHS Library Management System Logo"
               sx={{
                 width: 115,
                 height: "auto",
@@ -270,6 +270,7 @@ const LoginPage = () => {
                   disabled={loading}
                   error={Boolean(error && !formData.username)}
                   aria-describedby={error && !formData.username ? "username-error" : undefined}
+                  aria-invalid={Boolean(error && !formData.username)}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       backgroundColor: "#E8EAF0",
@@ -334,6 +335,7 @@ const LoginPage = () => {
                   disabled={loading}
                   error={Boolean(error && !formData.password)}
                   aria-describedby={error && !formData.password ? "password-error" : undefined}
+                  aria-invalid={Boolean(error && !formData.password)}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       backgroundColor: "#E8EAF0",
