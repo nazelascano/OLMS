@@ -3,8 +3,23 @@ import toast from "react-hot-toast";
 
 const DEFAULT_BASE_URL = "http://localhost:5001/api";
 
+const resolveAutomaticBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return DEFAULT_BASE_URL;
+  }
+
+  const origin = window.location.origin.replace(/\/$/, "");
+  const isLocalhost = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(origin);
+
+  if (isLocalhost) {
+    return DEFAULT_BASE_URL;
+  }
+
+  return `${origin}/api`;
+};
+
 const normalizeBaseUrl = (value) => {
-  const fallback = DEFAULT_BASE_URL;
+  const fallback = resolveAutomaticBaseUrl();
   if (!value) {
     return fallback;
   }
