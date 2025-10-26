@@ -26,9 +26,9 @@
       "totalReturned": 0
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-10-19T03:07:20.483Z",
-    "lastLoginAt": "2025-10-19T02:47:15.125Z",
-    "lastActivityAt": "2025-10-19T03:07:20.482Z"
+    "updatedAt": "2025-10-25T03:20:24.538Z",
+    "lastLoginAt": "2025-10-25T02:39:23.076Z",
+    "lastActivityAt": "2025-10-25T03:20:24.531Z"
   },
   {
     "libraryCardNumber": "LIB-25-0001",
@@ -42,7 +42,7 @@
     "lrn": "123456789012",
     "grade": "Grade 7",
     "section": "A",
-    "department": "",
+    "curriculum": "",
     "barangay": "Barangay 1",
     "municipality": "Quezon City",
     "province": "Philippines",

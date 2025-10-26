@@ -38,7 +38,7 @@ const defaultFilters = {
   academicYear: "",
   gradeLevel: "",
   section: "",
-  department: "",
+  curriculum: "",
 };
 
 const emptySetForm = {
@@ -46,7 +46,7 @@ const emptySetForm = {
   academicYear: "",
   gradeLevel: "",
   section: "",
-  department: "",
+  curriculum: "",
   description: "",
   books: [],
 };
@@ -647,7 +647,7 @@ const AnnualBorrowing = () => {
       <Card variant="outlined" sx={{ mb: 3 }}>
         <CardHeader
           title="Filters"
-          subheader="Search by year, grade, section, or department"
+          subheader="Search by year, grade, section, or curriculum"
         />
         <CardContent>
           <Grid container spacing={2}>
@@ -696,10 +696,10 @@ const AnnualBorrowing = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <TextField
-                label="Department"
-                value={filters.department}
+                label="Curriculum"
+                value={filters.curriculum}
                 onChange={(event) =>
-                  handleFilterChange("department", event.target.value)
+                  handleFilterChange("curriculum", event.target.value)
                 }
                 placeholder="e.g. Junior High"
                 fullWidth
@@ -769,7 +769,7 @@ const AnnualBorrowing = () => {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Stack spacing={1}>
                     <Typography variant="body2" color="text.secondary">
-                      Department: {set.department || "N/A"}
+                      Curriculum: {set.curriculum || "N/A"}
                     </Typography>
                     {set.description && (
                       <Typography variant="body2" color="text.secondary">
@@ -1211,9 +1211,9 @@ const AnnualBorrowing = () => {
                 fullWidth
               />
               <TextField
-                label="Department"
-                value={createForm.department}
-                onChange={(event) => handleCreateFieldChange("department", event.target.value)}
+                label="Curriculum"
+                value={createForm.curriculum}
+                onChange={(event) => handleCreateFieldChange("curriculum", event.target.value)}
                 placeholder="e.g. Junior High"
                 fullWidth
               />
@@ -1366,9 +1366,9 @@ const AnnualBorrowing = () => {
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Department
+                    Curriculum
                   </Typography>
-                  <Typography variant="body1">{previewInfo.department || "N/A"}</Typography>
+                  <Typography variant="body1">{previewInfo.curriculum || "N/A"}</Typography>
                 </Box>
               </Stack>
               <Divider />

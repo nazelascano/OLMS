@@ -108,7 +108,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             lrn: req.body.lrn, // Learner Reference Number
             grade: req.body.grade,
             section: req.body.section,
-            department: req.body.department,
+            curriculum: req.body.curriculum,
 
             // Address Information
             barangay: req.body.barangay,
@@ -149,7 +149,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
                     firstName: studentData.firstName,
                     lastName: studentData.lastName,
                     email: studentData.email,
-                    department: studentData.department
+                    curriculum: studentData.curriculum
                 }
             }
         });

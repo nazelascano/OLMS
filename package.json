@@ -6,13 +6,17 @@
     "scripts": {
         "start": "node start.js",
         "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "dev:offline": "cross-env USE_OFFLINE_DB=true npm run dev",
+    "dev:auto": "node scripts/start-auto.js --target=both",
         "server:dev": "cd backend && npm run dev",
         "client:dev": "cd frontend && npm run dev",
         "server:start": "cd backend && npm start",
         "client:build": "cd frontend && npm run build",
         "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
         "build": "cd frontend && npm run build",
-    "test": "cd frontend && npm test"
+    "test": "cd frontend && npm test",
+        "server:dev:auto": "node scripts/start-auto.js --target=backend",
+        "client:dev:auto": "node scripts/start-auto.js --target=frontend"
     },
     "keywords": [
         "library-management",
@@ -24,6 +28,7 @@
     "author": "OLMS Development Team",
     "license": "MIT",
     "devDependencies": {
-        "concurrently": "^8.2.2"
+        "concurrently": "^8.2.2",
+        "cross-env": "^7.0.3"
     }
 }

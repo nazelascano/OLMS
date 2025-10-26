@@ -21,8 +21,8 @@ const matchesSearchTerm = (user, term) => {
         user.studentNumber,
         user.studentId,
         user.libraryCardNumber,
-        user?.library?.cardNumber,
-        user.department,
+    user?.library?.cardNumber,
+    user.curriculum,
         user.gradeLevel,
     ];
 
@@ -62,8 +62,8 @@ const sanitizeUserSummary = (user) => {
         username: user.username || '',
         email: user.email || '',
         role: user.role || 'student',
-        studentId: user.studentId || user.studentNumber || '',
-        department: user.department || '',
+    studentId: user.studentId || user.studentNumber || '',
+    curriculum: user.curriculum || '',
         gradeLevel: user.gradeLevel || user.grade || '',
         libraryCardNumber: user.library?.cardNumber || user.libraryCardNumber || '',
     };
@@ -186,7 +186,7 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
             page = 1,
                 limit = 20,
                 role,
-                department,
+                curriculum,
                 gradeLevel,
                 isActive,
                 search
@@ -194,8 +194,8 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
 
         // Build query filters
         let filters = {};
-        if (role) filters.role = role;
-        if (department) filters.department = department;
+    if (role) filters.role = role;
+    if (curriculum) filters.curriculum = curriculum;
         if (gradeLevel) filters.gradeLevel = gradeLevel;
         if (isActive !== undefined) filters.isActive = isActive === 'true';
 
@@ -311,7 +311,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             lastName,
             role,
             studentNumber,
-            department,
+            curriculum,
             gradeLevel
         } = req.body;
 
@@ -331,7 +331,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
                     lastName: lastName || null,
                     role: role || null,
                     studentNumber: studentNumber || null,
-                    department: department || null,
+                    curriculum: curriculum || null,
                     gradeLevel: gradeLevel || null
                 }
             }
@@ -410,7 +410,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             lastName,
             role,
             studentNumber: studentNumber || null,
-            department: department || null,
+            curriculum: curriculum || null,
             gradeLevel: gradeLevel || null,
             isActive: true,
             createdAt: new Date(),
@@ -582,7 +582,7 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
             lastName,
             role,
             studentNumber,
-            department,
+            curriculum,
             gradeLevel,
             isActive,
             email
@@ -653,7 +653,7 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
         if (lastName) updateData.lastName = lastName;
         if (role && req.user.id !== userId) updateData.role = role;
         if (studentNumber) updateData.studentNumber = studentNumber;
-        if (department) updateData.department = department;
+    if (curriculum) updateData.curriculum = curriculum;
         if (gradeLevel) updateData.gradeLevel = gradeLevel;
         if (email) updateData.email = email;
         if (isActive !== undefined && req.user.role !== 'student') updateData.isActive = isActive;

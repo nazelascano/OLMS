@@ -1,7 +1,7 @@
 const express = require('express');
 const { verifyToken, requireAdmin, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
 const {
-    DEFAULT_DEPARTMENTS,
+    DEFAULT_CURRICULA,
     DEFAULT_GRADE_LEVELS,
     normalizeStringList
 } = require('../utils/userAttributes');
@@ -205,16 +205,16 @@ router.get('/notifications', verifyToken, requireLibrarian, async(req, res) => {
 
 router.get('/user-attributes', verifyToken, requireLibrarian, async(req, res) => {
     try {
-        const [departmentsSetting, gradeLevelsSetting] = await Promise.all([
-            req.dbAdapter.findOneInCollection('settings', { id: 'USER_DEPARTMENTS' }),
+        const [curriculaSetting, gradeLevelsSetting] = await Promise.all([
+            req.dbAdapter.findOneInCollection('settings', { id: 'USER_CURRICULA' }),
             req.dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_LEVELS' })
         ]);
 
-        const departments = normalizeStringList(departmentsSetting?.value, DEFAULT_DEPARTMENTS);
+        const curriculumOptions = normalizeStringList(curriculaSetting?.value, DEFAULT_CURRICULA);
         const gradeLevels = normalizeStringList(gradeLevelsSetting?.value, DEFAULT_GRADE_LEVELS);
 
         res.json({
-            departments,
+            curriculum: curriculumOptions,
             gradeLevels
         });
     } catch (error) {
@@ -412,20 +412,20 @@ router.put('/notifications', verifyToken, requireAdmin, logAction('UPDATE', 'set
 router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 'settings-user-attributes'), async(req, res) => {
     try {
         const {
-            departments = [],
+            curriculum = [],
             gradeLevels = []
         } = req.body || {};
 
-        const normalizedDepartments = normalizeStringList(departments, DEFAULT_DEPARTMENTS);
+        const normalizedCurriculum = normalizeStringList(curriculum, DEFAULT_CURRICULA);
         const normalizedGradeLevels = normalizeStringList(gradeLevels, DEFAULT_GRADE_LEVELS);
 
         await Promise.all([
             updateOrCreateSetting(req.dbAdapter, req.user.id, {
-                id: 'USER_DEPARTMENTS',
-                value: normalizedDepartments,
+                id: 'USER_CURRICULA',
+                value: normalizedCurriculum,
                 type: 'array',
                 category: USER_CATEGORY,
-                description: 'Configured department options for users and students'
+                description: 'Configured curriculum options for users and students'
             }),
             updateOrCreateSetting(req.dbAdapter, req.user.id, {
                 id: 'USER_GRADE_LEVELS',

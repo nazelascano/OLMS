@@ -177,6 +177,34 @@ npm run server:dev
 npm run client:dev
 ```
 
+### Offline Development
+
+This project includes an offline mode that uses local JSON files (no MongoDB required). The offline adapter stores data under `backend/data` and will seed a default admin user automatically.
+
+Recommended way (cross-platform):
+
+- From the repository root (starts frontend + backend in offline mode):
+```
+npm run dev:offline
+```
+
+- Backend only (offline):
+```
+cd backend
+npm run dev:offline
+```
+
+PowerShell alternative (temporarily sets env for the current shell):
+```
+$env:USE_OFFLINE_DB = 'true'; npm run server:dev
+```
+
+Notes:
+- Default admin credentials: `admin` / `admin123456`.
+- Offline data files are in `backend/data` (users.json, books.json, transactions.json, etc.).
+- If you want to switch back to MongoDB mode, set `MONGODB_URI` (or `MONGO_URI`) in `backend/.env` and unset `USE_OFFLINE_DB`.
+
+
 ### Production Mode
 ```bash
 # Build frontend

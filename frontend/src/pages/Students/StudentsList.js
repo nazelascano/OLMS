@@ -86,7 +86,7 @@ const StudentsList = () => {
         if (isMounted) {
           setUserAttributes(ensureUserAttributes());
           setAttributeError(
-            "Failed to load department and grade options. Using defaults.",
+            "Failed to load curriculum and grade options. Using defaults.",
           );
         }
       }
@@ -118,6 +118,7 @@ const StudentsList = () => {
             section: user.section || "N/A",
             dues: user.borrowingStats?.totalFines || 0,
             studentId: user.studentNumber || user.studentId || "N/A",
+            curriculum: user.curriculum || "N/A",
           })) || [];
         setStudents(studentsData);
       } catch (fallbackError) {
@@ -177,7 +178,8 @@ const StudentsList = () => {
       student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentId?.toString().includes(searchTerm);
+      student.studentId?.toString().includes(searchTerm) ||
+      student.curriculum?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesGrade = !gradeFilter || student.grade === gradeFilter;
     const matchesSection = !sectionFilter || student.section === sectionFilter;

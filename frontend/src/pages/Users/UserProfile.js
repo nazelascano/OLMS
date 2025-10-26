@@ -389,11 +389,11 @@ const UserProfile = () => {
                     />{" "}
                   </ListItem>
                 )}{" "}
-                {profileData.department && (
+                {profileData.curriculum && (
                   <ListItem>
                     <ListItemText
-                      primary="Department"
-                      secondary={profileData.department}
+                      primary="Curriculum"
+                      secondary={profileData.curriculum}
                     />{" "}
                   </ListItem>
                 )}{" "}

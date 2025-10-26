@@ -158,8 +158,9 @@ const UsersList = () => {
       user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  user.studentNumber?.includes(searchTerm) ||
-  user.studentId?.includes(searchTerm);
+      user.studentNumber?.includes(searchTerm) ||
+      user.studentId?.includes(searchTerm) ||
+      user.curriculum?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesRole = !roleFilter || user.role === roleFilter;
 
@@ -296,7 +297,7 @@ const UsersList = () => {
                 <TableCell> User </TableCell> <TableCell> Email </TableCell>{" "}
                 <TableCell> Role </TableCell>{" "}
                 <TableCell> Student Number </TableCell>{" "}
-                <TableCell> Department </TableCell>{" "}
+                <TableCell> Curriculum </TableCell>{" "}
                 <TableCell> Status </TableCell>{" "}
                 <TableCell> Last Login </TableCell>{" "}
                 <TableCell align="right"> Actions </TableCell>{" "}
@@ -339,7 +340,7 @@ const UsersList = () => {
                     />{" "}
                   </TableCell>{" "}
                   <TableCell> {user.studentNumber || "-"} </TableCell>{" "}
-                  <TableCell> {user.department || "-"} </TableCell>{" "}
+                  <TableCell> {user.curriculum || "-"} </TableCell>{" "}
                   <TableCell>
                     <Chip
                       label={user.isActive ? "Active" : "Inactive"}

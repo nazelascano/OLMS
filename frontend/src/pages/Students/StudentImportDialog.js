@@ -60,7 +60,7 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
         if (isMounted) {
           setUserAttributes(ensureUserAttributes());
           setAttributeError(
-            "Failed to load department and grade options. Using defaults.",
+            "Failed to load curriculum and grade options. Using defaults.",
           );
         }
       }

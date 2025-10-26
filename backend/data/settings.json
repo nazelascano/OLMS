@@ -78,5 +78,28 @@
     "createdAt": "2025-10-06T14:33:34.258Z",
     "updatedAt": "2025-10-06T14:33:34.258Z",
     "_id": "mgf8e33m6aq0q"
+  },
+  {
+  "id": "USER_CURRICULA",
+    "value": [
+      "Computer Science",
+      "Engineering",
+      "Mathematics",
+      "Science",
+      "Arts",
+      "Business",
+      "Education",
+      "Medicine",
+      "Law",
+      "Other"
+    ],
+    "type": "array",
+    "category": "user",
+  "description": "Configured curriculum options for users and students",
+    "createdAt": "2025-10-25T02:46:09.803Z",
+    "updatedAt": "2025-10-25T02:46:09.804Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mh5ohjf05ajzr"
   }
 ]

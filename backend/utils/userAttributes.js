@@ -1,4 +1,4 @@
-const DEFAULT_DEPARTMENTS = [
+const DEFAULT_CURRICULA = [
   'Computer Science',
   'Engineering',
   'Mathematics',
@@ -60,7 +60,7 @@ const toSlug = (value, fallback) => {
 };
 
 module.exports = {
-  DEFAULT_DEPARTMENTS,
+  DEFAULT_CURRICULA,
   DEFAULT_GRADE_LEVELS,
   normalizeStringList,
   toSlug

@@ -163,7 +163,7 @@ const buildAnnualSetDocument = (payload, user) => {
         name: (payload.name || '').trim() || 'Untitled Annual Set',
         gradeLevel: (payload.gradeLevel || '').trim(),
         section: (payload.section || '').trim(),
-        department: (payload.department || '').trim(),
+    curriculum: (payload.curriculum || '').trim(),
         academicYear: normalizeAcademicYear(payload.academicYear),
         description: (payload.description || '').trim(),
         books: normalizeBooks(payload.books),
@@ -184,8 +184,8 @@ const applyEditableFields = (record, payload) => {
     if (payload.section !== undefined) {
         record.section = String(payload.section || '').trim();
     }
-    if (payload.department !== undefined) {
-        record.department = String(payload.department || '').trim();
+    if (payload.curriculum !== undefined) {
+        record.curriculum = String(payload.curriculum || '').trim();
     }
     if (payload.academicYear !== undefined) {
         record.academicYear = normalizeAcademicYear(payload.academicYear);
@@ -213,19 +213,19 @@ const buildFiltersFromQuery = (query = {}) => {
         filters.section = String(query.section).trim();
     }
 
-    if (query.department) {
-        filters.department = String(query.department).trim();
+    if (query.curriculum) {
+        filters.curriculum = String(query.curriculum).trim();
     }
 
     return filters;
 };
 
-const findMatchingStudents = async(dbAdapter, { gradeLevel, section, department }) => {
+const findMatchingStudents = async(dbAdapter, { gradeLevel, section, curriculum }) => {
     const students = await dbAdapter.findInCollection('users', { role: 'student' });
 
     const normalizedGrade = safeLower(gradeLevel);
     const normalizedSection = safeLower(section);
-    const normalizedDepartment = safeLower(department);
+    const normalizedCurriculum = safeLower(curriculum);
 
     return (students || []).filter(student => {
         if (!student || student.isActive === false) {
@@ -246,9 +246,9 @@ const findMatchingStudents = async(dbAdapter, { gradeLevel, section, department 
             }
         }
 
-        if (normalizedDepartment) {
-            const studentDepartment = safeLower(student.department || student.profile?.department || student.academic?.department);
-            if (studentDepartment !== normalizedDepartment) {
+        if (normalizedCurriculum) {
+            const studentCurriculum = safeLower(student.curriculum || student.profile?.curriculum || student.academic?.curriculum);
+            if (studentCurriculum !== normalizedCurriculum) {
                 return false;
             }
         }
@@ -336,7 +336,7 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
 
 router.post('/preview', verifyToken, requireStaff, async(req, res) => {
     try {
-        const { academicYear, gradeLevel, section, department, setId } = req.body || {};
+    const { academicYear, gradeLevel, section, curriculum, setId } = req.body || {};
 
         let targetSet = null;
 
@@ -348,7 +348,7 @@ router.post('/preview', verifyToken, requireStaff, async(req, res) => {
         }
 
         if (!targetSet) {
-            const filters = buildFiltersFromQuery({ academicYear, gradeLevel, section, department });
+            const filters = buildFiltersFromQuery({ academicYear, gradeLevel, section, curriculum });
             const sets = await req.dbAdapter.findInCollection('annualSets', filters);
             targetSet = Array.isArray(sets) && sets.length > 0 ? sets[0] : null;
         }
@@ -360,7 +360,7 @@ router.post('/preview', verifyToken, requireStaff, async(req, res) => {
         const students = await findMatchingStudents(req.dbAdapter, {
             gradeLevel: gradeLevel || targetSet.gradeLevel,
             section: section || targetSet.section,
-            department: department || targetSet.department
+            curriculum: curriculum || targetSet.curriculum
         });
 
         const books = await req.dbAdapter.findInCollection('books', {});
@@ -372,7 +372,7 @@ router.post('/preview', verifyToken, requireStaff, async(req, res) => {
             academicYear: enriched.academicYear,
             gradeLevel: enriched.gradeLevel,
             section: enriched.section,
-            department: enriched.department,
+            curriculum: enriched.curriculum,
             targetSet: enriched,
             studentCount: students.length,
             studentSample: students.slice(0, 10).map(student => ({
@@ -380,7 +380,7 @@ router.post('/preview', verifyToken, requireStaff, async(req, res) => {
                 name: student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim(),
                 grade: student.grade || student.gradeLevel || student.profile?.gradeLevel || '',
                 section: student.section || student.profile?.section || '',
-                department: student.department || student.profile?.department || ''
+                curriculum: student.curriculum || student.profile?.curriculum || ''
             }))
         });
     } catch (error) {
@@ -474,7 +474,7 @@ router.get('/:id/issue-context', verifyToken, requireStaff, async(req, res) => {
         const matchingStudents = await findMatchingStudents(req.dbAdapter, {
             gradeLevel: enriched.gradeLevel,
             section: enriched.section,
-            department: enriched.department
+            curriculum: enriched.curriculum
         });
 
         const { q } = req.query || {};
@@ -514,7 +514,7 @@ router.get('/:id/issue-context', verifyToken, requireStaff, async(req, res) => {
                     name: student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.username || student.email || 'Unnamed student',
                     grade: student.grade || student.gradeLevel || student.profile?.gradeLevel || '',
                     section: student.section || student.sectionName || student.profile?.section || '',
-                    department: student.department || student.profile?.department || '',
+                    curriculum: student.curriculum || student.profile?.curriculum || '',
                     libraryCardNumber: student.libraryCardNumber || student.library?.cardNumber || '',
                     email: student.email || '',
                     isActive: student.isActive !== false,
@@ -852,7 +852,7 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
                 academicYear: set.academicYear || '',
                 gradeLevel: set.gradeLevel || '',
                 section: set.section || '',
-                department: set.department || '',
+                curriculum: set.curriculum || '',
                 providedDueDate: providedDueDate && !Number.isNaN(providedDueDate.getTime()) ? providedDueDate.toISOString() : null
             }
         };

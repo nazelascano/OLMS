@@ -291,7 +291,7 @@ const SettingsPage = () => {
   const [userAttributes, setUserAttributes] = useState(() =>
     ensureUserAttributes(),
   );
-  const [newDepartment, setNewDepartment] = useState("");
+  const [newCurriculum, setNewCurriculum] = useState("");
   const [newGradeLevel, setNewGradeLevel] = useState("");
 
   useEffect(() => {
@@ -372,7 +372,7 @@ const SettingsPage = () => {
 
   const handleUserAttributesSave = () => {
     const sanitized = {
-      departments: normalizeStringList(userAttributes.departments),
+      curriculum: normalizeStringList(userAttributes.curriculum),
       gradeLevels: normalizeStringList(userAttributes.gradeLevels),
     };
 
@@ -393,26 +393,26 @@ const SettingsPage = () => {
     }
   };
 
-  const handleAddDepartment = () => {
-    const value = newDepartment.trim();
+  const handleAddCurriculum = () => {
+    const value = newCurriculum.trim();
     if (!value) return;
 
     setUserAttributes((prev) => {
-      if (prev.departments.some((item) => item.toLowerCase() === value.toLowerCase())) {
+      if (prev.curriculum.some((item) => item.toLowerCase() === value.toLowerCase())) {
         return prev;
       }
       return {
         ...prev,
-        departments: [...prev.departments, value],
+        curriculum: [...prev.curriculum, value],
       };
     });
-    setNewDepartment("");
+    setNewCurriculum("");
   };
 
-  const handleRemoveDepartment = (value) => {
+  const handleRemoveCurriculum = (value) => {
     setUserAttributes((prev) => ({
       ...prev,
-      departments: prev.departments.filter((item) => item !== value),
+      curriculum: prev.curriculum.filter((item) => item !== value),
     }));
   };
 
@@ -1378,8 +1378,8 @@ const SettingsPage = () => {
             <Grid item xs={12} md={6}>
               <Card elevation={1}>
                 <CardHeader
-                  title="Departments"
-                  subheader="Update the selectable departments for users and students"
+                  title="Curriculum"
+                  subheader="Update the selectable curricula for users and students"
                 />
                 <CardContent>
                   <Stack spacing={2}>
@@ -1387,36 +1387,36 @@ const SettingsPage = () => {
                       <TextField
                         fullWidth
                         size="small"
-                        label="Add Department"
-                        value={newDepartment}
-                        onChange={(event) => setNewDepartment(event.target.value)}
+                        label="Add Curriculum"
+                        value={newCurriculum}
+                        onChange={(event) => setNewCurriculum(event.target.value)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter") {
                             event.preventDefault();
-                            handleAddDepartment();
+                            handleAddCurriculum();
                           }
                         }}
                       />
                       <Button
                         variant="contained"
                         startIcon={<Add />}
-                        onClick={handleAddDepartment}
-                        disabled={!newDepartment.trim()}
+                        onClick={handleAddCurriculum}
+                        disabled={!newCurriculum.trim()}
                       >
                         Add
                       </Button>
                     </Stack>
-                    {userAttributes.departments.length === 0 ? (
+                    {userAttributes.curriculum.length === 0 ? (
                       <Typography color="text.secondary">
-                        No departments configured. Add at least one option.
+                        No curriculum options configured. Add at least one option.
                       </Typography>
                     ) : (
                       <Stack direction="row" flexWrap="wrap" spacing={1}>
-                        {userAttributes.departments.map((department) => (
+                        {userAttributes.curriculum.map((item) => (
                           <Chip
-                            key={department}
-                            label={department}
-                            onDelete={() => handleRemoveDepartment(department)}
+                            key={item}
+                            label={item}
+                            onDelete={() => handleRemoveCurriculum(item)}
                             sx={{ mb: 1 }}
                             color="primary"
                             variant="outlined"

@@ -21,7 +21,7 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       lastName, 
       role = 'student', 
       studentNumber, 
-      department, 
+      curriculum, 
       gradeLevel 
     } = req.body;
 
@@ -74,7 +74,7 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       lastName,
       role,
       studentNumber: studentNumber || null,
-      department: department || null,
+  curriculum: curriculum || null,
       gradeLevel: gradeLevel || null,
       isActive: true,
       createdAt: new Date(),
@@ -104,7 +104,7 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       description: `Registered new user ${newUser.username}`,
       details: {
         role: newUser.role,
-        department: newUser.department || null,
+  curriculum: newUser.curriculum || null,
         gradeLevel: newUser.gradeLevel || null,
       },
     });

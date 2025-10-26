@@ -48,7 +48,7 @@ const DEFAULT_FORM_DATA = {
   confirmPassword: "",
   role: "student",
   studentId: "",
-  department: "",
+  curriculum: "",
   gradeLevel: "",
   phoneNumber: "",
   address: "",
@@ -87,7 +87,7 @@ const UserForm = () => {
         console.error("Failed to load user attribute options:", attributesError);
         if (isMounted) {
           setUserAttributes(ensureUserAttributes());
-          setUserAttributesError("Failed to load latest department and grade options. Using defaults.");
+          setUserAttributesError("Failed to load latest curriculum and grade options. Using defaults.");
         }
       }
     };
@@ -117,6 +117,7 @@ const UserForm = () => {
           lastName: userData.lastName || "",
           password: "",
           confirmPassword: "",
+          curriculum: userData.curriculum || "",
           phoneNumber: userData.phoneNumber || userData.profile?.phone || "",
           address: userData.address || userData.profile?.address || "",
           isActive:
@@ -140,18 +141,18 @@ const UserForm = () => {
 
   useEffect(() => {
     setFormData((prev) => {
-      const allowedDepartments = userAttributes.departments || [];
+      const allowedCurriculum = userAttributes.curriculum || [];
       const allowedGradeLevels = userAttributes.gradeLevels || [];
 
-      let nextDepartment = prev.department;
+      let nextCurriculum = prev.curriculum;
       let nextGradeLevel = prev.gradeLevel;
 
       if (
-        nextDepartment &&
-        allowedDepartments.length > 0 &&
-        !allowedDepartments.includes(nextDepartment)
+        nextCurriculum &&
+        allowedCurriculum.length > 0 &&
+        !allowedCurriculum.includes(nextCurriculum)
       ) {
-        nextDepartment = "";
+        nextCurriculum = "";
       }
 
       if (
@@ -163,12 +164,12 @@ const UserForm = () => {
       }
 
       if (
-        nextDepartment !== prev.department ||
+        nextCurriculum !== prev.curriculum ||
         nextGradeLevel !== prev.gradeLevel
       ) {
         return {
           ...prev,
-          department: nextDepartment,
+          curriculum: nextCurriculum,
           gradeLevel: nextGradeLevel,
         };
       }

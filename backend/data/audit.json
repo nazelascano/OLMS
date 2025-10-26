@@ -158,5 +158,93 @@
     "_id": "mgx4lnvwnozoz",
     "createdAt": "2025-10-19T03:07:20.492Z",
     "updatedAt": "2025-10-19T03:07:20.492Z"
+  },
+  {
+    "timestamp": "2025-10-25T02:39:23.081Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-10-19T02:47:15.125Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mh5o8tl532i7j",
+    "_id": "mh5o8tl532i7j",
+    "createdAt": "2025-10-25T02:39:23.081Z",
+    "updatedAt": "2025-10-25T02:39:23.081Z"
+  },
+  {
+    "timestamp": "2025-10-25T02:46:09.809Z",
+    "action": "UPDATE",
+    "entity": "settings-user-attributes",
+    "entityId": null,
+    "resource": "settings-user-attributes",
+    "resourceId": null,
+    "description": "Updated user attribute settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/user-attributes",
+        "body": {
+          "curriculum": [
+            "Computer Science",
+            "Engineering",
+            "Mathematics",
+            "Science",
+            "Arts",
+            "Business",
+            "Education",
+            "Medicine",
+            "Law",
+            "Other"
+          ],
+          "gradeLevels": [
+            "Grade 7",
+            "Grade 8",
+            "Grade 9",
+            "Grade 10",
+            "Grade 11",
+            "Grade 12"
+          ]
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 7
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/user-attributes",
+    "id": "mh5ohjf5oy261",
+    "_id": "mh5ohjf5oy261",
+    "createdAt": "2025-10-25T02:46:09.809Z",
+    "updatedAt": "2025-10-25T02:46:09.809Z"
   }
 ]

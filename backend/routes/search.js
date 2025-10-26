@@ -244,7 +244,7 @@ router.get('/', verifyToken, async (req, res) => {
           includesTerm(user.email, term) ||
           includesTerm(user.studentNumber, term) ||
           includesTerm(user.studentId, term) ||
-          includesTerm(user.department, term) ||
+          includesTerm(user.curriculum, term) ||
           includesTerm(user.gradeLevel, term),
       );
 

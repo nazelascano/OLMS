@@ -485,9 +485,9 @@ const BorrowForm = () => {
                     {selectedBorrower.role && (
                       <Chip label={`Role: ${selectedBorrower.role}`} size="small" />
                     )}
-                    {selectedBorrower.department && (
+                    {selectedBorrower.curriculum && (
                       <Chip
-                        label={`Department: ${selectedBorrower.department}`}
+                        label={`Curriculum: ${selectedBorrower.curriculum}`}
                         size="small"
                       />
                     )}

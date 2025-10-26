@@ -409,7 +409,7 @@ router.get('/annual/stats', verifyToken, requireStaff, async(req, res) => {
 // Annual borrowing list (MUST be before /:id)
 router.get('/annual', verifyToken, requireStaff, async(req, res) => {
     try {
-        const { year, department } = req.query;
+    const { year, curriculum } = req.query;
         const targetYear = year || new Date().getFullYear();
         const transactions = await req.dbAdapter.findInCollection('transactions', {});
 
@@ -418,9 +418,9 @@ router.get('/annual', verifyToken, requireStaff, async(req, res) => {
             return tDate.getFullYear() === parseInt(targetYear);
         });
 
-        if (department) {
-            // Filter by department if provided (would need user data)
-            const users = await req.dbAdapter.findInCollection('users', { department });
+        if (curriculum) {
+            // Filter by curriculum if provided (would need user data)
+            const users = await req.dbAdapter.findInCollection('users', { curriculum });
             const userIds = users.map(u => u.id);
             annualTransactions = annualTransactions.filter(t => userIds.includes(t.userId));
         }

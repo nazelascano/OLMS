@@ -51,9 +51,9 @@ const StudentForm = () => {
     // Academic Information
     studentId: "",
     lrn: "", // Learner Reference Number
-    grade: "",
-    section: "",
-    department: "",
+  grade: "",
+  section: "",
+  curriculum: "",
 
     // Address Information
     barangay: "",
@@ -85,9 +85,9 @@ const StudentForm = () => {
   const sections = ["A", "B", "C", "D", "E"];
 
   const gradeOptions = userAttributes.gradeLevels;
-  const departmentOptions = userAttributes.departments;
+  const curriculumOptions = userAttributes.curriculum;
   const hasGradeOptions = gradeOptions.length > 0;
-  const hasDepartmentOptions = departmentOptions.length > 0;
+  const hasCurriculumOptions = curriculumOptions.length > 0;
 
   useEffect(() => {
     if (isEditing) {
@@ -118,7 +118,7 @@ const StudentForm = () => {
         if (isMounted) {
           setUserAttributes(ensureUserAttributes());
           setAttributeError(
-            "Failed to load department and grade options. Using defaults.",
+            "Failed to load curriculum and grade options. Using defaults.",
           );
         }
       }
@@ -144,16 +144,16 @@ const StudentForm = () => {
       }
 
       if (
-        prev.department &&
-        departmentOptions.length > 0 &&
-        !departmentOptions.includes(prev.department)
+        prev.curriculum &&
+        curriculumOptions.length > 0 &&
+        !curriculumOptions.includes(prev.curriculum)
       ) {
-        updates.department = "";
+        updates.curriculum = "";
       }
 
       return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
     });
-  }, [gradeOptions, departmentOptions]);
+  }, [gradeOptions, curriculumOptions]);
 
   const fetchNextLibraryCard = async () => {
     try {
@@ -181,9 +181,9 @@ const StudentForm = () => {
         phoneNumber: studentData.phoneNumber || "",
         studentId: studentData.studentId || "",
         lrn: studentData.lrn || "",
-        grade: studentData.grade || "",
-        section: studentData.section || "",
-        department: studentData.department || "",
+  grade: studentData.grade || "",
+  section: studentData.section || "",
+  curriculum: studentData.curriculum || "",
         barangay: studentData.barangay || "",
         municipality: studentData.municipality || "",
         province: studentData.province || "",
@@ -474,33 +474,33 @@ const StudentForm = () => {
                     </FormControl>{" "}
                   </Grid>{" "}
                   <Grid item xs={12} sm={6}>
-                    {hasDepartmentOptions ? (
+                    {hasCurriculumOptions ? (
                       <TextField
                         select
                         fullWidth
-                        label="Department"
-                        name="department"
-                        value={formData.department}
+                        label="Curriculum"
+                        name="curriculum"
+                        value={formData.curriculum}
                         onChange={handleChange}
-                        error={!!validationErrors.department}
-                        helperText={validationErrors.department}
+                        error={!!validationErrors.curriculum}
+                        helperText={validationErrors.curriculum}
                       >
-                        {departmentOptions.map((department) => (
-                          <MenuItem key={department} value={department}>
-                            {department}
+                        {curriculumOptions.map((curriculum) => (
+                          <MenuItem key={curriculum} value={curriculum}>
+                            {curriculum}
                           </MenuItem>
                         ))}
                       </TextField>
                     ) : (
                       <TextField
                         fullWidth
-                        label="Department"
-                        name="department"
-                        value={formData.department}
+                        label="Curriculum"
+                        name="curriculum"
+                        value={formData.curriculum}
                         onChange={handleChange}
-                        error={!!validationErrors.department}
-                        helperText={validationErrors.department}
-                        placeholder="Enter department"
+                        error={!!validationErrors.curriculum}
+                        helperText={validationErrors.curriculum}
+                        placeholder="Enter curriculum"
                       />
                     )}
                   </Grid>{" "}

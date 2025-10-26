@@ -1,4 +1,4 @@
-export const DEFAULT_DEPARTMENTS = [
+export const DEFAULT_CURRICULA = [
   "Computer Science",
   "Engineering",
   "Mathematics",
@@ -42,6 +42,9 @@ export const normalizeStringList = (input, fallback = []) => {
 };
 
 export const ensureUserAttributes = (attributes = {}) => ({
-  departments: normalizeStringList(attributes.departments, DEFAULT_DEPARTMENTS),
+  curriculum: normalizeStringList(
+    attributes.curriculum ?? attributes.curricula,
+    DEFAULT_CURRICULA
+  ),
   gradeLevels: normalizeStringList(attributes.gradeLevels, DEFAULT_GRADE_LEVELS),
 });
