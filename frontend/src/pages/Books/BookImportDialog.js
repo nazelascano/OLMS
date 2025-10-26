@@ -349,11 +349,13 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
           cursor: "pointer",
           "&:hover": { borderColor: "#2563EB" },
         }}
+        role="button"
+        tabIndex={0}
         onClick={() => document.getElementById("book-import-input").click()}
       >
-        <CloudUpload sx={{ fontSize: 48, color: "#666", mb: 2 }} />
+        <CloudUpload aria-hidden="true" sx={{ fontSize: 48, color: "#666", mb: 2 }} />
         <Typography variant="h6" gutterBottom>
-          Click to upload CSV file
+          Click or press Enter to upload CSV file
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Only .csv files are supported for bulk import
@@ -362,6 +364,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
           id="book-import-input"
           type="file"
           accept=".csv"
+          aria-label="Upload books CSV"
           style={{ display: "none" }}
           onChange={handleFileUpload}
         />

@@ -5,7 +5,6 @@ import {
   TextField,
   Button,
   Typography,
-  Alert,
   InputAdornment,
   IconButton,
   CircularProgress,
@@ -240,10 +239,9 @@ const LoginPage = () => {
             <Box component="form" onSubmit={handleSubmit} noValidate>
               {" "}
               {error && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                  {" "}
-                  {error}{" "}
-                </Alert>
+                <Box sx={{ mb: 3 }}>
+                  <div role="alert" aria-live="assertive">{error}</div>
+                </Box>
               )}
               {/* Username Field */}{" "}
               <Box sx={{ mb: 2.5 }}>

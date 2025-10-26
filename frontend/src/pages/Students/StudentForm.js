@@ -314,10 +314,9 @@ const StudentForm = () => {
         </Typography>{" "}
       </Box>
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {" "}
-          {error}{" "}
-        </Alert>
+        <Box sx={{ mb: 3 }}>
+          <div role="alert" aria-live="assertive">{error}</div>
+        </Box>
       )}
       {success && (
         <Alert severity="success" sx={{ mb: 3 }}>
@@ -687,8 +686,9 @@ const StudentForm = () => {
                 loading={loading}
                 disabled={loading}
                 sx={{
-                  backgroundColor: "#22C55E",
-                  "&:hover": { backgroundColor: "#16A34A" },
+                  backgroundColor:'#0f5132',
+                  color:'#fff',
+                  '&:hover':{backgroundColor:'#0c3f28'},
                 }}
               >
                 {loading

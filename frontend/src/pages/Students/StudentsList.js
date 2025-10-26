@@ -214,7 +214,8 @@ const StudentsList = () => {
   }
 
   return (
-    <Box>
+    <main>
+      <Box>
       {/* Header */}
       <Box
         display="flex"
@@ -356,33 +357,35 @@ const StudentsList = () => {
           sx={{ boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)" }}
         >
           <Table>
+            <caption>Students List</caption>
             <TableHead sx={{ backgroundColor: "#F8FAFC" }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600, color: "#475569" }}>
+                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   {" "}
                   Grade{" "}
                 </TableCell>{" "}
-                <TableCell sx={{ fontWeight: 600, color: "#475569" }}>
+                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   {" "}
                   Student{" "}
                 </TableCell>{" "}
-                <TableCell sx={{ fontWeight: 600, color: "#475569" }}>
+                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   {" "}
                   Section{" "}
                 </TableCell>{" "}
-                <TableCell sx={{ fontWeight: 600, color: "#475569" }}>
+                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   {" "}
                   Library Card{" "}
                 </TableCell>{" "}
-                <TableCell sx={{ fontWeight: 600, color: "#475569" }}>
+                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   {" "}
                   Contact{" "}
                 </TableCell>{" "}
-                <TableCell sx={{ fontWeight: 600, color: "#475569" }}>
+                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   {" "}
                   Dues{" "}
                 </TableCell>{" "}
                 <TableCell
+                  scope="col"
                   align="right"
                   sx={{ fontWeight: 600, color: "#475569" }}
                 >
@@ -594,6 +597,7 @@ const StudentsList = () => {
         onImportComplete={handleImportComplete}
       />{" "}
     </Box>
+    </main>
   );
 };
 

@@ -344,32 +344,36 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
           Download Template{" "}
         </Button>{" "}
       </Box>
-      <Paper
-        sx={{
-          border: "2px dashed #ccc",
-          borderRadius: 2,
-          p: 4,
-          textAlign: "center",
-          cursor: "pointer",
-          "&:hover": { borderColor: "#22C55E" },
-        }}
-        onClick={() => document.getElementById("csv-file-input").click()}
-      >
-        <CloudUpload sx={{ fontSize: 48, color: "#666", mb: 2 }} />{" "}
-        <Typography variant="h6" gutterBottom>
-          Click to upload CSV file{" "}
-        </Typography>{" "}
-        <Typography variant="body2" color="text.secondary">
-          Supported format: CSV files only{" "}
-        </Typography>{" "}
-        <input
-          id="csv-file-input"
-          type="file"
-          accept=".csv"
-          style={{ display: "none" }}
-          onChange={handleFileUpload}
-        />{" "}
-      </Paper>
+      <label htmlFor="csv-file-input" style={{display:'block',cursor:'pointer'}}>
+        <Paper
+          role="button"
+          tabIndex={0}
+          sx={{
+            border: "2px dashed #ccc",
+            borderRadius: 2,
+            p: 4,
+            textAlign: "center",
+            cursor: "pointer",
+            "&:hover": { borderColor: "#22C55E" },
+          }}
+        >
+          <CloudUpload aria-hidden="true" sx={{ fontSize: 48, color: "#666", mb: 2 }} />{" "}
+          <Typography variant="h6" gutterBottom>
+            Click or press Enter to upload CSV file{" "}
+          </Typography>{" "}
+          <Typography variant="body2" color="text.secondary">
+            Supported format: CSV files only{" "}
+          </Typography>{" "}
+        </Paper>
+      </label>
+      <input
+        id="csv-file-input"
+        type="file"
+        accept=".csv"
+        aria-label="Upload students CSV"
+        style={{ display: "none" }}
+        onChange={handleFileUpload}
+      />
       {file && (
         <Box mt={2}>
           <Typography variant="body2">

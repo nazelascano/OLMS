@@ -566,6 +566,7 @@ const TransactionsList = () => {
                       <IconButton
                         onClick={(e) => handleMenuClick(e, transaction)}
                         size="small"
+                        aria-label={`Actions for transaction ${getDisplayTransactionId(transaction)}`}
                       >
                         <MoreVert />
                       </IconButton>

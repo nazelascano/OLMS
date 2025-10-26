@@ -60,8 +60,8 @@
     "overrides": {
         "@svgr/core": "6.5.1",
         "@svgr/plugin-jsx": "6.5.1",
-    "@svgr/plugin-svgo": "6.5.1",
-    "@svgr/webpack": "6.5.1",
+        "@svgr/plugin-svgo": "6.5.1",
+        "@svgr/webpack": "6.5.1",
         "css-select": "^4.3.0",
         "nth-check": "^2.1.1",
         "postcss": "^8.5.6",
@@ -73,6 +73,8 @@
         "@craco/craco": "^7.1.0",
         "@types/file-saver": "^2.0.5",
         "@types/papaparse": "^5.3.8",
+        "axe-core": "^4.11.0",
+        "jest-axe": "^10.0.0",
         "prettier": "^3.6.2"
     }
 }

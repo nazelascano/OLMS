@@ -241,6 +241,7 @@ const BooksList = () => {
                     <IconButton
                       size="small"
                       onClick={(e) => handleMenuClick(e, book)}
+                      aria-label={`Actions for ${book.title}`}
                     >
                       <MoreVert />
                     </IconButton>{" "}
