@@ -125,7 +125,7 @@ const LoginPage = () => {
           <Box
             component="img"
             src={logo}
-            alt="School Logo"
+            alt="ONHS School Library Management System Logo"
             sx={{
               width: { md: 280, lg: 320 },
               height: "auto",
@@ -268,6 +268,8 @@ const LoginPage = () => {
                   autoComplete="username"
                   autoFocus
                   disabled={loading}
+                  error={Boolean(error && !formData.username)}
+                  aria-describedby={error && !formData.username ? "username-error" : undefined}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       backgroundColor: "#E8EAF0",
@@ -295,7 +297,17 @@ const LoginPage = () => {
                       </InputAdornment>
                     ),
                   }}
-                />{" "}
+                />
+                {error && !formData.username && (
+                  <Typography
+                    id="username-error"
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 0.5, display: "block" }}
+                  >
+                    Username is required
+                  </Typography>
+                )}
               </Box>
               {/* Password Field */}{" "}
               <Box sx={{ mb: 3 }}>
@@ -320,6 +332,8 @@ const LoginPage = () => {
                   required
                   autoComplete="current-password"
                   disabled={loading}
+                  error={Boolean(error && !formData.password)}
+                  aria-describedby={error && !formData.password ? "password-error" : undefined}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       backgroundColor: "#E8EAF0",
@@ -363,7 +377,17 @@ const LoginPage = () => {
                       </InputAdornment>
                     ),
                   }}
-                />{" "}
+                />
+                {error && !formData.password && (
+                  <Typography
+                    id="password-error"
+                    variant="caption"
+                    color="error"
+                    sx={{ mt: 0.5, display: "block" }}
+                  >
+                    Password is required
+                  </Typography>
+                )}
               </Box>
               {/* Login Button */}{" "}
               <Box

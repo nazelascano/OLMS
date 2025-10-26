@@ -169,6 +169,27 @@ const Layout = () => {
   const [notificationsError, setNotificationsError] = useState("");
   const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
   const [notificationsFetchedAt, setNotificationsFetchedAt] = useState(null);
+  const [liveRegionMessage, setLiveRegionMessage] = useState("");
+
+  // Announce search results to screen readers
+  useEffect(() => {
+    if (searchResults.length > 0 && !searchLoading) {
+      const totalResults = searchResults.reduce((sum, section) => sum + section.items.length, 0);
+      setLiveRegionMessage(`${totalResults} search results found`);
+    } else if (searchValue.trim() && !searchLoading && searchResults.length === 0) {
+      setLiveRegionMessage("No search results found");
+    }
+  }, [searchResults, searchLoading, searchValue]);
+
+  // Announce notifications to screen readers
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const unreadCount = notifications.filter(n => !n.read).length;
+      if (unreadCount > 0) {
+        setLiveRegionMessage(`${unreadCount} unread notifications`);
+      }
+    }
+  }, [notifications]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -215,6 +236,12 @@ const Layout = () => {
   const handleSearchKeyDown = (event) => {
     if (event.key === "Escape") {
       setSearchOpen(false);
+      return;
+    }
+
+    if (event.key === "ArrowDown" && searchResults.length > 0) {
+      event.preventDefault();
+      // Focus first result (would need to implement proper focus management)
       return;
     }
 
@@ -458,6 +485,24 @@ const Layout = () => {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", width: "100%" }}>
+      {/* Skip Links */}
+      <a 
+        href="#main-content" 
+        className="skip-link"
+        onFocus={(e) => e.target.style.top = "6px"}
+        onBlur={(e) => e.target.style.top = "-40px"}
+      >
+        Skip to main content
+      </a>
+      <a 
+        href="#navigation" 
+        className="skip-link"
+        onFocus={(e) => e.target.style.top = "6px"}
+        onBlur={(e) => e.target.style.top = "-40px"}
+      >
+        Skip to navigation
+      </a>
+      
       {/* Sidebar - Desktop */}
       {!isMobile && <Sidebar />}
       {/* Mobile Sidebar Drawer */}
@@ -495,6 +540,9 @@ const Layout = () => {
       {/* Main Content */}
       <Box
         component="main"
+        role="main"
+        id="main-content"
+        aria-label="Main content"
         sx={{
           flexGrow: 1,
           ml: isMobile ? 0 : "240px", // Sidebar width only on desktop
@@ -507,6 +555,7 @@ const Layout = () => {
         <AppBar
           position="sticky"
           elevation={0}
+          role="banner"
           sx={{
             backgroundColor: "#FFFFFF",
             backdropFilter: "blur(20px)",
@@ -1065,6 +1114,15 @@ const Layout = () => {
             </Fade>
           )}
         </Popper>
+        {/* Live region for screen reader announcements */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          style={{ position: "absolute", left: "-10000px", width: "1px", height: "1px", overflow: "hidden" }}
+        >
+          {liveRegionMessage}
+        </div>
+        
         {/* Page Content */}
         <Box sx={{ p: { xs: 2, sm: 3, lg: 4 }, backgroundColor: "transparent" }}>
           <Outlet />

@@ -137,6 +137,10 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+      <Typography variant="h1" sx={{ mb: 3, fontSize: "1.5rem", fontWeight: 600 }}>
+        Admin Dashboard
+      </Typography>
+      
       {/* Statistics Cards in 2x3 Grid matching Figma */}
       <Grid container spacing={2} mb={3}>
         {/* First Row */}
@@ -178,7 +182,7 @@ const AdminDashboard = () => {
           >
             <CardContent sx={{ p: 2 }}>
               <Typography
-                variant="h6"
+                variant="h2"
                 sx={{
                   mb: 1.5,
                   fontWeight: 600,
@@ -270,7 +274,7 @@ const AdminDashboard = () => {
           >
             <CardContent sx={{ p: 2 }}>
               <Typography
-                variant="h6"
+                variant="h2"
                 sx={{
                   mb: 1.5,
                   fontWeight: 600,
@@ -281,10 +285,11 @@ const AdminDashboard = () => {
                 Overdue 's History{" "}
               </Typography>{" "}
               <TableContainer sx={{ maxHeight: 220, overflowX: "auto" }}>
-                <Table size="small">
+                <Table size="small" aria-label="Overdue books table">
                   <TableHead>
                     <TableRow>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -296,6 +301,7 @@ const AdminDashboard = () => {
                         Student Id
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -307,6 +313,7 @@ const AdminDashboard = () => {
                         Title
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -324,6 +331,7 @@ const AdminDashboard = () => {
                       overdueBooks.map((book, index) => (
                         <TableRow key={index}>
                           <TableCell
+                            scope="row"
                             sx={{
                               py: 1,
                               border: "none",
@@ -389,7 +397,7 @@ const AdminDashboard = () => {
           >
             <CardContent sx={{ p: 2 }}>
               <Typography
-                variant="h6"
+                variant="h2"
                 sx={{
                   mb: 1.5,
                   fontWeight: 600,
@@ -400,10 +408,11 @@ const AdminDashboard = () => {
                 Recent Check - outs{" "}
               </Typography>{" "}
               <TableContainer sx={{ overflowX: "auto" }}>
-                <Table size="small">
+                <Table size="small" aria-label="Recent check-outs table">
                   <TableHead>
                     <TableRow>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -415,6 +424,7 @@ const AdminDashboard = () => {
                         Student Id
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -426,6 +436,7 @@ const AdminDashboard = () => {
                         Title
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -437,6 +448,7 @@ const AdminDashboard = () => {
                         Author
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -448,6 +460,7 @@ const AdminDashboard = () => {
                         Student
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",
@@ -459,6 +472,7 @@ const AdminDashboard = () => {
                         Issued Date
                       </TableCell>
                       <TableCell
+                        scope="col"
                         sx={{
                           fontWeight: 600,
                           color: "#6B7280",

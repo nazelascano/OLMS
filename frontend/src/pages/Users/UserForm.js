@@ -347,6 +347,8 @@ const UserForm = () => {
                       helperText={validationErrors.username}
                       required
                       disabled={isEditing}
+                      FormHelperTextProps={{ id: "username-error" }}
+                      aria-describedby={validationErrors.username ? "username-error" : undefined}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
@@ -367,6 +369,8 @@ const UserForm = () => {
                       onChange={handleChange}
                       error={Boolean(validationErrors.email)}
                       helperText={validationErrors.email}
+                      FormHelperTextProps={{ id: "email-error" }}
+                      aria-describedby={validationErrors.email ? "email-error" : undefined}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

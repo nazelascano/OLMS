@@ -114,6 +114,9 @@ const Sidebar = ({ onItemClick }) => {
   return (
     <Paper
       elevation={0}
+      role="navigation"
+      id="navigation"
+      aria-label="Main navigation"
       sx={{
         width: 240,
         height: "100vh",
@@ -136,7 +139,7 @@ const Sidebar = ({ onItemClick }) => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <img
             src={logo}
-            alt="Library System Logo"
+            alt="ONHS Library Management System - Home"
             style={{
               width: "32px",
               height: "32px",
