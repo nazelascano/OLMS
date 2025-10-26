@@ -266,7 +266,6 @@ const LoginPage = () => {
                   onChange={handleChange}
                   required
                   autoComplete="username"
-                  autoFocus
                   disabled={loading}
                   error={Boolean(error && !formData.username)}
                   aria-describedby={error && !formData.username ? "username-error" : undefined}
