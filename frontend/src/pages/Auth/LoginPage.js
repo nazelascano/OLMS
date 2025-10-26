@@ -247,21 +247,11 @@ const LoginPage = () => {
               )}
               {/* Username Field */}{" "}
               <Box sx={{ mb: 2.5 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    mb: 0.8,
-                    fontWeight: 500,
-                    color: "#333333",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  Username{" "}
-                </Typography>{" "}
                 <TextField
                   fullWidth
                   id="username"
                   name="username"
+                  label="Username"
                   value={formData.username}
                   onChange={handleChange}
                   required
@@ -287,6 +277,11 @@ const LoginPage = () => {
                         borderWidth: "2px",
                       },
                     },
+                    "& .MuiInputLabel-root": {
+                      color: "#333333",
+                      fontSize: "0.9rem",
+                      fontWeight: 500,
+                    },
                   }}
                   InputProps={{
                     startAdornment: (
@@ -311,21 +306,11 @@ const LoginPage = () => {
               </Box>
               {/* Password Field */}{" "}
               <Box sx={{ mb: 3 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    mb: 0.8,
-                    fontWeight: 500,
-                    color: "#333333",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  Password{" "}
-                </Typography>{" "}
                 <TextField
                   fullWidth
                   id="password"
                   name="password"
+                  label="Password"
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleChange}
@@ -351,6 +336,11 @@ const LoginPage = () => {
                         borderColor: "#305FB7",
                         borderWidth: "2px",
                       },
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#333333",
+                      fontSize: "0.9rem",
+                      fontWeight: 500,
                     },
                   }}
                   InputProps={{
