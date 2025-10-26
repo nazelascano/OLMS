@@ -36,27 +36,28 @@ const AdminDashboard = () => {
         setLoading(true);
         console.log('Starting dashboard data load...');
         
-        // Load all data in parallel
-        const [statsResponse, chartResponse, overdueResponse, checkoutsResponse] = await Promise.all([
+        // Load all data in parallel with error handling
+        const [statsResponse, chartResponse, overdueResponse, checkoutsResponse] = await Promise.allSettled([
           reportsAPI.getStats(),
           reportsAPI.getDailyTrends(),
           reportsAPI.getRecentOverdue(),
           reportsAPI.getRecentCheckouts()
         ]);
 
-        // Set all state at once
-        setStats(statsResponse.data);
+        // Set all state at once, handling potential errors
+        setStats(statsResponse.status === 'fulfilled' ? statsResponse.value.data : null);
         
         // Transform chart data
-        const transformedData = (chartResponse.data || []).map(item => ({
+        const chartData = (chartResponse.status === 'fulfilled' && Array.isArray(chartResponse.value.data)) ? chartResponse.value.data : [];
+        const transformedData = chartData.map(item => ({
           name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           borrowed: item.borrows,
           returned: item.returns
         }));
         setChartData(transformedData);
         
-        setOverdueBooks(overdueResponse.data || []);
-        setRecentCheckouts(checkoutsResponse.data || []);
+        setOverdueBooks(overdueResponse.status === 'fulfilled' && Array.isArray(overdueResponse.value.data) ? overdueResponse.value.data : []);
+        setRecentCheckouts(checkoutsResponse.status === 'fulfilled' && Array.isArray(checkoutsResponse.value.data) ? checkoutsResponse.value.data : []);
         
         console.log('All dashboard data loaded successfully');
         
