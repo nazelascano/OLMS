@@ -1,4 +1,5 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
+﻿/* eslint-disable unicode-bom */
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -26,9 +27,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import QRScanner from "../../components/QRScanner";
 import { ArrowBack, Assignment, Book, Remove, Search } from "@mui/icons-material";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
+import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
+import toast from "react-hot-toast";
 
 const normalizeNumber = (value, fallback) => {
   const parsed = Number(value);
@@ -77,6 +81,7 @@ const BorrowForm = () => {
   const [bookOptions, setBookOptions] = useState([]);
   const [bookLoading, setBookLoading] = useState(false);
   const [bookSearchError, setBookSearchError] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [transactionType, setTransactionType] = useState("regular");
@@ -305,6 +310,39 @@ const BorrowForm = () => {
     setBookOptions([]);
   };
 
+  // When a QR is scanned in Borrow form, attempt to find and add that copy automatically
+  const handleBorrowScan = async (raw) => {
+    const scanned = String(raw || "").trim();
+    if (!scanned) return;
+    // Try to find the copy in current bookOptions first
+    const inOptions = bookOptions.find((o) => String(o.copyId).toLowerCase() === scanned.toLowerCase());
+    if (inOptions) {
+      handleAddBook(inOptions);
+      setScannerOpen(false);
+      toast.success(`Added copy ${scanned}`);
+      return;
+    }
+
+    // Fallback: search server for the copy using books search
+    try {
+      const resp = await api.get('/books/search', { params: { q: scanned, limit: 20 } });
+      const options = (resp.data || []).flatMap((book) => (book.copies || [])
+        .filter((c) => c.status === 'available')
+        .map((c) => ({ copyId: c.copyId, bookId: book.id || book._id, title: book.title || 'Untitled', author: book.author || '', isbn: book.isbn || '', location: c.location || 'Main Library' })));
+      const match = options.find((o) => String(o.copyId).toLowerCase() === scanned.toLowerCase());
+      if (match) {
+        handleAddBook(match);
+        setScannerOpen(false);
+        toast.success(`Added copy ${scanned}`);
+        return;
+      }
+      toast.error('Scanned copy not available');
+    } catch (err) {
+      console.error('Error searching copy by scanned value', err);
+      toast.error('Failed to search scanned copy');
+    }
+  };
+
   const handleRemoveBook = (copyId) => {
     clearFeedback();
     setSelectedBooks((prev) =>
@@ -356,6 +394,28 @@ const BorrowForm = () => {
           "Borrowing transaction submitted successfully.",
       );
       setConfirmOpen(false);
+
+      // Generate transaction receipt
+      try {
+        const transactionData = response.data.transaction || {
+          id: response.data.transactionId,
+          type: transactionType,
+          createdAt: new Date(),
+          dueDate: new Date(Date.now() + (borrowDays * 24 * 60 * 60 * 1000)),
+          fineAmount: 0
+        };
+
+        const receiptPDF = await generateTransactionReceipt(
+          transactionData,
+          selectedBorrower,
+          selectedBooks
+        );
+        downloadPDF(receiptPDF, `receipt_${transactionData.id || Date.now()}.pdf`);
+      } catch (receiptError) {
+        console.error("Error generating receipt:", receiptError);
+        // Don't show error for receipt generation failure
+      }
+
       resetForm();
 
       window.setTimeout(() => {
@@ -377,8 +437,8 @@ const BorrowForm = () => {
       <Box display="flex" alignItems="center" mb={3}>
         <IconButton
           onClick={() => navigate(-1)}
-          color="primary"
-          sx={{ mr: 2 }}
+          edge="start"
+          sx={{ mr: 2, color: 'text.primary' }}
           aria-label="Go back"
         >
           <ArrowBack />
@@ -386,13 +446,6 @@ const BorrowForm = () => {
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Borrow Books
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Assignment />}
-          onClick={() => navigate("/transactions")}
-        >
-          View Transactions
-        </Button>
       </Box>
 
       {errorMessage && (
@@ -622,14 +675,14 @@ const BorrowForm = () => {
                   }
                   InputProps={{
                     ...params.InputProps,
-                    startAdornment: (
-                      <>
-                        <InputAdornment position="start">
-                          <Search fontSize="small" />
-                        </InputAdornment>
-                        {params.InputProps.startAdornment}
-                      </>
-                    ),
+                      startAdornment: (
+                        <>
+                          <InputAdornment position="start">
+                            <Search fontSize="small" />
+                          </InputAdornment>
+                          {params.InputProps.startAdornment}
+                        </>
+                      ),
                     endAdornment: (
                       <>
                         {bookLoading ? (
@@ -642,6 +695,17 @@ const BorrowForm = () => {
                 />
               )}
             />
+
+            {/* Scanner dialog for BorrowForm (auto-add scanned copy) */}
+            <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="xs" fullWidth>
+              <DialogTitle>Scan Copy QR</DialogTitle>
+              <DialogContent>
+                <QRScanner elementId="borrow-qr-scanner" onDetected={(v) => handleBorrowScan(v)} onClose={() => setScannerOpen(false)} />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+              </DialogActions>
+            </Dialog>
 
             <Box mt={3}>
               <Typography variant="subtitle2" gutterBottom>

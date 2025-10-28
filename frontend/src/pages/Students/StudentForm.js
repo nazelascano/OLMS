@@ -29,6 +29,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { api, studentsAPI, settingsAPI } from "../../utils/api";
 import { ensureUserAttributes } from "../../utils/userAttributes";
+import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 
 const StudentForm = () => {
@@ -269,8 +270,19 @@ const StudentForm = () => {
           navigate("/students", { state: { refresh: true } });
         }, 1000);
       } else {
-        await studentsAPI.create(studentData);
+        const response = await studentsAPI.create(studentData);
         toast.success("Student created successfully");
+
+        // Generate and download library card
+        try {
+          const libraryCardPDF = await generateLibraryCard(response.data.student || studentData);
+          downloadPDF(libraryCardPDF, `library_card_${studentData.libraryCardNumber}.pdf`);
+          toast.success("Library card generated and downloaded");
+        } catch (cardError) {
+          console.error("Error generating library card:", cardError);
+          toast.error("Student created but failed to generate library card");
+        }
+
         setTimeout(() => {
           navigate("/students", { state: { refresh: true } });
         }, 1000);

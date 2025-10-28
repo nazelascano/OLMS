@@ -463,5 +463,85 @@
     "_id": "mgvg8kwgdddku",
     "returnNotes": "",
     "returnedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761553670930_p99c2e",
+    "userId": "mgniuxw0uslme",
+    "items": [
+      {
+        "copyId": "978-0123456789-MGG4VON8-ZZD4",
+        "bookId": "book_1759815783043_sei18pb7v",
+        "isbn": "978-0123456789",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-10-27T08:27:50.923Z",
+    "dueDate": "2025-11-24T08:27:50.923Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "",
+    "renewalCount": 1,
+    "createdAt": "2025-10-27T08:27:50.931Z",
+    "updatedAt": "2025-10-27T16:24:24.445Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "_id": "mh8vknirfw5it",
+    "renewedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761555738804_kcwt6p",
+    "userId": "mh8vn0bn8uibb",
+    "items": [
+      {
+        "copyId": "978-0123456789-MGG4VON8-E4UI",
+        "bookId": "book_1759815783043_sei18pb7v",
+        "isbn": "978-0123456789",
+        "status": "returned",
+        "returnedAt": "2025-10-28T02:57:00.105Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-10-27T09:02:18.799Z",
+    "dueDate": "2025-11-24T09:02:18.799Z",
+    "returnDate": "2025-10-28T02:57:00.105Z",
+    "fineAmount": 0,
+    "notes": "",
+    "renewalCount": 1,
+    "createdAt": "2025-10-27T09:02:18.805Z",
+    "updatedAt": "2025-10-28T02:57:00.111Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "_id": "mh8wsz3qbj7cv",
+    "renewedBy": "mgnhicbwhxfy9",
+    "returnNotes": "",
+    "returnedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761556304910_5fblg0",
+    "userId": "mgniuxw0uslme",
+    "items": [
+      {
+        "copyId": "978-0201616224-MGSOUS0A-HFOK",
+        "bookId": "book_1760574927177_vhnin6uky",
+        "isbn": "978-0201616224",
+        "status": "returned",
+        "returnedAt": "2025-10-27T10:22:12.737Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "borrowDate": "2025-10-27T09:11:44.905Z",
+    "dueDate": "2025-11-10T09:11:44.905Z",
+    "returnDate": "2025-10-27T10:22:12.737Z",
+    "fineAmount": 0,
+    "notes": "",
+    "renewalCount": 0,
+    "createdAt": "2025-10-27T09:11:44.911Z",
+    "updatedAt": "2025-10-27T10:22:12.742Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "_id": "mh8x53wvf0n9s",
+    "returnNotes": "",
+    "returnedBy": "mgnhicbwhxfy9"
   }
 ]

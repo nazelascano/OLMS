@@ -19,11 +19,14 @@ import {
   LinearProgress,
   Chip,
   IconButton,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { CloudUpload, GetApp, Check, Error, Close } from "@mui/icons-material";
 import { studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
 import { ensureUserAttributes } from "../../utils/userAttributes";
+import { downloadPDF } from "../../utils/pdfGenerator";
 
 const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [file, setFile] = useState(null);
@@ -37,6 +40,7 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
     ensureUserAttributes(),
   );
   const [attributeError, setAttributeError] = useState("");
+  const [autoPrintCards, setAutoPrintCards] = useState(true); // Default to true for automatic printing
 
   const gradeOptions = userAttributes.gradeLevels;
   const sections = ["A", "B", "C", "D", "E"];
@@ -289,7 +293,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
       }
 
       if (response.data.results.errors > 0) {
-        toast.warning(
+        toast.error(
           `${response.data.results.errors} students failed to import`,
         );
       }
@@ -301,10 +305,11 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     const wasSuccessful = importSuccessful;
 
-    // Reset all state
+    // Reset all state first
+    const successfulStudents = importResults?.details?.filter(detail => detail.status === 'success') || [];
     setFile(null);
     setCsvData([]);
     setImportResults(null);
@@ -312,8 +317,46 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     setExistingStudents([]);
     setImportSuccessful(false);
     setAttributeError("");
+    setAutoPrintCards(true); // Reset to default
 
-    // Close the dialog first
+    // Generate a single combined PDF for the successfully imported students
+    if (wasSuccessful && successfulStudents.length > 0 && autoPrintCards) {
+      try {
+        toast.loading("Generating library cards for imported students...");
+
+        // Fetch all students and filter down to the newly imported ones
+        const allStudentsResponse = await studentsAPI.getAll();
+        const allStudents = allStudentsResponse.data.students || [];
+
+        const importedStudents = allStudents.filter((student) =>
+          successfulStudents.some((success) => success.studentId === student.studentId) && student.libraryCardNumber,
+        );
+
+        if (importedStudents.length > 0) {
+          // Create a single PDF with all cards (front+back pages per student)
+          try {
+            const multiPDF = await import(/* webpackChunkName: "pdf-generator" */ '../../utils/pdfGenerator').then(m => m.generateLibraryCardsPDF(importedStudents));
+            const filename = `library_cards_import_${Date.now()}.pdf`;
+            downloadPDF(multiPDF, filename);
+            toast.dismiss();
+            toast.success(`Generated ${importedStudents.length} library cards successfully!`);
+          } catch (err) {
+            console.error('Failed to generate combined library cards PDF:', err);
+            toast.dismiss();
+            toast.error('Failed to generate library cards');
+          }
+        } else {
+          toast.dismiss();
+          toast.error('No imported students with assigned library card numbers found');
+        }
+      } catch (error) {
+        toast.dismiss();
+        toast.error('Failed to generate library cards');
+        console.error('Error generating library cards after import:', error);
+      }
+    }
+
+    // Close the dialog
     onClose();
 
     // Then trigger refresh if import was successful
@@ -415,6 +458,24 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
             proceed.{" "}
           </Typography>{" "}
         </Alert>
+
+        {/* Auto-print cards option */}
+        <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={autoPrintCards}
+                onChange={(e) => setAutoPrintCards(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Automatically generate and download library cards for imported students"
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block' }}>
+            PDFs will be downloaded to your browser after successful import
+          </Typography>
+        </Box>
+
         <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
           <Table stickyHeader>
             <TableHead>
@@ -426,7 +487,6 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
               </TableRow>{" "}
             </TableHead>{" "}
             <TableBody>
-              {" "}
               {csvData.map((student, index) => {
                 const errors = validateStudentData(student, existingStudents);
 
@@ -446,29 +506,27 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
                 return (
                   <TableRow key={index}>
                     <TableCell>
-                      {" "}
                       {student.firstname || student.firstName}{" "}
-                      {student.lastname || student.lastName}{" "}
-                    </TableCell>{" "}
-                    <TableCell> {student.email} </TableCell>{" "}
+                      {student.lastname || student.lastName}
+                    </TableCell>
+                    <TableCell>{student.email}</TableCell>
                     <TableCell>
-                      {" "}
-                      {student.studentid || student.studentId}{" "}
-                    </TableCell>{" "}
-                    <TableCell> {student.lrn} </TableCell>{" "}
-                    <TableCell> {student.grade} </TableCell>{" "}
-                    <TableCell> {student.section} </TableCell>{" "}
+                      {student.studentid || student.studentId}
+                    </TableCell>
+                    <TableCell>{student.lrn}</TableCell>
+                    <TableCell>{student.grade}</TableCell>
+                    <TableCell>{student.section}</TableCell>
                     <TableCell>
                       <Chip
                         label={isValid ? "Valid" : "Invalid"}
                         color={isValid ? "success" : "error"}
                         size="small"
                         icon={isValid ? <Check /> : <Error />}
-                      />{" "}
-                    </TableCell>{" "}
+                      />
+                    </TableCell>
                   </TableRow>
                 );
-              })}{" "}
+              })}
             </TableBody>{" "}
           </Table>{" "}
         </TableContainer>{" "}
@@ -496,23 +554,21 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
               </TableRow>{" "}
             </TableHead>{" "}
             <TableBody>
-              {" "}
               {importResults.details.map((detail, index) => (
                 <TableRow key={index}>
-                  <TableCell> {detail.studentId} </TableCell>{" "}
+                  <TableCell>{detail.studentId}</TableCell>
                   <TableCell>
                     <Chip
                       label={detail.status === "success" ? "Success" : "Error"}
                       color={detail.status === "success" ? "success" : "error"}
                       size="small"
                     />
-                  </TableCell>{" "}
+                  </TableCell>
                   <TableCell>
-                    {" "}
-                    {detail.error || "Imported successfully"}{" "}
-                  </TableCell>{" "}
+                    {detail.error || "Imported successfully"}
+                  </TableCell>
                 </TableRow>
-              ))}{" "}
+              ))}
             </TableBody>{" "}
           </Table>{" "}
         </TableContainer>

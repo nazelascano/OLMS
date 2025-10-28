@@ -23,14 +23,28 @@ import {
   MenuItem,
   Avatar,
   Alert,
+  IconButton,
+  Menu,
+  ListItemIcon,
 } from "@mui/material";
-import { Search, PersonAdd, GetApp, Person } from "@mui/icons-material";
+import {
+  Search,
+  PersonAdd,
+  GetApp,
+  Person,
+  MoreVert,
+  Edit,
+  Print,
+  Delete as DeleteIcon,
+  Payments,
+} from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api, studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
 import StudentImportDialog from "./StudentImportDialog";
 import { ensureUserAttributes } from "../../utils/userAttributes";
 import { PageLoading } from "../../components/Loading";
+import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -48,6 +62,20 @@ const StudentsList = () => {
     ensureUserAttributes(),
   );
   const [attributeError, setAttributeError] = useState("");
+
+  // Menu state for per-row actions (three-dot vertical menu)
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [menuStudent, setMenuStudent] = useState(null);
+
+  const handleOpenMenu = (event, student) => {
+    setMenuAnchorEl(event.currentTarget);
+    setMenuStudent(student);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchorEl(null);
+    setMenuStudent(null);
+  };
 
   const sections = ["A", "B", "C", "D", "E"];
   const gradeOptions = userAttributes.gradeLevels;
@@ -166,6 +194,20 @@ const StudentsList = () => {
     } catch (error) {
       console.error("Failed to pay dues:", error);
       toast.error("Failed to process payment");
+    }
+  };
+
+  const handlePrintCard = async (student) => {
+    try {
+      toast.loading("Generating library card...");
+      const libraryCardPDF = await generateLibraryCard(student);
+      downloadPDF(libraryCardPDF, `library_card_${student.libraryCardNumber}.pdf`);
+      toast.dismiss();
+      toast.success("Library card generated successfully!");
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to generate library card");
+      console.error("Error generating library card:", error);
     }
   };
 
@@ -352,85 +394,68 @@ const StudentsList = () => {
             <TableHead sx={{ backgroundColor: "#F8FAFC" }}>
               <TableRow>
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  {" "}
-                  Grade{" "}
-                </TableCell>{" "}
+                  Grade
+                </TableCell>
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  {" "}
-                  Student{" "}
-                </TableCell>{" "}
+                  Student
+                </TableCell>
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  {" "}
-                  Section{" "}
-                </TableCell>{" "}
+                  Section
+                </TableCell>
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  {" "}
-                  Library Card{" "}
-                </TableCell>{" "}
+                  Library Card
+                </TableCell>
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  {" "}
-                  Contact{" "}
-                </TableCell>{" "}
+                  Contact
+                </TableCell>
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  {" "}
-                  Dues{" "}
-                </TableCell>{" "}
-                <TableCell
-                  scope="col"
-                  align="right"
-                  sx={{ fontWeight: 600, color: "#475569" }}
-                >
-                  {" "}
-                  Action{" "}
-                </TableCell>{" "}
-              </TableRow>{" "}
-            </TableHead>{" "}
+                  Dues
+                </TableCell>
+                <TableCell scope="col" align="right" sx={{ fontWeight: 600, color: "#475569" }}>
+                  Action
+                </TableCell>
+              </TableRow>
+            </TableHead>
             <TableBody>
-              {" "}
               {filteredStudents.map((student) => (
-                <TableRow key={student.uid} hover>
+                <TableRow key={student._id || student.id || student.uid || student.studentId} hover>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
-                      {" "}
-                      {student.grade}{" "}
-                    </Typography>{" "}
-                  </TableCell>{" "}
+                      {student.grade}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={2}>
                       <Avatar
                         sx={{ bgcolor: "primary.main", width: 32, height: 32 }}
                       >
-                        {" "}
-                        {student.firstName?.[0] || <Person />}{" "}
-                      </Avatar>{" "}
+                        {student.firstName?.[0] || <Person />}
+                      </Avatar>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
-                          {" "}
                           {student.fullName ||
-                            `${student.firstName || ""} ${student.middleName ? student.middleName + " " : ""}${student.lastName || ""}`}{" "}
-                        </Typography>{" "}
+                            `${student.firstName || ""} ${student.middleName ? student.middleName + " " : ""}${student.lastName || ""}`}
+                        </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          ID: {student.studentId}{" "}
-                        </Typography>{" "}
+                          ID: {student.studentId}
+                        </Typography>
                         {student.email && (
                           <Typography
                             variant="caption"
                             color="text.secondary"
                             display="block"
                           >
-                            {" "}
-                            {student.email}{" "}
+                            {student.email}
                           </Typography>
-                        )}{" "}
-                      </Box>{" "}
-                    </Box>{" "}
-                  </TableCell>{" "}
+                        )}
+                      </Box>
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {" "}
-                      {student.section}{" "}
-                    </Typography>{" "}
-                  </TableCell>{" "}
+                      {student.section}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     <Box>
                       <Typography
@@ -444,95 +469,128 @@ const StudentsList = () => {
                           fontSize: "0.875rem",
                         }}
                       >
-                        {" "}
-                        {student.libraryCardNumber || "Not assigned"}{" "}
-                      </Typography>{" "}
-                    </Box>{" "}
-                  </TableCell>{" "}
+                        {student.libraryCardNumber || "Not assigned"}
+                      </Typography>
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Box>
-                      {" "}
                       {student.phoneNumber && (
                         <Typography variant="body2" fontSize="0.75rem">
-                          {" "}
-                          📱 {student.phoneNumber}{" "}
+                          📱 {student.phoneNumber}
                         </Typography>
-                      )}{" "}
+                      )}
                       {student.barangay && student.municipality && (
                         <Typography
                           variant="caption"
                           color="text.secondary"
                           display="block"
                         >
-                          {" "}
-                          📍 {student.barangay}, {student.municipality}{" "}
+                          📍 {student.barangay}, {student.municipality}
                         </Typography>
-                      )}{" "}
+                      )}
                       {student.parentGuardianName && (
                         <Typography
                           variant="caption"
                           color="text.secondary"
                           display="block"
                         >
-                          {" "}
-                          👤 {student.parentGuardianName}{" "}
+                          👤 {student.parentGuardianName}
                         </Typography>
-                      )}{" "}
-                    </Box>{" "}
-                  </TableCell>{" "}
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     <Chip
                       label={formatCurrency(student.dues)}
                       size="small"
                       color={getDuesColor(student.dues)}
                       variant={student.dues === 0 ? "outlined" : "filled"}
-                    />{" "}
-                  </TableCell>{" "}
+                    />
+                  </TableCell>
                   <TableCell align="right">
-                    <Box display="flex" gap={1} justifyContent="flex-end">
-                      {" "}
-                      {student.dues > 0 && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="success"
+                    <Box display="flex" justifyContent="flex-end">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleOpenMenu(e, student)}
+                        aria-controls={menuAnchorEl ? "student-action-menu" : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={Boolean(menuAnchorEl)}
+                      >
+                        <MoreVert />
+                      </IconButton>
+
+                      <Menu
+                        anchorEl={menuAnchorEl}
+                        open={
+                          Boolean(menuAnchorEl) &&
+                          (menuStudent
+                            ? (menuStudent._id || menuStudent.id || menuStudent.uid || menuStudent.studentId) ===
+                              (student._id || student.id || student.uid || student.studentId)
+                            : false)
+                        }
+                        onClose={handleCloseMenu}
+                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                        transformOrigin={{ vertical: "top", horizontal: "right" }}
+                      >
+                        {student.dues > 0 && (
+                          <MenuItem
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setPaymentDialogOpen(true);
+                              handleCloseMenu();
+                            }}
+                          >
+                            <ListItemIcon>
+                              <Payments fontSize="small" />
+                            </ListItemIcon>
+                            Pay Dues
+                          </MenuItem>
+                        )}
+
+                        {student.libraryCardNumber && (
+                          <MenuItem
+                            onClick={() => {
+                              handlePrintCard(student);
+                              handleCloseMenu();
+                            }}
+                          >
+                            <ListItemIcon>
+                              <Print fontSize="small" />
+                            </ListItemIcon>
+                            Print Card
+                          </MenuItem>
+                        )}
+
+                        <MenuItem
+                          onClick={() => {
+                            navigate(`/students/${student._id || student.id}/edit`);
+                            handleCloseMenu();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Edit fontSize="small" />
+                          </ListItemIcon>
+                          Edit
+                        </MenuItem>
+
+                        <MenuItem
                           onClick={() => {
                             setSelectedStudent(student);
-                            setPaymentDialogOpen(true);
+                            setDeleteDialogOpen(true);
+                            handleCloseMenu();
                           }}
-                          sx={{ fontSize: "0.75rem", px: 2 }}
                         >
-                          Pay{" "}
-                        </Button>
-                      )}{" "}
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() =>
-                          navigate(
-                            `/students/${student._id || student.id}/edit`,
-                          )
-                        }
-                        sx={{ fontSize: "0.75rem", px: 2 }}
-                      >
-                        Edit{" "}
-                      </Button>{" "}
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="error"
-                        onClick={() => {
-                          setSelectedStudent(student);
-                          setDeleteDialogOpen(true);
-                        }}
-                        sx={{ fontSize: "0.75rem", px: 2 }}
-                      >
-                        Delete{" "}
-                      </Button>{" "}
-                    </Box>{" "}
-                  </TableCell>{" "}
+                          <ListItemIcon>
+                            <DeleteIcon fontSize="small" />
+                          </ListItemIcon>
+                          Delete
+                        </MenuItem>
+                      </Menu>
+                    </Box>
+                  </TableCell>
                 </TableRow>
-              ))}{" "}
+              ))}
             </TableBody>{" "}
           </Table>{" "}
         </TableContainer>

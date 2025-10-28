@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -31,6 +32,7 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
+import QRScanner from "../../components/QRScanner";
 import {
   Add,
   Edit,
@@ -44,7 +46,6 @@ import {
   CheckCircle,
   Book,
   Print,
-  Download,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
@@ -70,6 +71,7 @@ const BookCopies = () => {
     price: "",
     acquisitionDate: new Date().toISOString().split("T")[0],
   });
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const conditions = [
     { value: "excellent", label: "Excellent", color: "success" },
@@ -87,6 +89,8 @@ const BookCopies = () => {
     { value: "maintenance", label: "Maintenance", color: "default" },
   ];
 
+  // fetchBookDetails and fetchCopies are intentionally called once when bookId changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchBookDetails();
     fetchCopies();
@@ -510,17 +514,29 @@ const BookCopies = () => {
         <DialogContent>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Copy ID"
-                value={copyForm.copyId}
-                onChange={(e) =>
-                  setCopyForm({ ...copyForm, copyId: e.target.value })
-                }
-                margin="normal"
-                required
-                disabled={editingCopy} // Can't change copy ID when editing
-              />{" "}
+                <Box display="flex" gap={1} alignItems="center">
+                  <TextField
+                    fullWidth
+                    label="Copy ID"
+                    value={copyForm.copyId}
+                    onChange={(e) => setCopyForm({ ...copyForm, copyId: e.target.value })}
+                    margin="normal"
+                    required
+                    disabled={editingCopy} // Can't change copy ID when editing
+                  />
+                  {/* Scanner dialog inline - will be mounted when user requests via Scan QR button */}
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={async () => {
+                      // open a temporary scanner dialog and await a result
+                      setScannerOpen(true);
+                    }}
+                    sx={{ height: 40 }}
+                  >
+                    Scan QR
+                  </Button>
+                </Box>
             </Grid>
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth margin="normal">
@@ -606,6 +622,24 @@ const BookCopies = () => {
           </Button>{" "}
         </DialogActions>{" "}
       </Dialog>{" "}
+      {/* QR Scanner Dialog for scanning copy IDs into the Add/Edit form */}
+      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Scan Copy QR</DialogTitle>
+        <DialogContent>
+          <QRScanner
+            onDetected={(decodedText) => {
+              // populate the copyId field and close scanner
+              setCopyForm((prev) => ({ ...prev, copyId: decodedText }));
+              setScannerOpen(false);
+              setSuccess("Scanned copy ID populated");
+              setTimeout(() => setSuccess(""), 2500);
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

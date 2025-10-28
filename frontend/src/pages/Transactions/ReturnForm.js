@@ -42,6 +42,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
+import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 
 const toNumber = (value, fallback) => {
   const parsed = Number(value);
@@ -282,6 +283,41 @@ const ReturnForm = () => {
       const response = await api.post("/transactions/return", payload);
       setSuccess(response.data?.message || `Successfully returned ${selectedReturns.length} book(s)`);
       setError("");
+
+      // Generate transaction receipts for each returned book
+      try {
+        const returnDateTime = returnDate || new Date();
+        for (const returnItem of selectedReturns) {
+          const transactionData = {
+            id: returnItem.transactionId,
+            type: 'Return',
+            createdAt: returnDateTime,
+            fineAmount: calculateFine(returnItem.dueDate, returnDateTime)
+          };
+
+          const studentData = {
+            firstName: returnItem.borrowerName?.split(' ')[0] || '',
+            lastName: returnItem.borrowerName?.split(' ').slice(1).join(' ') || '',
+            studentId: returnItem.studentId || '',
+            libraryCardNumber: returnItem.libraryCardNumber || ''
+          };
+
+          const booksData = [{
+            title: returnItem.bookTitle,
+            copyId: returnItem.copyId
+          }];
+
+          const receiptPDF = await generateTransactionReceipt(
+            transactionData,
+            studentData,
+            booksData
+          );
+          downloadPDF(receiptPDF, `return_receipt_${returnItem.transactionId}_${Date.now()}.pdf`);
+        }
+      } catch (receiptError) {
+        console.error("Error generating receipts:", receiptError);
+        // Don't show error for receipt generation failure
+      }
 
       // Reset form
       setBorrowedBooks([]);

@@ -22,6 +22,10 @@ import {
   ListItemIcon,
   CircularProgress,
   Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   TrendingUp,
@@ -39,8 +43,9 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { reportsAPI } from "../../utils/api";
+import { reportsAPI, studentsAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
+import { generateReportPDF, downloadPDF } from "../../utils/pdfGenerator";
 
 const initialDashboardStats = {
   totalBooks: 0,
@@ -59,6 +64,7 @@ const initialReportData = {
   overdueReport: [],
   fineReport: [],
   inventoryReport: [],
+  studentListReport: [],
 };
 
 const ReportsPage = () => {
@@ -68,6 +74,18 @@ const ReportsPage = () => {
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     endDate: new Date(),
+  });
+
+  const [studentFilters, setStudentFilters] = useState({
+    grade: '',
+    section: '',
+    schoolYear: '',
+  });
+
+  const [filterOptions, setFilterOptions] = useState({
+    grades: [],
+    sections: [],
+    schoolYears: [],
   });
 
   const [dashboardStats, setDashboardStats] = useState(initialDashboardStats);
@@ -93,6 +111,31 @@ const ReportsPage = () => {
   const formatDateTime = (value) => {
     const date = toValidDate(value);
     return date ? date.toLocaleString() : "N/A";
+  };
+
+  const convertToCSV = (data) => {
+    if (!data || data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const csvRows = [];
+
+    // Add headers
+    csvRows.push(headers.join(','));
+
+    // Add data rows
+    data.forEach(row => {
+      const values = headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes in CSV
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value || '';
+      });
+      csvRows.push(values.join(','));
+    });
+
+    return csvRows.join('\n');
   };
 
   const renderTableRows = (rows, renderRow, emptyMessage, colSpan) => {
@@ -174,11 +217,39 @@ const ReportsPage = () => {
     return params;
   }, [dateRange.startDate, dateRange.endDate]);
 
+  const loadFilterOptions = useCallback(async () => {
+    try {
+      // Get all students to extract unique filter options
+      const response = await studentsAPI.getAll({ limit: 10000 });
+      const students = response.data?.students || response.data || [];
+
+      const grades = [...new Set(students.map(s => s.grade).filter(Boolean))].sort();
+      const sections = [...new Set(students.map(s => s.section).filter(Boolean))].sort();
+      const schoolYears = [...new Set(students.map(s => s.schoolYear).filter(Boolean))].sort();
+
+      setFilterOptions({
+        grades,
+        sections,
+        schoolYears,
+      });
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+    }
+  }, []);
+
   const loadAllReports = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
       const params = getRangeParams();
+
+      // Build student filter params - only apply when not on student list tab
+      const studentParams = { limit: 1000 };
+      if (currentTab === 7) { // Student List tab
+        if (studentFilters.grade) studentParams.grade = studentFilters.grade;
+        if (studentFilters.section) studentParams.section = studentFilters.section;
+        if (studentFilters.schoolYear) studentParams.schoolYear = studentFilters.schoolYear;
+      }
 
       const [
         dashboardResponse,
@@ -188,6 +259,7 @@ const ReportsPage = () => {
         overdue,
         fine,
         inventory,
+        studentList,
       ] = await Promise.all([
         reportsAPI.getDashboard(params),
         reportsAPI.getCirculation(params),
@@ -196,6 +268,7 @@ const ReportsPage = () => {
         reportsAPI.getOverdue(params),
         reportsAPI.getFines(params),
         reportsAPI.getInventory(),
+        studentsAPI.getAll(studentParams), // Use filtered params for students
       ]);
 
       setDashboardStats({
@@ -210,6 +283,7 @@ const ReportsPage = () => {
         overdueReport: overdue?.data || [],
         fineReport: fine?.data || [],
         inventoryReport: inventory?.data || [],
+        studentListReport: studentList?.data?.students || studentList?.data || [],
       });
     } catch (loadError) {
       setError("Failed to load reports data");
@@ -217,16 +291,39 @@ const ReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getRangeParams]);
+  }, [getRangeParams, studentFilters, currentTab]);
 
   useEffect(() => {
     loadAllReports();
   }, [loadAllReports]);
 
+  useEffect(() => {
+    // Load filter options when component mounts or when switching to student list tab
+    if (currentTab === 7) {
+      loadFilterOptions();
+    }
+  }, [currentTab, loadFilterOptions]);
+
   const handleExportReport = async (type) => {
     try {
-      const params = { ...getRangeParams(), format: "csv" };
-      const response = await reportsAPI.export(type, params);
+      let response;
+
+      if (type === 'student-list') {
+        // For student list, use studentsAPI directly with filters
+        const studentParams = { limit: 10000 };
+        if (studentFilters.grade) studentParams.grade = studentFilters.grade;
+        if (studentFilters.section) studentParams.section = studentFilters.section;
+        if (studentFilters.schoolYear) studentParams.schoolYear = studentFilters.schoolYear;
+
+        response = await studentsAPI.getAll(studentParams);
+        // Convert to CSV format
+        const csvData = convertToCSV(response.data.students || response.data || []);
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        response = { data: blob };
+      } else {
+        const params = { ...getRangeParams(), format: "csv" };
+        response = await reportsAPI.export(type, params);
+      }
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -242,6 +339,26 @@ const ReportsPage = () => {
     } catch (exportError) {
       setError(`Failed to export ${type} report`);
       console.error("Error exporting report:", exportError);
+    }
+  };
+
+  const handlePrintReport = async (type, reportData) => {
+    try {
+      const options = {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      };
+
+      // Add student filters for student-list report
+      if (type === 'student-list') {
+        options.studentFilters = studentFilters;
+      }
+
+      const pdf = await generateReportPDF(type, reportData, options);
+      downloadPDF(pdf, `${type}_report_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (printError) {
+      setError(`Failed to generate PDF for ${type} report`);
+      console.error("Error generating PDF:", printError);
     }
   };
 
@@ -308,44 +425,128 @@ const ReportsPage = () => {
             border: (theme) => `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={3} md={2.5}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Date Range
+          {currentTab === 7 ? (
+            // Student List Filters
+            <>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Student Filters
               </Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Grade</InputLabel>
+                    <Select
+                      value={studentFilters.grade}
+                      label="Grade"
+                      onChange={(e) => setStudentFilters({ ...studentFilters, grade: e.target.value })}
+                    >
+                      <MenuItem value="">
+                        <em>All Grades</em>
+                      </MenuItem>
+                      {filterOptions.grades.map((grade) => (
+                        <MenuItem key={grade} value={grade}>
+                          {grade}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Section</InputLabel>
+                    <Select
+                      value={studentFilters.section}
+                      label="Section"
+                      onChange={(e) => setStudentFilters({ ...studentFilters, section: e.target.value })}
+                    >
+                      <MenuItem value="">
+                        <em>All Sections</em>
+                      </MenuItem>
+                      {filterOptions.sections.map((section) => (
+                        <MenuItem key={section} value={section}>
+                          Section {section}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>School Year</InputLabel>
+                    <Select
+                      value={studentFilters.schoolYear}
+                      label="School Year"
+                      onChange={(e) => setStudentFilters({ ...studentFilters, schoolYear: e.target.value })}
+                    >
+                      <MenuItem value="">
+                        <em>All Years</em>
+                      </MenuItem>
+                      {filterOptions.schoolYears.map((year) => (
+                        <MenuItem key={year} value={year}>
+                          {year}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+              <Box display="flex" justifyContent="flex-end" mt={2}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setStudentFilters({ grade: '', section: '', schoolYear: '' });
+                    loadAllReports();
+                  }}
+                  sx={{ mr: 1 }}
+                >
+                  Clear Filters
+                </Button>
+                <Button variant="contained" onClick={loadAllReports}>
+                  Apply Filters
+                </Button>
+              </Box>
+            </>
+          ) : (
+            // Date Range Filters for other tabs
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={3} md={2.5}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Date Range
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4} md={3}>
+                <DatePicker
+                  label="Start Date"
+                  value={dateRange.startDate}
+                  onChange={(newValue) =>
+                    setDateRange({ ...dateRange, startDate: newValue })
+                  }
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4} md={3}>
+                <DatePicker
+                  label="End Date"
+                  value={dateRange.endDate}
+                  onChange={(newValue) =>
+                    setDateRange({ ...dateRange, endDate: newValue })
+                  }
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                />
+              </Grid>
+              <Grid
+                item
+                xs={12}
+                sm={4}
+                md={3}
+                sx={{ display: "flex", justifyContent: { sm: "flex-end" } }}
+              >
+                <Button variant="contained" onClick={loadAllReports} fullWidth>
+                  Apply Filter
+                </Button>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={4} md={3}>
-              <DatePicker
-                label="Start Date"
-                value={dateRange.startDate}
-                onChange={(newValue) =>
-                  setDateRange({ ...dateRange, startDate: newValue })
-                }
-                slotProps={{ textField: { size: "small", fullWidth: true } }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4} md={3}>
-              <DatePicker
-                label="End Date"
-                value={dateRange.endDate}
-                onChange={(newValue) =>
-                  setDateRange({ ...dateRange, endDate: newValue })
-                }
-                slotProps={{ textField: { size: "small", fullWidth: true } }}
-              />
-            </Grid>
-            <Grid
-              item
-              xs={12}
-              sm={4}
-              md={3}
-              sx={{ display: "flex", justifyContent: { sm: "flex-end" } }}
-            >
-              <Button variant="contained" onClick={loadAllReports} fullWidth>
-                Apply Filter
-              </Button>
-            </Grid>
-          </Grid>
+          )}
         </Paper>
         <Paper
           elevation={0}
@@ -368,6 +569,7 @@ const ReportsPage = () => {
             <Tab label="Overdue Books" icon={<Warning />} disableRipple />
             <Tab label="Fines" icon={<CurrencyExchange />} disableRipple />
             <Tab label="Inventory" icon={<Book />} disableRipple />
+            <Tab label="Student List" icon={<People />} disableRipple />
           </Tabs>
           {/* Overview Tab */}{" "}
           <TabPanel value={currentTab} index={0}>
@@ -474,13 +676,22 @@ const ReportsPage = () => {
               mb={2}
             >
               <Typography variant="h6"> Circulation Report </Typography>{" "}
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => handleExportReport("circulation")}
-              >
-                Export CSV{" "}
-              </Button>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("circulation")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("circulation", reportData.circulationReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
             </Box>{" "}
             <TableContainer sx={tableContainerSx}>
               <Table size="small">
@@ -521,13 +732,22 @@ const ReportsPage = () => {
               mb={2}
             >
               <Typography variant="h6"> Popular Books Report </Typography>{" "}
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => handleExportReport("popular-books")}
-              >
-                Export CSV{" "}
-              </Button>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("popular-books")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("popular-books", reportData.popularBooksReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
             </Box>{" "}
             <TableContainer sx={tableContainerSx}>
               <Table size="small">
@@ -578,13 +798,22 @@ const ReportsPage = () => {
               mb={2}
             >
               <Typography variant="h6"> User Activity Report </Typography>{" "}
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => handleExportReport("user-activity")}
-              >
-                Export CSV{" "}
-              </Button>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("user-activity")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("user-activity", reportData.userActivityReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
             </Box>{" "}
             <TableContainer sx={tableContainerSx}>
               <Table size="small">
@@ -635,13 +864,22 @@ const ReportsPage = () => {
               mb={2}
             >
               <Typography variant="h6"> Overdue Books Report </Typography>{" "}
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => handleExportReport("overdue")}
-              >
-                Export CSV{" "}
-              </Button>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("overdue")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("overdue", reportData.overdueReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
             </Box>{" "}
             <TableContainer sx={tableContainerSx}>
               <Table size="small">
@@ -694,13 +932,22 @@ const ReportsPage = () => {
               mb={2}
             >
               <Typography variant="h6"> Fines Report </Typography>{" "}
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => handleExportReport("fines")}
-              >
-                Export CSV{" "}
-              </Button>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("fines")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("fines", reportData.fineReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
             </Box>{" "}
             <TableContainer sx={tableContainerSx}>
               <Table size="small">
@@ -757,13 +1004,22 @@ const ReportsPage = () => {
               mb={2}
             >
               <Typography variant="h6"> Inventory Report </Typography>{" "}
-              <Button
-                variant="outlined"
-                startIcon={<Download />}
-                onClick={() => handleExportReport("inventory")}
-              >
-                Export CSV{" "}
-              </Button>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("inventory")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("inventory", reportData.inventoryReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
             </Box>{" "}
             <TableContainer sx={tableContainerSx}>
               <Table size="small">
@@ -799,6 +1055,80 @@ const ReportsPage = () => {
                       </TableRow>
                     ),
                     "Inventory looks good - no records found for this range.",
+                    7,
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </TabPanel>{" "}
+          {/* Student List Tab */}{" "}
+          <TabPanel value={currentTab} index={7}>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={2}
+            >
+              <Typography variant="h6"> Student List Report </Typography>{" "}
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Download />}
+                  onClick={() => handleExportReport("student-list")}
+                >
+                  Export CSV{" "}
+                </Button>{" "}
+                <Button
+                  variant="contained"
+                  startIcon={<Download />}
+                  onClick={() => handlePrintReport("student-list", reportData.studentListReport)}
+                >
+                  Print PDF{" "}
+                </Button>{" "}
+              </Box>
+            </Box>{" "}
+            <TableContainer sx={tableContainerSx}>
+              <Table size="small">
+                <TableHead sx={tableHeadSx}>
+                  <TableRow>
+                    <TableCell>Student ID</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Grade & Section</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Phone</TableCell>
+                    <TableCell>Library Card</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {renderTableRows(
+                    reportData.studentListReport,
+                    (student, index) => (
+                      <TableRow key={student.id || student._id || index} sx={stripedRowSx}>
+                        <TableCell>{student.studentId || "N/A"}</TableCell>
+                        <TableCell>
+                          {student.firstName && student.lastName
+                            ? `${student.firstName} ${student.middleName || ""} ${student.lastName}`.trim()
+                            : student.name || "Unknown"}
+                        </TableCell>
+                        <TableCell>
+                          {student.grade && student.section
+                            ? `${student.grade} - ${student.section}`
+                            : student.grade || student.section || "N/A"}
+                        </TableCell>
+                        <TableCell>{student.email || "N/A"}</TableCell>
+                        <TableCell>{student.phoneNumber || "N/A"}</TableCell>
+                        <TableCell>{student.libraryCardNumber || "Not assigned"}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={student.isActive !== false ? "Active" : "Inactive"}
+                            color={student.isActive !== false ? "success" : "error"}
+                            size="small"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ),
+                    "No students found.",
                     7,
                   )}
                 </TableBody>

@@ -18,9 +18,11 @@
         "dayjs": "^1.11.9",
         "file-saver": "^2.0.5",
         "html2canvas": "^1.4.1",
+        "html5-qrcode": "^2.3.8",
         "jspdf": "^3.0.3",
         "mongoose": "^8.19.0",
         "papaparse": "^5.4.1",
+        "qrcode": "^1.5.4",
         "qrcode.react": "^3.1.0",
         "react": "^18.2.0",
         "react-barcode": "^1.4.6",
@@ -34,7 +36,7 @@
     },
     "scripts": {
         "start": "set PORT=3001 && craco start",
-        "build": "craco build",
+        "build": "set GENERATE_SOURCEMAP=false && craco build",
         "test": "craco test",
         "eject": "react-scripts eject",
         "dev": "set PORT=3001 && craco start"

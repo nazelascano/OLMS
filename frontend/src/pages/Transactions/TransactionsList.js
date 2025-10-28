@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+﻿/* eslint-disable unicode-bom */
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -42,10 +43,15 @@ import {
   Cancel,
   History,
   AutoStories,
+  Print,
+  
 } from "@mui/icons-material";
+import QRScanner from "../../components/QRScanner";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
+import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
+import toast from "react-hot-toast";
 
 const TransactionsList = () => {
   const navigate = useNavigate();
@@ -68,6 +74,84 @@ const TransactionsList = () => {
     overdue: 0,
     returned: 0,
   });
+  // Return confirmation dialog state
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [returnCopyInput, setReturnCopyInput] = useState("");
+  const [returnError, setReturnError] = useState("");
+  // QR scanner dialog
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const copyIdInputRef = useRef(null);
+
+  // Focus the Copy ID input when return dialog opens or when scanner closes
+  useEffect(() => {
+    if (returnDialogOpen) {
+      // small timeout to wait for dialog animation/mount
+      const t = setTimeout(() => {
+        try {
+          copyIdInputRef.current?.focus?.();
+          if (copyIdInputRef.current?.select) copyIdInputRef.current.select();
+        } catch (err) {
+          // ignore
+        }
+      }, 100);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [returnDialogOpen]);
+
+  useEffect(() => {
+    if (!scannerOpen && returnDialogOpen) {
+      // return from scanner — focus the input
+      const t = setTimeout(() => {
+        try {
+          copyIdInputRef.current?.focus?.();
+          if (copyIdInputRef.current?.select) copyIdInputRef.current.select();
+        } catch (err) {}
+      }, 100);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [scannerOpen, returnDialogOpen]);
+
+  // Handle a scanned QR value: auto-validate and perform return when it matches
+  const handleScannedCopy = async (value) => {
+    const scanned = String(value || '').trim();
+    setReturnCopyInput(scanned);
+    setReturnError('');
+
+    // Build expected copy id list (same logic as handleConfirmReturn)
+    const items = Array.isArray(selectedTransaction?.items)
+      ? selectedTransaction.items
+      : [];
+    const expectedCopyIds = items.length > 0
+      ? items.map((it) => String(it.copyId || it.copyid || it.copyID || '').trim().toLowerCase()).filter(Boolean)
+      : (selectedTransaction?.copyId ? [String(selectedTransaction.copyId).trim().toLowerCase()] : []);
+
+    if (expectedCopyIds.length > 0) {
+      if (!expectedCopyIds.includes(scanned.toLowerCase())) {
+        setReturnError('Scanned Copy ID does not match the expected item(s).');
+        toast.error('Scanned Copy ID does not match.');
+        return; // don't proceed
+      }
+    }
+
+    // If validation passed (or no expected ids), proceed to perform return
+    toast.loading('Processing return...');
+    try {
+      await handleReturnBook();
+      toast.dismiss();
+      toast.success('Return processed successfully');
+      setScannerOpen(false);
+      setReturnDialogOpen(false);
+      setReturnCopyInput('');
+      setReturnError('');
+    } catch (err) {
+      toast.dismiss();
+      setReturnError('Failed to process return.');
+      toast.error('Failed to process return');
+      console.error('Error processing scanned return:', err);
+    }
+  };
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -188,6 +272,55 @@ const TransactionsList = () => {
     }
   };
 
+  
+
+  // Print receipt for a specific transaction (works for any transaction status)
+  const handlePrintReceiptFor = async (transaction) => {
+    try {
+      toast.loading("Generating Receipt...");
+      const transactionId = getTransactionIdentifier(transaction);
+      if (!transactionId) {
+        setError("Transaction identifier is missing");
+        toast.dismiss();
+        return;
+      }
+      try {
+        const response = await api.get(`/transactions/${transactionId.trim()}`);
+        const transactionData = response.data || [];
+        const responseStudent = await api.get(`/students/${transactionData.userId}`);
+        const studentData = responseStudent.data || [];
+        const booksData = [];
+        for (let x = 0; transactionData.items.length > x; x++) {
+          let book = transactionData.items[x];
+          const responseBook = await api.get(`/books/${book.bookId}`);
+          const bookData = responseBook.data || [];
+          let newBookData = {
+            title: bookData.title,
+            bookId: book.bookId,
+            copyId: book.copyId,
+          };
+          booksData.push(newBookData);
+        }
+        const transactionPDF = await generateTransactionReceipt(
+          transactionData,
+          studentData.student,
+          booksData
+        );
+
+        downloadPDF(transactionPDF, `receipt_${transactionData.id}.pdf`);
+        toast.dismiss();
+        toast.success("Receipt generated successfully!");
+      } catch (fallbackError) {
+        console.error("Failed to fetch transaction data from transactions:", fallbackError);
+        toast.error("Failed to load transaction");
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to generate receipt");
+      console.error("Error generating receipt:", error);
+    }
+  };
+
   const handleRenewBook = async () => {
     const transactionId = getTransactionIdentifier(selectedTransaction);
     if (!transactionId) {
@@ -204,6 +337,36 @@ const TransactionsList = () => {
       const message = error.response?.data?.message || "Failed to renew book";
       setError(message);
       console.error("Error renewing book:", error);
+    }
+  };
+
+  // Confirm and perform return — validates copy ID if available
+  const handleConfirmReturn = async () => {
+    // Collect expected copy IDs from transaction items (if any), fallback to single copyId
+    const items = Array.isArray(selectedTransaction?.items)
+      ? selectedTransaction.items
+      : [];
+    const expectedCopyIds = items.length > 0
+      ? items.map((it) => String(it.copyId || it.copyid || it.copyID || '').trim().toLowerCase()).filter(Boolean)
+      : (selectedTransaction?.copyId ? [String(selectedTransaction.copyId).trim().toLowerCase()] : []);
+
+    // If we have expected copy IDs, require that the entered value matches any of them (case-insensitive)
+    if (expectedCopyIds.length > 0) {
+      if (!returnCopyInput || !expectedCopyIds.includes(returnCopyInput.trim().toLowerCase())) {
+        setReturnError("Copy ID does not match. Please enter the correct Copy ID to confirm return.");
+        return;
+      }
+    }
+
+    // Proceed with return
+    try {
+      await handleReturnBook();
+      setReturnDialogOpen(false);
+      setReturnCopyInput("");
+      setReturnError("");
+    } catch (err) {
+      setReturnError("Failed to return book. Try again.");
+      console.error(err);
     }
   };
 
@@ -563,13 +726,24 @@ const TransactionsList = () => {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton
-                        onClick={(e) => handleMenuClick(e, transaction)}
-                        size="small"
-                        aria-label={`Actions for transaction ${getDisplayTransactionId(transaction)}`}
-                      >
-                        <MoreVert />
-                      </IconButton>
+                      <Box display="flex" justifyContent="center" gap={1}>
+                        {canManageTransactions && (
+                          <IconButton
+                            size="small"
+                            aria-label={`Print receipt for ${getDisplayTransactionId(transaction)}`}
+                            onClick={() => handlePrintReceiptFor(transaction)}
+                          >
+                            <Print />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          onClick={(e) => handleMenuClick(e, transaction)}
+                          size="small"
+                          aria-label={`Actions for transaction ${getDisplayTransactionId(transaction)}`}
+                        >
+                          <MoreVert />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))
@@ -601,7 +775,7 @@ const TransactionsList = () => {
           View Details
         </MenuItem>
         {canManageTransactions && selectedTransaction?.status === "active" && (
-          <MenuItem onClick={handleReturnBook}>
+          <MenuItem onClick={() => { handleMenuClose(false); setReturnCopyInput(""); setReturnError(""); setReturnDialogOpen(true); }}>
             <AssignmentReturn sx={{ mr: 1 }} />
             Return Book
           </MenuItem>
@@ -610,6 +784,12 @@ const TransactionsList = () => {
           <MenuItem onClick={handleRenewBook}>
             <Schedule sx={{ mr: 1 }} />
             Renew Book
+          </MenuItem>
+        )}
+        {canManageTransactions && selectedTransaction && (
+          <MenuItem onClick={() => { handlePrintReceiptFor(selectedTransaction); handleMenuClose(); }}>
+            <Print sx={{ mr: 1 }} />
+            Print Receipt
           </MenuItem>
         )}
       </Menu>
@@ -722,6 +902,66 @@ const TransactionsList = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Return confirmation dialog */}
+      <Dialog
+        open={returnDialogOpen}
+        onClose={() => setReturnDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Confirm Return</DialogTitle>
+        <DialogContent>
+          <Typography gutterBottom>
+            To confirm the return, please enter the Copy ID of the book being returned.
+          </Typography>
+          <Box display="flex" gap={1} alignItems="center">
+            <TextField
+              label="Copy ID"
+              value={returnCopyInput}
+              onChange={(e) => { setReturnCopyInput(e.target.value); setReturnError(""); }}
+              fullWidth
+              margin="dense"
+              autoFocus
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setScannerOpen(true)}
+              sx={{ height: 40 }}
+            >
+              Scan QR
+            </Button>
+          </Box>
+          {returnError && (
+            <Typography color="error" variant="caption" display="block" sx={{ mt: 1 }}>
+              {returnError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReturnDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmReturn} variant="contained" color="primary">
+            Confirm Return
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Scanner dialog */}
+      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Scan QR Code</DialogTitle>
+        <DialogContent>
+          <QRScanner
+            elementId="transaction-qr-scanner"
+            onDetected={(value) => {
+              // auto-process the scanned value (validate and perform return)
+              handleScannedCopy(value);
+            }}
+            onClose={() => setScannerOpen(false)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </Box>

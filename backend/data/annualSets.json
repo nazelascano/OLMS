@@ -4,7 +4,7 @@
     "name": "Grade 7-A",
     "gradeLevel": "Grade 7",
     "section": "A",
-  "curriculum": "Junior High",
+    "curriculum": "Junior High",
     "academicYear": "2024-2025",
     "description": "",
     "books": [
@@ -28,5 +28,79 @@
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mgvwr3dnukd14"
+  },
+  {
+    "id": "annual_1761579005170_1mxsmj",
+    "name": "10-b",
+    "gradeLevel": "Grade 10",
+    "section": "B",
+    "curriculum": "Junior High",
+    "academicYear": "2025-2026",
+    "description": "",
+    "books": [
+      {
+        "bookId": "book_1760074029889_qasd7r6ae",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      },
+      {
+        "bookId": "book_1759815783043_sei18pb7v",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      },
+      {
+        "bookId": "book_1760074424228_6d6msmwml",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      }
+    ],
+    "createdAt": "2025-10-27T15:30:05.169Z",
+    "updatedAt": "2025-10-27T15:30:05.172Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mh9annjod1dmi"
+  },
+  {
+    "id": "annual_1761579135530_5h4g70",
+    "name": "sdfghjk",
+    "gradeLevel": "Grade 10",
+    "section": "B",
+    "curriculum": "fghjk",
+    "academicYear": "2024-2025",
+    "description": "",
+    "books": [
+      {
+        "bookId": "book_1760074424911_fn353vxfy",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      },
+      {
+        "bookId": "book_1760074424790_xx609fnbq",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      },
+      {
+        "bookId": "book_1760074424360_iiue297m0",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      }
+    ],
+    "createdAt": "2025-10-27T15:32:15.530Z",
+    "updatedAt": "2025-10-27T15:32:15.531Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mh9aqg4rg1teh"
   }
 ]

@@ -8,4 +8,12 @@ module.exports = {
       },
     },
   },
+  webpack: {
+    configure: (webpackConfig) => {
+      // Suppress noisy source map parse warnings from some third-party packages
+      webpackConfig.ignoreWarnings = webpackConfig.ignoreWarnings || [];
+      webpackConfig.ignoreWarnings.push(/Failed to parse source map/);
+      return webpackConfig;
+    },
+  },
 };

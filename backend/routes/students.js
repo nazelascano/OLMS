@@ -93,8 +93,8 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             // Library Card Information (auto-generated)
             libraryCardNumber: libraryCardNumber,
 
-            // Login credentials
-            username: req.body.username,
+            // Login credentials - use LRN as username (per requirement)
+                username: req.body.lrn || req.body.username,
 
             // Basic Information
             firstName: req.body.firstName,
@@ -166,25 +166,34 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             });
         }
 
-        // Check if username already exists
-        if (req.body.username) {
-            const existingUsers = await req.dbAdapter.getUsers({ username: req.body.username });
-            if (existingUsers.length > 0) {
-                setAuditContext(req, {
-                    success: false,
-                    status: 'Conflict',
-                    description: `Create student failed: username ${req.body.username} already exists`,
-                    details: { username: req.body.username },
-                });
-                return res.status(400).json({ message: 'Username already exists' });
-            }
+        // Determine username (prefer LRN) and ensure uniqueness
+        const usernameToUse = studentData.lrn || studentData.username;
+        if (!usernameToUse) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationError',
+                description: 'Create student failed: username (lrn) is required'
+            });
+            return res.status(400).json({ message: 'LRN (used as username) is required' });
         }
 
-        // Hash the LRN to use as default password
-        const hashedPassword = await bcrypt.hash(studentData.lrn, 10);
+        const existingUsers = await req.dbAdapter.getUsers({ username: usernameToUse });
+        if (existingUsers.length > 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'Conflict',
+                description: `Create student failed: username ${usernameToUse} already exists`,
+                details: { username: usernameToUse },
+            });
+            return res.status(400).json({ message: 'Username already exists' });
+        }
 
-        // Add password to student data
+        // Build default raw password: first letter of firstName + username
+        const rawPassword = `${(studentData.firstName || '').charAt(0)}${usernameToUse}`;
+        const hashedPassword = await bcrypt.hash(rawPassword, 10);
         studentData.password = hashedPassword;
+        // ensure username field is set to the chosen username
+        studentData.username = usernameToUse;
 
         // Create student using database adapter
         const student = await req.dbAdapter.createUser(studentData);
@@ -359,6 +368,119 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             return res.status(400).json({ message: 'Students array is required' });
         }
 
+        // Validate that every row includes an LRN (we require LRN as username)
+        const missingLrnRows = students
+            .map((s, idx) => ({ idx, studentId: s.studentId || null, lrn: s.lrn }))
+            .filter(r => !r.lrn || String(r.lrn).trim() === '');
+
+        if (missingLrnRows.length > 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationError',
+                description: 'Student bulk import failed: one or more rows missing LRN',
+                details: { missingRows: missingLrnRows }
+            });
+            return res.status(400).json({
+                message: 'Bulk import requires LRN for every student. One or more rows are missing LRN.',
+                missing: missingLrnRows
+            });
+        }
+
+        // Pre-validate payload for other errors (duplicates, invalid emails, missing required fields)
+        const errors = [];
+
+        // Helper: find duplicates in array
+        const findDuplicates = (arr) => arr.reduce((acc, val, idx, a) => {
+            if (a.indexOf(val) !== idx && !acc.includes(val)) acc.push(val);
+            return acc;
+        }, []);
+
+        // Trim and normalize usernames (LRN) and studentIds
+        const normalized = students.map((s, idx) => ({
+            idx,
+            firstName: (s.firstName || '').toString().trim(),
+            lastName: (s.lastName || '').toString().trim(),
+            studentId: (s.studentId || '').toString().trim(),
+            lrn: (s.lrn || '').toString().trim(),
+            email: (s.email || '').toString().trim().toLowerCase()
+        }));
+
+        // Check for required fields and invalid email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        normalized.forEach((row) => {
+            const rowErrors = [];
+            if (!row.firstName) rowErrors.push('Missing firstName');
+            if (!row.lastName) rowErrors.push('Missing lastName');
+            if (!row.studentId) rowErrors.push('Missing studentId');
+            if (!row.lrn) rowErrors.push('Missing lrn'); // redundant if earlier, but keep for specificity
+            if (row.email && !emailRegex.test(row.email)) rowErrors.push('Invalid email');
+            if (rowErrors.length > 0) {
+                errors.push({ idx: row.idx, studentId: row.studentId || null, issues: rowErrors });
+            }
+        });
+
+        // Check duplicate LRNs and studentIds within payload
+        const lrns = normalized.map(r => r.lrn).filter(Boolean);
+        const duplicateLrns = findDuplicates(lrns);
+        duplicateLrns.forEach((dup) => {
+            // find all indices with this dup
+            normalized.forEach(r => { if (r.lrn === dup) errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['Duplicate lrn in payload'] }); });
+        });
+
+        const studentIds = normalized.map(r => r.studentId).filter(Boolean);
+        const duplicateStudentIds = findDuplicates(studentIds);
+        duplicateStudentIds.forEach((dup) => {
+            normalized.forEach(r => { if (r.studentId === dup) errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['Duplicate studentId in payload'] }); });
+        });
+
+        // Check duplicates against DB for usernames (lrn) and studentId using batched queries
+        const uniqueLrns = Array.from(new Set(lrns));
+        if (uniqueLrns.length > 0) {
+            try {
+                const existingUsersByLrn = await req.dbAdapter.getUsers({ username: { $in: uniqueLrns } });
+                if (existingUsersByLrn && existingUsersByLrn.length > 0) {
+                    const existingLrnSet = new Set(existingUsersByLrn.map(u => String(u.username)));
+                    normalized.forEach(r => {
+                        if (existingLrnSet.has(r.lrn)) {
+                            errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['Username (LRN) already exists in system'] });
+                        }
+                    });
+                }
+            } catch (dbErr) {
+                console.error('Error checking existing usernames during bulk import validation:', dbErr);
+                errors.push({ idx: null, studentId: null, issues: ['Failed to validate existing usernames'] });
+            }
+        }
+
+        const uniqueStudentIds = Array.from(new Set(studentIds));
+        if (uniqueStudentIds.length > 0) {
+            try {
+                const existingUsersByStudentId = await req.dbAdapter.getUsers({ studentId: { $in: uniqueStudentIds } });
+                if (existingUsersByStudentId && existingUsersByStudentId.length > 0) {
+                    const existingSidSet = new Set(existingUsersByStudentId.map(u => String(u.studentId)));
+                    normalized.forEach(r => {
+                        if (existingSidSet.has(r.studentId)) {
+                            errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['studentId already exists in system'] });
+                        }
+                    });
+                }
+            } catch (dbErr) {
+                console.error('Error checking existing studentIds during bulk import validation:', dbErr);
+                errors.push({ idx: null, studentId: null, issues: ['Failed to validate existing studentIds'] });
+            }
+        }
+
+        // If any validation errors, abort and return consolidated list
+        if (errors.length > 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationError',
+                description: 'Bulk import validation failed',
+                details: { errors }
+            });
+            return res.status(400).json({ message: 'Bulk import validation failed', errors });
+        }
+
         setAuditContext(req, {
             metadata: {
                 bulkImportRequest: {
@@ -377,16 +499,22 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                 // Generate library card number for each student
                 const libraryCardNumber = await generateLibraryCardNumber(req.dbAdapter);
 
-                // Hash LRN as password if provided
+                // Determine username (prefer LRN) and generate default password (first letter of firstName + username)
+                const username = studentData.lrn || studentData.username || null;
                 let hashedPassword = null;
-                if (studentData.lrn) {
-                    hashedPassword = await bcrypt.hash(studentData.lrn, 10);
+                if (username) {
+                    const rawPassword = `${(studentData.firstName || '').charAt(0)}${username}`;
+                    hashedPassword = await bcrypt.hash(rawPassword, 10);
+                } else if (studentData.password) {
+                    // fallback to provided password (already hashed or plain depending on upstream)
+                    hashedPassword = await bcrypt.hash(studentData.password, 10);
                 }
 
                 const newStudent = {
                     ...studentData,
+                    username: username,
                     libraryCardNumber: libraryCardNumber, // Auto-generated
-                    password: hashedPassword || studentData.password, // Use LRN or provided password
+                    password: hashedPassword,
                     role: 'student',
                     isActive: true,
                     borrowingStats: {
