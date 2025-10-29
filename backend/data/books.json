@@ -515,8 +515,8 @@
     "description": "Classic developer book",
     "coverImage": "",
     "status": "active",
-    "totalCopies": 6,
-    "availableCopies": 6,
+    "totalCopies": 9,
+    "availableCopies": 9,
     "copies": [
       {
         "copyId": "978-0201616224-MGSOUS0A-HFOK",
@@ -572,10 +572,37 @@
         "createdAt": "2025-10-16T00:57:18.750Z",
         "updatedAt": "2025-10-16T00:57:18.750Z",
         "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHAOB8OS-E406",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-28T14:40:06.844Z",
+        "updatedAt": "2025-10-28T14:40:06.844Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHAOB8OS-F7NV",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-28T14:40:06.844Z",
+        "updatedAt": "2025-10-28T14:40:06.844Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHAOB8OS-25KC",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-10-28T14:40:06.844Z",
+        "updatedAt": "2025-10-28T14:40:06.844Z",
+        "createdBy": "mgnhicbwhxfy9"
       }
     ],
     "createdAt": "2025-10-16T00:35:27.178Z",
-    "updatedAt": "2025-10-27T10:22:12.739Z",
+    "updatedAt": "2025-10-28T14:40:06.854Z",
     "createdBy": "mgnhicbwhxfy9",
     "_id": "mgsous0bcn99t",
     "updatedBy": "mgnhicbwhxfy9"

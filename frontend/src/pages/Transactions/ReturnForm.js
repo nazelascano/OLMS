@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Alert,
   Avatar,
@@ -51,6 +51,7 @@ const toNumber = (value, fallback) => {
 
 const ReturnForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchInput, setSearchInput] = useState("");
   const [borrowedBooks, setBorrowedBooks] = useState([]);
   const [selectedReturns, setSelectedReturns] = useState([]);
@@ -326,9 +327,9 @@ const ReturnForm = () => {
       setNotes("");
       setConfirmDialog(false);
 
-      // Navigate to transactions list after delay
+      // Navigate back to referrer when possible, otherwise go to transactions list
       setTimeout(() => {
-        navigate("/transactions");
+        navigate(location.state?.from || "/transactions");
       }, 2000);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Failed to process returns");
@@ -378,7 +379,13 @@ const ReturnForm = () => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
         <Box display="flex" alignItems="center" mb={3}>
-          <IconButton onClick={() => navigate("/transactions")} sx={{ mr: 2 }}>
+          <IconButton
+            onClick={() => {
+              if (location.state?.from) navigate(location.state.from);
+              else navigate(-1);
+            }}
+            sx={{ mr: 2 }}
+          >
             <ArrowBack />
           </IconButton>
           <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 }}>

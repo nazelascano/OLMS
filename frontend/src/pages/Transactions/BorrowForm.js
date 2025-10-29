@@ -1,6 +1,6 @@
 ﻿/* eslint-disable unicode-bom */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Alert,
   Autocomplete,
@@ -68,6 +68,7 @@ const getBorrowerLabel = (borrower) => {
 
 const BorrowForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [borrowerQuery, setBorrowerQuery] = useState("");
   const [borrowerOptions, setBorrowerOptions] = useState([]);
@@ -419,7 +420,7 @@ const BorrowForm = () => {
       resetForm();
 
       window.setTimeout(() => {
-        navigate("/transactions");
+        navigate(location.state?.from || "/transactions");
       }, 1500);
     } catch (error) {
       const message =

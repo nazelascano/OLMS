@@ -26,6 +26,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  IconButton,
+  Menu,
 } from "@mui/material";
 import {
   TrendingUp,
@@ -39,6 +41,7 @@ import {
   Book,
   Schedule,
   CurrencyExchange,
+  FilterList,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -87,6 +90,11 @@ const ReportsPage = () => {
     sections: [],
     schoolYears: [],
   });
+  // Filter menu state for student filters
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const filterOpen = Boolean(filterAnchorEl);
+  const openFilterMenu = (e) => setFilterAnchorEl(e.currentTarget);
+  const closeFilterMenu = () => setFilterAnchorEl(null);
 
   const [dashboardStats, setDashboardStats] = useState(initialDashboardStats);
   const [reportData, setReportData] = useState(initialReportData);
@@ -426,84 +434,107 @@ const ReportsPage = () => {
           }}
         >
           {currentTab === 7 ? (
-            // Student List Filters
+            // Student List Filters (compact icon + pop-up menu)
             <>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Student Filters
               </Typography>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Grade</InputLabel>
-                    <Select
-                      value={studentFilters.grade}
-                      label="Grade"
-                      onChange={(e) => setStudentFilters({ ...studentFilters, grade: e.target.value })}
-                    >
-                      <MenuItem value="">
-                        <em>All Grades</em>
-                      </MenuItem>
-                      {filterOptions.grades.map((grade) => (
-                        <MenuItem key={grade} value={grade}>
-                          {grade}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Section</InputLabel>
-                    <Select
-                      value={studentFilters.section}
-                      label="Section"
-                      onChange={(e) => setStudentFilters({ ...studentFilters, section: e.target.value })}
-                    >
-                      <MenuItem value="">
-                        <em>All Sections</em>
-                      </MenuItem>
-                      {filterOptions.sections.map((section) => (
-                        <MenuItem key={section} value={section}>
-                          Section {section}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>School Year</InputLabel>
-                    <Select
-                      value={studentFilters.schoolYear}
-                      label="School Year"
-                      onChange={(e) => setStudentFilters({ ...studentFilters, schoolYear: e.target.value })}
-                    >
-                      <MenuItem value="">
-                        <em>All Years</em>
-                      </MenuItem>
-                      {filterOptions.schoolYears.map((year) => (
-                        <MenuItem key={year} value={year}>
-                          {year}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-              <Box display="flex" justifyContent="flex-end" mt={2}>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setStudentFilters({ grade: '', section: '', schoolYear: '' });
-                    loadAllReports();
-                  }}
-                  sx={{ mr: 1 }}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconButton
+                  aria-label="Open student filters"
+                  onClick={openFilterMenu}
+                  sx={{ border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
                 >
-                  Clear Filters
-                </Button>
-                <Button variant="contained" onClick={loadAllReports}>
-                  Apply Filters
-                </Button>
+                  <FilterList />
+                </IconButton>
+
+                <Menu
+                  anchorEl={filterAnchorEl}
+                  open={filterOpen}
+                  onClose={closeFilterMenu}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  PaperProps={{ sx: { p: 2, minWidth: 300 } }}
+                >
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Grade</InputLabel>
+                      <Select
+                        value={studentFilters.grade}
+                        label="Grade"
+                        onChange={(e) => setStudentFilters({ ...studentFilters, grade: e.target.value })}
+                      >
+                        <MenuItem value="">
+                          <em>All Grades</em>
+                        </MenuItem>
+                        {filterOptions.grades.map((grade) => (
+                          <MenuItem key={grade} value={grade}>
+                            {grade}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Section</InputLabel>
+                      <Select
+                        value={studentFilters.section}
+                        label="Section"
+                        onChange={(e) => setStudentFilters({ ...studentFilters, section: e.target.value })}
+                      >
+                        <MenuItem value="">
+                          <em>All Sections</em>
+                        </MenuItem>
+                        {filterOptions.sections.map((section) => (
+                          <MenuItem key={section} value={section}>
+                            Section {section}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth size="small">
+                      <InputLabel>School Year</InputLabel>
+                      <Select
+                        value={studentFilters.schoolYear}
+                        label="School Year"
+                        onChange={(e) => setStudentFilters({ ...studentFilters, schoolYear: e.target.value })}
+                      >
+                        <MenuItem value="">
+                          <em>All Years</em>
+                        </MenuItem>
+                        {filterOptions.schoolYears.map((year) => (
+                          <MenuItem key={year} value={year}>
+                            {year}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setStudentFilters({ grade: '', section: '', schoolYear: '' });
+                          closeFilterMenu();
+                          loadAllReports();
+                        }}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => {
+                          closeFilterMenu();
+                          loadAllReports();
+                        }}
+                      >
+                        Apply
+                      </Button>
+                    </Box>
+                  </Box>
+                </Menu>
               </Box>
             </>
           ) : (

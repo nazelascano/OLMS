@@ -33,6 +33,7 @@ import {
   GetApp,
   Person,
   MoreVert,
+  FilterList,
   Edit,
   Print,
   Delete as DeleteIcon,
@@ -80,6 +81,12 @@ const StudentsList = () => {
   const sections = ["A", "B", "C", "D", "E"];
   const gradeOptions = userAttributes.gradeLevels;
   const hasGradeOptions = gradeOptions.length > 0;
+  // Filter menu state
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const filterOpen = Boolean(filterAnchorEl);
+
+  const handleOpenFilters = (e) => setFilterAnchorEl(e.currentTarget);
+  const handleCloseFilters = () => setFilterAnchorEl(null);
 
   useEffect(() => {
     fetchStudents();
@@ -308,45 +315,83 @@ const StudentsList = () => {
                 </InputAdornment>
               ),
             }}
-          />{" "}
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel> Grade </InputLabel>{" "}
-            <Select
-              value={gradeFilter}
-              onChange={(e) => setGradeFilter(e.target.value)}
-              label="Grade"
-              disabled={!hasGradeOptions}
-            >
-              <MenuItem value=""> All Grades </MenuItem>{" "}
-              {hasGradeOptions ? (
-                gradeOptions.map((grade) => (
-                  <MenuItem key={grade} value={grade}>
-                    {grade}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem value="" disabled>
-                  No grade options available
-                </MenuItem>
-              )}{" "}
-            </Select>{" "}
-          </FormControl>{" "}
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel> Section </InputLabel>{" "}
-            <Select
-              value={sectionFilter}
-              onChange={(e) => setSectionFilter(e.target.value)}
-              label="Section"
-            >
-              <MenuItem value=""> All Sections </MenuItem>{" "}
-              {sections.map((section) => (
-                <MenuItem key={section} value={section}>
-                  Section {section}{" "}
-                </MenuItem>
-              ))}{" "}
-            </Select>{" "}
-          </FormControl>{" "}
-        </Box>{" "}
+          />
+          {/* Compact filter icon that opens a pop-up menu containing Grade and Section filters */}
+          <IconButton
+            aria-label="Open filters"
+            onClick={handleOpenFilters}
+            size="small"
+            sx={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}
+          >
+            <FilterList />
+          </IconButton>
+
+          <Menu
+            anchorEl={filterAnchorEl}
+            open={filterOpen}
+            onClose={handleCloseFilters}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+            PaperProps={{ sx: { p: 2, minWidth: 220 } }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel> Grade </InputLabel>
+                <Select
+                  value={gradeFilter}
+                  onChange={(e) => setGradeFilter(e.target.value)}
+                  label="Grade"
+                  disabled={!hasGradeOptions}
+                >
+                  <MenuItem value=""> All Grades </MenuItem>
+                  {hasGradeOptions ? (
+                    gradeOptions.map((grade) => (
+                      <MenuItem key={grade} value={grade}>
+                        {grade}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No grade options available
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth size="small">
+                <InputLabel> Section </InputLabel>
+                <Select
+                  value={sectionFilter}
+                  onChange={(e) => setSectionFilter(e.target.value)}
+                  label="Section"
+                >
+                  <MenuItem value=""> All Sections </MenuItem>
+                  {sections.map((section) => (
+                    <MenuItem key={section} value={section}>
+                      Section {section}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setGradeFilter("");
+                    setSectionFilter("");
+                    handleCloseFilters();
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button size="small" variant="contained" onClick={handleCloseFilters}>
+                  Apply
+                </Button>
+              </Box>
+            </Box>
+          </Menu>
+        </Box>
         {attributeError && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             {attributeError}

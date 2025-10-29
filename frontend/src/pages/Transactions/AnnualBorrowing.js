@@ -20,6 +20,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Menu,
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -31,6 +32,7 @@ import {
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
+import { FilterList } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { annualSetsAPI, booksAPI } from "../../utils/api";
 
@@ -84,6 +86,12 @@ const AnnualBorrowing = () => {
   useEffect(() => {
     fetchSets(appliedFilters);
   }, [appliedFilters]);
+
+  // compact filter menu state
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const filterMenuOpen = Boolean(filterAnchorEl);
+  const openFilterMenu = (e) => setFilterAnchorEl(e.currentTarget);
+  const closeFilterMenu = () => setFilterAnchorEl(null);
 
   useEffect(() => {
     issueContextRef.current = issueContext;
@@ -650,74 +658,85 @@ const AnnualBorrowing = () => {
           subheader="Search by year, grade, section, or curriculum"
         />
         <CardContent>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Academic Year"
-                value={filters.academicYear}
-                onChange={(event) =>
-                  handleFilterChange("academicYear", event.target.value)
-                }
-                select
-                fullWidth
-                helperText="Select or type a year"
-              >
-                <MenuItem value="">
-                  <em>All</em>
-                </MenuItem>
-                {availableAcademicYears.map((year) => (
-                  <MenuItem key={year} value={year}>
-                    {year}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              aria-label="Open filters"
+              onClick={openFilterMenu}
+              sx={{ border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
+            >
+              <FilterList />
+            </IconButton>
+
+            <Menu
+              anchorEl={filterAnchorEl}
+              open={filterMenuOpen}
+              onClose={closeFilterMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{ sx: { p: 2, minWidth: 300 } }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <TextField
+                  label="Academic Year"
+                  value={filters.academicYear}
+                  onChange={(event) =>
+                    handleFilterChange('academicYear', event.target.value)
+                  }
+                  select
+                  fullWidth
+                  helperText="Select or type a year"
+                >
+                  <MenuItem value="">
+                    <em>All</em>
                   </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Grade Level"
-                value={filters.gradeLevel}
-                onChange={(event) =>
-                  handleFilterChange("gradeLevel", event.target.value)
-                }
-                placeholder="e.g. Grade 7"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Section"
-                value={filters.section}
-                onChange={(event) =>
-                  handleFilterChange("section", event.target.value)
-                }
-                placeholder="e.g. A"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                label="Curriculum"
-                value={filters.curriculum}
-                onChange={(event) =>
-                  handleFilterChange("curriculum", event.target.value)
-                }
-                placeholder="e.g. Junior High"
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            mt={3}
-          >
-            <Button variant="contained" onClick={handleApplyFilters}>
-              Apply Filters
-            </Button>
-            <Button variant="text" onClick={handleResetFilters}>
-              Reset
-            </Button>
-          </Stack>
+                  {availableAcademicYears.map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                <TextField
+                  label="Grade Level"
+                  value={filters.gradeLevel}
+                  onChange={(event) =>
+                    handleFilterChange('gradeLevel', event.target.value)
+                  }
+                  placeholder="e.g. Grade 7"
+                  fullWidth
+                />
+
+                <TextField
+                  label="Section"
+                  value={filters.section}
+                  onChange={(event) =>
+                    handleFilterChange('section', event.target.value)
+                  }
+                  placeholder="e.g. A"
+                  fullWidth
+                />
+
+                <TextField
+                  label="Curriculum"
+                  value={filters.curriculum}
+                  onChange={(event) =>
+                    handleFilterChange('curriculum', event.target.value)
+                  }
+                  placeholder="e.g. Junior High"
+                  fullWidth
+                />
+
+                <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+                  <Button size="small" onClick={() => { handleResetFilters(); closeFilterMenu(); }}>
+                    Clear
+                  </Button>
+                  <Button size="small" variant="contained" onClick={() => { handleApplyFilters(); closeFilterMenu(); }}>
+                    Apply
+                  </Button>
+                </Box>
+              </Box>
+            </Menu>
+          </Box>
         </CardContent>
       </Card>
 

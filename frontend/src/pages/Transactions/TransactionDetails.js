@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -55,8 +55,11 @@ import { formatCurrency } from "../../utils/currency";
 const TransactionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [transaction, setTransaction] = useState(null);
+  const [book, setBook] = useState(null);
+  const [borrower, setBorrower] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -86,9 +89,10 @@ const TransactionDetails = () => {
   const fetchTransactionHistory = useCallback(async () => {
     try {
       const response = await api.get(`/transactions/${id}/history`);
-      setHistory(response.data);
+      setHistory(response.data || []);
     } catch (error) {
       console.error("Error fetching transaction history:", error);
+      setHistory([]);
     }
   }, [id]);
 
@@ -96,6 +100,44 @@ const TransactionDetails = () => {
     fetchTransactionDetails();
     fetchTransactionHistory();
   }, [fetchTransactionDetails, fetchTransactionHistory]);
+
+  // When transaction is loaded, try to resolve book and borrower details
+  useEffect(() => {
+    if (!transaction) return;
+
+    const firstItem = Array.isArray(transaction.items) && transaction.items.length > 0
+      ? transaction.items[0]
+      : null;
+
+    const fetchBook = async (bookId) => {
+      try {
+        if (!bookId) return;
+        const res = await api.get(`/books/${bookId}`);
+        setBook(res.data || null);
+      } catch (err) {
+        // fallback: leave book null
+        console.debug('Could not fetch book', bookId, err?.message || err);
+      }
+    };
+
+    const fetchBorrower = async (userId) => {
+      try {
+        if (!userId) return;
+        const res = await api.get(`/users/${userId}`);
+        setBorrower(res.data || null);
+      } catch (err) {
+        console.debug('Could not fetch user', userId, err?.message || err);
+      }
+    };
+
+    if (firstItem && firstItem.bookId) {
+      fetchBook(firstItem.bookId);
+    }
+
+    if (transaction.userId) {
+      fetchBorrower(transaction.userId);
+    }
+  }, [transaction]);
 
   const handleRenewTransaction = async () => {
     try {
@@ -197,6 +239,90 @@ const TransactionDetails = () => {
     return daysOverdue * (transaction?.finePerDay || 0.5);
   };
 
+  // Render human-friendly history details
+  const renderDetails = (entry) => {
+    const data = entry.details || entry.metadata;
+    if (!data) return null;
+
+    // If it's a plain string, show as text
+    if (typeof data === "string") {
+      return <Typography variant="body2">{data}</Typography>;
+    }
+
+    // If it contains a 'result' object (common for returns)
+    if (data.result || data.returnedItems !== undefined || data.returnedItems === 0) {
+      const result = data.result || data;
+      return (
+        <Box>
+          {result.returnedItems !== undefined && (
+            <Typography variant="body2">Returned items: {String(result.returnedItems)}</Typography>
+          )}
+          {result.fineAmount !== undefined && (
+            <Typography variant="body2">Fine: {formatCurrency(result.fineAmount)}</Typography>
+          )}
+          {result.daysOverdue !== undefined && (
+            <Typography variant="body2">Days overdue: {String(result.daysOverdue)}</Typography>
+          )}
+        </Box>
+      );
+    }
+
+    // If it has borrower info — deduplicate id fields
+    if (data.borrower || data.borrowerId) {
+      const b = data.borrower || {};
+      const borrowerIdValue = b.id || data.borrowerId || null;
+      return (
+        <Box>
+          {b.name && <Typography variant="body2">Borrower: {b.name}</Typography>}
+          {borrowerIdValue && <Typography variant="body2">Borrower ID: {borrowerIdValue}</Typography>}
+        </Box>
+      );
+    }
+
+    // If it contains a transaction payload
+    if (data.transaction || data.transactionId || data.id) {
+      const t = data.transaction || data;
+      const transactionIdValue = data.transactionId || t.transactionId || t.id || data.id || null;
+      return (
+        <Box>
+          {transactionIdValue && (
+            <Typography variant="body2">Transaction: {transactionIdValue}</Typography>
+          )}
+          {Array.isArray(t.items) && t.items.length > 0 && (
+            <Box>
+              <Typography variant="body2">Items:</Typography>
+              {t.items.map((it, i) => (
+                <Typography variant="caption" key={i} display="block">
+                  {`• ${it.copyId || it.copy || it.bookId || ''} ${it.isbn ? `(${it.isbn})` : ''}`}
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </Box>
+      );
+    }
+
+    // If it includes copy/book ids at top-level
+    if (data.copyId || data.bookId || data.isbn) {
+      return (
+        <Box>
+          {data.bookId && <Typography variant="body2">Book ID: {data.bookId}</Typography>}
+          {data.copyId && <Typography variant="body2">Copy ID: {data.copyId}</Typography>}
+          {data.isbn && <Typography variant="body2">ISBN: {data.isbn}</Typography>}
+        </Box>
+      );
+    }
+
+    // Fallback: pretty JSON
+    try {
+      return (
+        <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify(data, null, 2)}</pre>
+      );
+    } catch (err) {
+      return <Typography variant="body2">{String(data)}</Typography>;
+    }
+  };
+
   const canManageTransaction =
     user?.role === "admin" ||
     user?.role === "librarian" ||
@@ -230,11 +356,19 @@ const TransactionDetails = () => {
   const daysOverdue = calculateDaysOverdue();
   const fine = calculateFine();
 
+  const firstItem = Array.isArray(transaction?.items) && transaction.items.length > 0 ? transaction.items[0] : null;
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
         <Box display="flex" alignItems="center" mb={3}>
-          <IconButton onClick={() => navigate("/transactions")} sx={{ mr: 2 }}>
+          <IconButton
+            onClick={() => {
+              if (location.state?.from) navigate(location.state.from);
+              else navigate(-1);
+            }}
+            sx={{ mr: 2 }}
+          >
             <ArrowBack />
           </IconButton>{" "}
           <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 }}>
@@ -319,15 +453,14 @@ const TransactionDetails = () => {
                           Book{" "}
                         </Typography>{" "}
                         <Typography variant="h6">
-                          {" "}
-                          {transaction.bookTitle}{" "}
-                        </Typography>{" "}
+                          {book?.title || transaction.bookTitle || firstItem?.bookId || firstItem?.copyId || ''}
+                        </Typography>
                         <Typography variant="body2" color="textSecondary">
-                          by {transaction.author}{" "}
-                        </Typography>{" "}
+                          {`by ${book?.author || transaction.author || ''}`}
+                        </Typography>
                         <Typography variant="body2" color="textSecondary">
-                          Copy ID: {transaction.copyId}{" "}
-                        </Typography>{" "}
+                          {`Copy ID: ${firstItem?.copyId || transaction.copyId || ''}`}
+                        </Typography>
                       </Box>{" "}
                     </Box>{" "}
                   </Grid>
@@ -339,18 +472,18 @@ const TransactionDetails = () => {
                           Borrower{" "}
                         </Typography>{" "}
                         <Typography variant="h6">
-                          {" "}
-                          {transaction.borrowerName}{" "}
-                        </Typography>{" "}
+                          {borrower
+                            ? `${borrower.firstName || ''} ${borrower.lastName || ''}`.trim()
+                            : transaction.borrowerName || transaction.userId || ''}
+                        </Typography>
                         <Typography variant="body2" color="textSecondary">
-                          {" "}
-                          {transaction.borrowerEmail}{" "}
-                        </Typography>{" "}
-                        {transaction.borrowerStudentId && (
+                          {borrower?.email || transaction.borrowerEmail || ''}
+                        </Typography>
+                        {(borrower?.studentId || transaction.borrowerStudentId || borrower?.library?.cardNumber) && (
                           <Typography variant="body2" color="textSecondary">
-                            Student ID: {transaction.borrowerStudentId}{" "}
+                            {`Student ID: ${borrower?.studentId || transaction.borrowerStudentId || borrower?.library?.cardNumber || ''}`}
                           </Typography>
-                        )}{" "}
+                        )}
                       </Box>{" "}
                     </Box>{" "}
                   </Grid>{" "}
@@ -451,37 +584,26 @@ const TransactionDetails = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell> Date </TableCell>{" "}
-                        <TableCell> Action </TableCell>{" "}
-                        <TableCell> Details </TableCell>{" "}
-                        <TableCell> Staff </TableCell>{" "}
-                      </TableRow>{" "}
-                    </TableHead>{" "}
+                        <TableCell>Date</TableCell>
+                        <TableCell>Action</TableCell>
+                        <TableCell>Details</TableCell>
+                        <TableCell>Staff</TableCell>
+                      </TableRow>
+                    </TableHead>
                     <TableBody>
-                      {" "}
                       {history.map((entry, index) => (
                         <TableRow key={index}>
+                          <TableCell>{new Date(entry.timestamp).toLocaleString()}</TableCell>
                           <TableCell>
-                            {" "}
-                            {new Date(entry.timestamp).toLocaleString()}{" "}
-                          </TableCell>{" "}
-                          <TableCell>
-                            <Chip
-                              label={entry.action}
-                              size="small"
-                              variant="outlined"
-                            />
-                          </TableCell>{" "}
-                          <TableCell> {entry.details} </TableCell>{" "}
-                          <TableCell>
-                            {" "}
-                            {entry.staffName || "System"}{" "}
-                          </TableCell>{" "}
+                            <Chip label={entry.action} size="small" variant="outlined" />
+                          </TableCell>
+                          <TableCell>{renderDetails(entry)}</TableCell>
+                          <TableCell>{entry.staffName || 'System'}</TableCell>
                         </TableRow>
-                      ))}{" "}
-                    </TableBody>{" "}
-                  </Table>{" "}
-                </TableContainer>{" "}
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </CardContent>{" "}
             </Card>{" "}
           </Grid>
@@ -501,18 +623,18 @@ const TransactionDetails = () => {
                     </ListItemIcon>{" "}
                     <ListItemText
                       primary="Transaction ID"
-                      secondary={transaction._id}
-                    />{" "}
+                      secondary={transaction.id || transaction._id}
+                    />
                   </ListItem>{" "}
                   <ListItem>
                     <ListItemIcon>
                       <QrCode />
-                    </ListItemIcon>{" "}
+                    </ListItemIcon>
                     <ListItemText
                       primary="Copy Barcode"
-                      secondary={transaction.copyId}
-                    />{" "}
-                  </ListItem>{" "}
+                      secondary={firstItem?.copyId || transaction.copyId}
+                    />
+                  </ListItem>
                   <ListItem>
                     <ListItemIcon>
                       <CalendarToday />

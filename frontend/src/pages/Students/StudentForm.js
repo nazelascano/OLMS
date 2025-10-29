@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -35,6 +35,7 @@ import toast from "react-hot-toast";
 const StudentForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const { user } = useAuth();
   const isEditing = Boolean(id);
 
@@ -200,7 +201,8 @@ const StudentForm = () => {
     } catch (error) {
       console.error("Failed to fetch student:", error);
       toast.error("Failed to load student data");
-      navigate("/students");
+      // Return to referrer if available, otherwise go to students list
+      navigate(location.state?.from || "/students");
     }
   };
 
@@ -267,7 +269,8 @@ const StudentForm = () => {
         await studentsAPI.update(id, studentData);
         toast.success("Student updated successfully");
         setTimeout(() => {
-          navigate("/students", { state: { refresh: true } });
+          // After saving, return to the page that opened the form when possible
+          navigate(location.state?.from || "/students", { state: { refresh: true } });
         }, 1000);
       } else {
         const response = await studentsAPI.create(studentData);
@@ -284,7 +287,8 @@ const StudentForm = () => {
         }
 
         setTimeout(() => {
-          navigate("/students", { state: { refresh: true } });
+          // After creating, return to referrer when provided, otherwise go to students list
+          navigate(location.state?.from || "/students", { state: { refresh: true } });
         }, 1000);
       }
     } catch (error) {
@@ -313,7 +317,11 @@ const StudentForm = () => {
   return (
     <Box>
       <Box display="flex" alignItems="center" mb={3}>
-        <IconButton onClick={() => navigate("/students")} sx={{ mr: 2 }}>
+        <IconButton onClick={() => {
+          // Prefer explicit referrer, otherwise go back in history
+          if (location.state?.from) navigate(location.state.from);
+          else navigate(-1);
+        }} sx={{ mr: 2 }}>
           <ArrowBack />
         </IconButton>{" "}
         <Typography
@@ -685,7 +693,10 @@ const StudentForm = () => {
             <Box display="flex" gap={2} justifyContent="flex-end">
               <Button
                 variant="outlined"
-                onClick={() => navigate("/students")}
+                onClick={() => {
+                  if (location.state?.from) navigate(location.state.from);
+                  else navigate(-1);
+                }}
                 startIcon={<Cancel />}
                 disabled={loading}
               >

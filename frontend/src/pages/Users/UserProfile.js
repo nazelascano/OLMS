@@ -92,10 +92,7 @@ const UserProfile = () => {
         if (!t.dueDate) return false;
         return new Date(t.dueDate) < now;
       }).length,
-      totalFines: history.reduce(
-        (sum, t) => sum + (t.fineAmount || t.fine || 0),
-        0,
-      ),
+      totalFines: history.reduce((sum, t) => sum + (t.fineAmount || t.fine || 0), 0),
     };
   };
 
@@ -367,6 +364,51 @@ const UserProfile = () => {
                     secondary={profileData.email}
                   />{" "}
                 </ListItem>{" "}
+                {/* Student-specific details: shown when this profile is a student */}
+                {profileData.role === "student" && (
+                  <>
+                    {profileData.libraryCardNumber && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <Assignment />
+                        </ListItemIcon>
+                        <ListItemText primary="Library Card" secondary={profileData.libraryCardNumber} />
+                      </ListItem>
+                    )}
+                    {profileData.studentId && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <School />
+                        </ListItemIcon>
+                        <ListItemText primary="Student ID" secondary={profileData.studentId} />
+                      </ListItem>
+                    )}
+                    {profileData.lrn && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <Assignment />
+                        </ListItemIcon>
+                        <ListItemText primary="LRN" secondary={profileData.lrn} />
+                      </ListItem>
+                    )}
+                    {(profileData.grade || profileData.section) && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <LibraryBooks />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Grade / Section"
+                          secondary={`${profileData.grade || ""}${profileData.grade && profileData.section ? " • " : ""}${profileData.section || ""}`}
+                        />
+                      </ListItem>
+                    )}
+                    {profileData.fullAddress && (
+                      <ListItem>
+                        <ListItemText primary="Address" secondary={profileData.fullAddress} />
+                      </ListItem>
+                    )}
+                  </>
+                )}
                 {profileData.phoneNumber && (
                   <ListItem>
                     <ListItemIcon>
@@ -418,6 +460,20 @@ const UserProfile = () => {
                     >
                       Change Password{" "}
                     </Button>{" "}
+                  </Box>
+                )}
+                {!isSelfProfile && profileData.role === "student" && (user && (user.role === "admin" || user.role === "librarian" || user.role === "staff")) && (
+                  <Box mt={2}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => {
+                        const targetId = profileData._id || profileData.id;
+                        if (targetId) navigate(`/students/${targetId}/edit`);
+                      }}
+                    >
+                      Open Student Record
+                    </Button>
                   </Box>
                 )}
               </Box>{" "}

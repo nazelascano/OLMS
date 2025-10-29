@@ -559,6 +559,41 @@ router.get('/by-copy', verifyToken, requireStaff, async(req, res) => {
     }
 });
 
+// Transaction history (audit logs) - returns audit entries related to this transaction
+router.get('/:id/history', verifyToken, async(req, res) => {
+    try {
+        const transactionId = req.params.id;
+
+        // Fetch audit logs and filter for any entry that references this transaction id
+        // Look into entityId, resourceId, details, and metadata for references
+        let logs = await req.dbAdapter.findInCollection('audit', {});
+
+        const matches = logs.filter(log => {
+            try {
+                const entityMatch = log.entityId && String(log.entityId) === String(transactionId);
+                const resourceMatch = log.resourceId && String(log.resourceId) === String(transactionId);
+                const detailsString = JSON.stringify(log.details || {});
+                const metadataString = JSON.stringify(log.metadata || {});
+                const inDetails = detailsString.includes(transactionId);
+                const inMetadata = metadataString.includes(transactionId);
+                const actionEntityMatch = log.entity && String(log.entity).toLowerCase() === 'transaction' && (entityMatch || resourceMatch);
+
+                return entityMatch || resourceMatch || inDetails || inMetadata || actionEntityMatch;
+            } catch (e) {
+                return false;
+            }
+        });
+
+        // Sort by timestamp desc
+        matches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        res.json(matches);
+    } catch (error) {
+        console.error('Get transaction history error:', error);
+        res.status(500).json({ message: 'Failed to fetch transaction history' });
+    }
+});
+
 router.get('/:id', verifyToken, async(req, res) => {
     try {
         const transaction = await findTransactionByIdentifier(req.dbAdapter, req.params.id);
@@ -573,6 +608,41 @@ router.get('/:id', verifyToken, async(req, res) => {
     } catch (error) {
         console.error('Get transaction error:', error);
         res.status(500).json({ message: 'Failed to fetch transaction' });
+    }
+});
+
+// Transaction history (audit logs) - returns audit entries related to this transaction
+router.get('/:id/history', verifyToken, async(req, res) => {
+    try {
+        const transactionId = req.params.id;
+
+        // Fetch audit logs and filter for any entry that references this transaction id
+        // Look into entityId, resourceId, details, and metadata for references
+        let logs = await req.dbAdapter.findInCollection('audit', {});
+
+        const matches = logs.filter(log => {
+            try {
+                const entityMatch = log.entityId && String(log.entityId) === String(transactionId);
+                const resourceMatch = log.resourceId && String(log.resourceId) === String(transactionId);
+                const detailsString = JSON.stringify(log.details || {});
+                const metadataString = JSON.stringify(log.metadata || {});
+                const inDetails = detailsString.includes(transactionId);
+                const inMetadata = metadataString.includes(transactionId);
+                const actionEntityMatch = log.entity && String(log.entity).toLowerCase() === 'transaction' && (entityMatch || resourceMatch);
+
+                return entityMatch || resourceMatch || inDetails || inMetadata || actionEntityMatch;
+            } catch (e) {
+                return false;
+            }
+        });
+
+        // Sort by timestamp desc
+        matches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        res.json(matches);
+    } catch (error) {
+        console.error('Get transaction history error:', error);
+        res.status(500).json({ message: 'Failed to fetch transaction history' });
     }
 });
 

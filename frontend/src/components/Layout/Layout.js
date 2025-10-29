@@ -269,13 +269,56 @@ const Layout = () => {
   };
 
   const handleSearchResultClick = (item) => {
-    if (!item?.link) {
-      return;
+    if (!item) return;
+
+    // Role-aware routing for search results.
+    // Some backend search links point to staff-only routes (e.g. /students/:id)
+    // which don't exist for student users. Map student search results to
+    // appropriate pages depending on the current user role.
+
+    try {
+      const category = item.category;
+      const id = item.id;
+
+      if (category === "students") {
+        // If the current user is the same student, send them to their profile.
+        // For staff/admin/librarian, navigate to the user profile page (/users/:id)
+        // which is the canonical user/student profile component in the app.
+        const currentUserId = (user && (user._id || user.id || "")) + "";
+        if (user && user.role === "student") {
+          if (id && id === currentUserId) {
+            navigate("/profile");
+          } else {
+            // Students should not view other students' profiles.
+            navigate("/unauthorized");
+          }
+        } else {
+          // Staff/admin/librarian: open the shared UserProfile component.
+          if (id) navigate(`/users/${id}`);
+        }
+      } else if (category === "transactions") {
+        // Transactions detail is staff-only. If current user is student and
+        // the transaction belongs to them, redirect to /student/dashboard
+        // (students can't view the staff transaction details page).
+        if (user && user.role === "student") {
+          // If the search item includes a field indicating ownership, prefer it.
+          // Otherwise, send student to their dashboard where they can view own transactions.
+          navigate("/student/dashboard");
+        } else {
+          if (item.link) navigate(item.link);
+        }
+      } else {
+        // Default: use the provided link if available.
+        if (item.link) navigate(item.link);
+      }
+    } catch (err) {
+      console.error("Failed to navigate from search result:", err);
+      if (item.link) navigate(item.link);
+    } finally {
+      setSearchOpen(false);
+      setSearchResults([]);
+      setSearchValue("");
     }
-    navigate(item.link);
-    setSearchOpen(false);
-    setSearchResults([]);
-    setSearchValue("");
   };
 
   const renderSectionIcon = (key) => {
@@ -704,18 +747,6 @@ const Layout = () => {
                   }}
                 >
                   <Chip
-                    icon={<KeyboardArrowDown sx={{ fontSize: 18 }} />}
-                    label="Last 2 days"
-                    sx={{
-                      backgroundColor: "#F8FAFC",
-                      border: "1px solid #E2E8F0",
-                      fontSize: "0.7rem",
-                      height: 32,
-                      pr: 1,
-                      "& .MuiChip-icon": { color: "#64748B" },
-                    }}
-                  />
-                  <Chip
                     label={userRoleLabel}
                     sx={{
                       backgroundColor: "#EEF2FF",
@@ -749,15 +780,17 @@ const Layout = () => {
                 )}
                 <Box
                   sx={{
-                    flexGrow: { sm: 1, md: 0 },
-                    width: { sm: "100%", md: "auto" },
-                    maxWidth: { sm: "100%", md: 420 },
+                    // allow the search box to grow on larger screens so it can be longer
+                    flexGrow: 1,
+                    width: { sm: "100%", md: "100%" },
+                    // increase search max width more for roomy desktop layouts
+                    maxWidth: { sm: "100%", md: 720 },
                     mr: { sm: 0, md: 3 },
                   }}
                 >
                   <TextField
                     fullWidth
-                    size="small"
+                    size="medium"
                     placeholder="Search by title, author, student, etc."
                     value={searchValue}
                     onChange={handleSearchChange}
@@ -793,18 +826,6 @@ const Layout = () => {
                     ml: "auto",
                   }}
                 >
-                  <Chip
-                    icon={<KeyboardArrowDown sx={{ fontSize: 18 }} />}
-                    label="Last 2 days"
-                    sx={{
-                      backgroundColor: "#F8FAFC",
-                      border: "1px solid #E2E8F0",
-                      fontSize: "0.72rem",
-                      height: 34,
-                      pr: 1,
-                      "& .MuiChip-icon": { color: "#64748B" },
-                    }}
-                  />
                   <IconButton
                     aria-label="Open notifications"
                     onClick={handleNotificationsOpen}
@@ -1000,7 +1021,8 @@ const Layout = () => {
               <Paper
                 elevation={3}
                 sx={{
-                  width: { xs: "100vw", sm: 420 },
+                  // Match search input width so the dropdown aligns nicely
+                  width: { xs: "100vw", sm: 720 },
                   maxWidth: "95vw",
                   borderRadius: "10px",
                   boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",

@@ -1,6 +1,6 @@
 ﻿/* eslint-disable unicode-bom */
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -36,7 +36,6 @@ import {
   Assignment,
   AssignmentReturn,
   Search,
-  Refresh,
   Warning,
   CheckCircle,
   Schedule,
@@ -44,18 +43,18 @@ import {
   History,
   AutoStories,
   Print,
-  
+  FilterList,
 } from "@mui/icons-material";
 import QRScanner from "../../components/QRScanner";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
-import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 
 const TransactionsList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const location = useLocation();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -67,7 +66,7 @@ const TransactionsList = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [detailsDialog, setDetailsDialog] = useState(false);
+  // detailsDialog removed: use dedicated page at /transactions/:id instead
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -81,6 +80,12 @@ const TransactionsList = () => {
   // QR scanner dialog
   const [scannerOpen, setScannerOpen] = useState(false);
   const copyIdInputRef = useRef(null);
+  // filters menu state
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const filtersOpen = Boolean(filterAnchorEl);
+  const openFilters = (e) => setFilterAnchorEl(e.currentTarget);
+  const closeFilters = () => setFilterAnchorEl(null);
+  
 
   // Focus the Copy ID input when return dialog opens or when scanner closes
   useEffect(() => {
@@ -225,8 +230,12 @@ const TransactionsList = () => {
   };
 
   const handleViewDetails = () => {
-    setDetailsDialog(true);
-    handleMenuClose(false);
+    // Navigate to the transaction details page instead of opening the inline dialog
+    const transactionId = getTransactionIdentifier(selectedTransaction);
+    handleMenuClose();
+    if (transactionId) {
+      navigate(`/transactions/${transactionId}`, { state: { from: location.pathname } });
+    }
   };
 
   const getTransactionIdentifier = (transaction) =>
@@ -568,69 +577,77 @@ const TransactionsList = () => {
         </Grid>
       </Grid>
       {/* Search and Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Search by book, borrower, or copy ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
+      <Box mb={3}>
+              <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+                <TextField
+                  placeholder="Search books by title, author, or ISBN..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{ flex: 1, minWidth: 300 }}
+                  InputProps={{
+                    startAdornment: (
                   <Search sx={{ mr: 1, color: "text.secondary" }} />
                 ),
               }}
             />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Status"
+          <IconButton
+                aria-label="Open filters"
+                onClick={openFilters}
+                size="small"
+                sx={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}
               >
-                <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="returned">Returned</MenuItem>
-                <MenuItem value="overdue">Overdue</MenuItem>
-                <MenuItem value="renewed">Renewed</MenuItem>
-                <MenuItem value="lost">Lost</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Type</InputLabel>
-              <Select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                label="Type"
-              >
-                <MenuItem value="all">All Types</MenuItem>
-                <MenuItem value="regular">Regular</MenuItem>
-                <MenuItem value="annual">Annual</MenuItem>
-                <MenuItem value="reserved">Reserved</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-                setTypeFilter("all");
-              }}
+                <FilterList />
+              </IconButton>
+            <Menu
+              anchorEl={filterAnchorEl}
+              open={filtersOpen}
+              onClose={closeFilters}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              PaperProps={{ sx: { p: 2, minWidth: 220 } }}
             >
-              Reset
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    label="Status"
+                  >
+                    <MenuItem value="all">All Status</MenuItem>
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="returned">Returned</MenuItem>
+                    <MenuItem value="overdue">Overdue</MenuItem>
+                    <MenuItem value="renewed">Renewed</MenuItem>
+                    <MenuItem value="lost">Lost</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth size="small">
+                  <InputLabel>Type</InputLabel>
+                  <Select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    label="Type"
+                  >
+                    <MenuItem value="all">All Types</MenuItem>
+                    <MenuItem value="regular">Regular</MenuItem>
+                    <MenuItem value="annual">Annual</MenuItem>
+                    <MenuItem value="reserved">Reserved</MenuItem>
+                  </Select>
+                </FormControl>
+                <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+                  <Button size="small" onClick={() => { setStatusFilter("all"); setTypeFilter("all"); closeFilters(); }}>
+                    Clear
+                  </Button>
+                  <Button size="small" variant="contained" onClick={closeFilters}>
+                    Apply
+                  </Button>
+                </Box>
+              </Box>
+            </Menu>
+          </Box>
+      </Box>
       {/* Transactions Table */}
       <Paper>
         <TableContainer sx={{ overflowX: "auto" }}>
@@ -793,117 +810,7 @@ const TransactionsList = () => {
           </MenuItem>
         )}
       </Menu>
-      {/* Transaction Details Dialog */}
-      <Dialog
-        open={detailsDialog}
-        onClose={() => setDetailsDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Transaction Details</DialogTitle>
-        <DialogContent>
-          {selectedTransaction && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Borrow ID
-                </Typography>
-                <Typography
-                  variant="body1"
-                  gutterBottom
-                  sx={{ fontFamily: "monospace" }}
-                >
-                  {getDisplayTransactionId(selectedTransaction)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Book Title
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedTransaction.bookTitle}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Copy ID
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedTransaction.copyId}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Borrower
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {selectedTransaction.borrowerName}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Status
-                </Typography>
-                <Chip
-                  icon={getStatusIcon(selectedTransaction.status)}
-                  label={selectedTransaction.status}
-                  color={getStatusColor(selectedTransaction.status)}
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Borrow Date
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {formatDate(selectedTransaction.borrowDate)}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Due Date
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {formatDate(resolveDueDateValue(selectedTransaction))}
-                </Typography>
-              </Grid>
-              {selectedTransaction.returnDate && (
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Return Date
-                  </Typography>
-                  <Typography variant="body1" gutterBottom>
-                    {formatDate(selectedTransaction.returnDate)}
-                  </Typography>
-                </Grid>
-              )}
-              {selectedTransaction.fine > 0 && (
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Fine Amount
-                  </Typography>
-                  <Typography variant="body1" gutterBottom color="error">
-                    {formatCurrency(selectedTransaction.fine)}
-                  </Typography>
-                </Grid>
-              )}
-              {selectedTransaction.notes && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Notes
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedTransaction.notes}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailsDialog(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      {/* Inline Transaction Details dialog removed in favor of the dedicated /transactions/:id page */}
       {/* Return confirmation dialog */}
       <Dialog
         open={returnDialogOpen}
