@@ -211,6 +211,21 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // If the stored password was in plaintext (legacy), migrate it to a bcrypt hash now
+    try {
+      if (isPasswordValid && typeof userData.password === 'string' && !/^\$2[aby]\$/.test(userData.password)) {
+        const bcrypt = require('bcrypt');
+        const newHashed = await bcrypt.hash(password, 10);
+        // update stored password to hashed value
+        await req.dbAdapter.updateUser(userData._id, { password: newHashed, updatedAt: new Date() });
+        // keep local copy consistent
+        userData.password = newHashed;
+      }
+    } catch (migrateErr) {
+      console.error('Password migration error for user', userData.username, migrateErr);
+      // Do not fail login just because migration failed; proceed
+    }
+
     // Update last login
     await req.dbAdapter.updateUser(userData._id, {
       lastLoginAt: new Date()

@@ -261,6 +261,7 @@ const ReportsPage = () => {
 
       const [
         dashboardResponse,
+        statsResponse,
         circulation,
         popular,
         userActivity,
@@ -270,6 +271,7 @@ const ReportsPage = () => {
         studentList,
       ] = await Promise.all([
         reportsAPI.getDashboard(params),
+        reportsAPI.getStats(),
         reportsAPI.getCirculation(params),
         reportsAPI.getPopularBooks(params),
         reportsAPI.getUserActivity(params),
@@ -279,9 +281,11 @@ const ReportsPage = () => {
         studentsAPI.getAll(studentParams), // Use filtered params for students
       ]);
 
+      // Merge dashboard and stats endpoints so overview cards have all expected fields
       setDashboardStats({
         ...initialDashboardStats,
         ...(dashboardResponse?.data || {}),
+        ...(statsResponse?.data || {}),
       });
 
       setReportData({
@@ -403,7 +407,7 @@ const ReportsPage = () => {
           }}
         >
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+            <Typography variant="h4" sx={{ fontWeight: 600 }} color={"white"}>
               Reports & Analytics
             </Typography>
             <Typography variant="body2" color="text.secondary">

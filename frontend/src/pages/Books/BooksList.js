@@ -139,7 +139,7 @@ const BooksList = () => {
     <Box>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" component="h1" color={"white"}>
           Books Management
         </Typography>
 
@@ -238,7 +238,6 @@ const BooksList = () => {
 
       {/* Action Menu */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
-        <MenuItem onClick={() => { navigate(`/books/${selectedBook?.id}`); handleMenuClose(); }}><Visibility sx={{ mr: 1 }} /> View Details</MenuItem>
         {hasPermission("books.update") && (<MenuItem onClick={() => { navigate(`/books/${selectedBook?.id}/edit`); handleMenuClose(); }}><Edit sx={{ mr: 1 }} /> Edit Book</MenuItem>)}
         {hasPermission("books.delete") && (<MenuItem onClick={() => { setDeleteDialogOpen(true); handleMenuClose(); }}><Delete sx={{ mr: 1 }} /> Delete Book</MenuItem>)}
       </Menu>

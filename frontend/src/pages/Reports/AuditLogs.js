@@ -350,7 +350,7 @@ const AuditLogs = () => {
       <Box display="flex" flexDirection="column" gap={3}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="h4">Audit Logs</Typography>
+            <Typography variant="h4" color={"white"}>Audit Logs</Typography>
             <Typography variant="body2" color="text.secondary">
               Monitor recent activity, usage patterns, and notable security events.
             </Typography>

@@ -28,10 +28,10 @@ const drawCardFront = async (doc, student) => {
   // Title centered at top
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Odionngan National High School ', pageWidth / 2, margin + 2, { align: 'center' });
+  doc.text('Odiongan National High School ', pageWidth / 2, margin + 2, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
-  doc.text('Odiongan, Romblon', pageWidth / 2, margin + 6, { align: 'center' });
+  doc.text('Dapawan, Odiongan, Romblon', pageWidth / 2, margin + 6, { align: 'center' });
   doc.setFontSize(10);
   doc.text('Library Card', pageWidth / 2, margin + 12, { align: 'center' });
   
@@ -189,7 +189,7 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
   
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text('Odiongan, Romblon', centerText, addressLine, { align: 'center' });
+  doc.text('Dapawan, Odiongan, Romblon', centerText, addressLine, { align: 'center' });
 
   
   doc.setFontSize(10);
@@ -219,7 +219,7 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
   doc.text(`ID: ${studentData?.libraryCardNumber || studentData?.studentId || 'N/A'}`, 5, 38);
 
   doc.text('Books:', 5, 50);
-  doc.text('Book ID', margin + pageWidth - ((pageWidth/3)*2), 50);
+  doc.text('ISBN', margin + pageWidth - ((pageWidth/3)*2), 50);
   doc.text('Copy ID:', margin + pageWidth - ((pageWidth/3)), 50);
   
   let y = 58;
@@ -230,7 +230,7 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
     }
     console.log(book);
     doc.text(`${index + 1}. ${book.title || 'Unknown'}`, 5, y);
-    doc.text(` ${book.bookId || 'Unknown'}`, margin + pageWidth - ((pageWidth/3)*2), y);
+    doc.text(` ${book.isbn || 'Unknown'}`, margin + pageWidth - ((pageWidth/3)*2), y);
     doc.text(` ${book.copyId || 'Unknown'}`, margin + pageWidth - ((pageWidth/3)), y);
     y += 6;
   });

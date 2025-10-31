@@ -93,14 +93,26 @@ const generateToken = (user) => {
 
 // Helper function to hash password (simplified for testing)
 const hashPassword = async (password) => {
-  return password; // No hashing for now - just return plain text
+  const bcrypt = require('bcrypt');
+  // Use bcrypt with a reasonable cost factor
+  const SALT_ROUNDS = 10;
+  return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
 // Helper function to verify password using bcrypt
 const verifyPassword = async (password, storedPassword) => {
   try {
     const bcrypt = require('bcrypt');
-    return await bcrypt.compare(password, storedPassword);
+    if (!storedPassword) return false;
+
+    // Detect bcrypt hash prefix ($2a$, $2b$, $2y$). If it's a bcrypt hash, use bcrypt.compare.
+    if (typeof storedPassword === 'string' && /^\$2[aby]\$/.test(storedPassword)) {
+      return await bcrypt.compare(password, storedPassword);
+    }
+
+    // Fallback: stored password appears to be plaintext (legacy). Compare directly.
+    // This keeps compatibility with older records until they are migrated to hashed values.
+    return password === storedPassword;
   } catch (error) {
     console.error('Password verification error:', error);
     return false;

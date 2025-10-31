@@ -228,30 +228,36 @@ router.get('/dashboard', async(req, res) => {
             });
         }
 
-        // Calculate popular books
+        // Calculate popular books (support transactions that store books under t.books or t.items)
         const bookBorrowCounts = {};
         filteredTransactions.forEach(t => {
             if (t.books && Array.isArray(t.books)) {
                 t.books.forEach(book => {
-                    bookBorrowCounts[book.id] = (bookBorrowCounts[book.id] || 0) + 1;
+                    const bid = book.id || book._id || book.bookId;
+                    if (bid) bookBorrowCounts[bid] = (bookBorrowCounts[bid] || 0) + 1;
+                });
+            } else if (t.items && Array.isArray(t.items)) {
+                t.items.forEach(item => {
+                    const bid = item.bookId || item.book_id || item.book;
+                    if (bid) bookBorrowCounts[bid] = (bookBorrowCounts[bid] || 0) + 1;
                 });
             }
         });
 
         const popularBooks = Object.entries(bookBorrowCounts)
             .map(([bookId, count]) => {
-                const book = books.find(b => b.id === bookId);
+                const book = books.find(b => b.id === bookId || b._id === bookId) || {};
                 return {
                     id: bookId,
-                    title: book ? book.title : 'Unknown',
-                    author: book ? book.author : 'Unknown',
+                    title: book.title || 'Unknown',
+                    author: book.author || 'Unknown',
                     borrowCount: count
                 };
             })
             .sort((a, b) => b.borrowCount - a.borrowCount)
             .slice(0, 10);
 
-        // Get recent activity
+        // Get recent activity (include items[] fallback for bookCount)
         const recentActivity = filteredTransactions
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .slice(0, 10)
@@ -260,7 +266,7 @@ router.get('/dashboard', async(req, res) => {
                 type: t.status,
                 date: t.borrowDate || t.createdAt,
                 userId: t.userId,
-                bookCount: t.books ? t.books.length : 0
+                bookCount: t.books ? t.books.length : (t.items ? t.items.length : 0)
             }));
 
         res.json({
@@ -338,12 +344,18 @@ router.get('/popular-books', async(req, res) => {
             });
         }
 
-        // Count book borrows
+        // Count book borrows (support t.books and t.items)
         const bookCounts = {};
         filtered.forEach(t => {
             if (t.books && Array.isArray(t.books)) {
                 t.books.forEach(book => {
-                    bookCounts[book.id] = (bookCounts[book.id] || 0) + 1;
+                    const bid = book.id || book._id || book.bookId;
+                    if (bid) bookCounts[bid] = (bookCounts[bid] || 0) + 1;
+                });
+            } else if (t.items && Array.isArray(t.items)) {
+                t.items.forEach(item => {
+                    const bid = item.bookId || item.book_id || item.book;
+                    if (bid) bookCounts[bid] = (bookCounts[bid] || 0) + 1;
                 });
             }
         });
@@ -523,10 +535,12 @@ router.get('/overdue', async(req, res) => {
             const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
             const fine = daysOverdue * 5; // $5 per day fine
 
-            // Get book titles
-            const bookTitles = t.books && t.books.length > 0 ?
-                t.books.map(b => b.title || 'Unknown').join(', ') :
-                'Unknown';
+            // Get book titles (support t.items fallback)
+            const bookTitles = (t.books && t.books.length > 0)
+                ? t.books.map(b => b.title || 'Unknown').join(', ')
+                : (t.items && t.items.length > 0)
+                    ? t.items.map(it => it.title || it.isbn || it.bookId || 'Unknown').join(', ')
+                    : 'Unknown';
 
             return {
                 id: t.id,
@@ -547,3 +561,245 @@ router.get('/overdue', async(req, res) => {
 });
 
 module.exports = router;
+
+// Export reports as CSV
+router.get('/export/:type', async (req, res) => {
+    try {
+        const { type } = req.params;
+        const { startDate, endDate } = req.query;
+
+        if (!req.dbAdapter) {
+            return res.status(500).json({ message: 'Database adapter not available' });
+        }
+
+        const transactions = await req.dbAdapter.findInCollection('transactions', {});
+        const users = await req.dbAdapter.findInCollection('users', {});
+        const books = await req.dbAdapter.findInCollection('books', {});
+
+        // Helper: convert array of objects to CSV string
+        const toCSV = (arr) => {
+            if (!Array.isArray(arr) || arr.length === 0) return '';
+            const headers = Object.keys(arr[0]);
+            const escape = (v) => {
+                if (v === null || v === undefined) return '';
+                const s = String(v);
+                if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            };
+            const rows = [headers.join(',')];
+            arr.forEach(r => {
+                const row = headers.map(h => escape(r[h]));
+                rows.push(row.join(','));
+            });
+            return rows.join('\n');
+        };
+
+        let data = [];
+
+        switch ((type || '').toLowerCase()) {
+            case 'circulation': {
+                // reuse circulation logic: group by date
+                let filtered = transactions;
+                if (startDate && endDate) {
+                    filtered = transactions.filter(t => {
+                        const tDate = new Date(t.borrowDate || t.createdAt);
+                        return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+                    });
+                }
+                const dailyData = {};
+                filtered.forEach(t => {
+                    const date = new Date(t.borrowDate || t.createdAt).toDateString();
+                    if (!dailyData[date]) dailyData[date] = { date, borrowed: 0, returned: 0, newUsers: 0, finesCollected: 0 };
+                    if (t.status === 'borrowed') dailyData[date].borrowed++;
+                    if (t.status === 'returned') dailyData[date].returned++;
+                    if (t.fine && t.finePaid) dailyData[date].finesCollected += t.fine;
+                });
+                if (startDate && endDate) {
+                    // count new users
+                    users.forEach(u => {
+                        const userDate = new Date(u.createdAt).toDateString();
+                        if (dailyData[userDate]) dailyData[userDate].newUsers++;
+                    });
+                }
+                data = Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
+                break;
+            }
+            case 'popular-books': {
+                let filtered = transactions;
+                if (startDate && endDate) {
+                    filtered = transactions.filter(t => {
+                        const tDate = new Date(t.borrowDate || t.createdAt);
+                        return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+                    });
+                }
+                const bookCounts = {};
+                filtered.forEach(t => {
+                    if (t.books && Array.isArray(t.books)) {
+                        t.books.forEach(b => {
+                            bookCounts[b.id] = (bookCounts[b.id] || 0) + 1;
+                        });
+                    } else if (t.items && Array.isArray(t.items)) {
+                        t.items.forEach(it => {
+                            const bookId = it.bookId || it.book_id || it.book;
+                            if (bookId) bookCounts[bookId] = (bookCounts[bookId] || 0) + 1;
+                        });
+                    }
+                });
+                data = Object.entries(bookCounts).map(([bookId, count]) => {
+                    const book = books.find(b => b.id === bookId || b._id === bookId) || {};
+                    return {
+                        id: bookId,
+                        title: book.title || 'Unknown',
+                        author: book.author || 'Unknown',
+                        category: book.category || 'Uncategorized',
+                        borrowCount: count,
+                        averageRating: book.rating || ''
+                    };
+                }).sort((a, b) => b.borrowCount - a.borrowCount).slice(0, 1000);
+                break;
+            }
+            case 'user-activity': {
+                let filtered = transactions;
+                if (startDate && endDate) {
+                    filtered = transactions.filter(t => {
+                        const tDate = new Date(t.borrowDate || t.createdAt);
+                        return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+                    });
+                }
+                const userActivity = {};
+                filtered.forEach(t => {
+                    if (!userActivity[t.userId]) userActivity[t.userId] = { borrowed: 0, returned: 0, totalFines: 0, lastActivity: t.createdAt };
+                    if (t.status === 'borrowed') userActivity[t.userId].borrowed++;
+                    if (t.status === 'returned') userActivity[t.userId].returned++;
+                    if (t.fine) userActivity[t.userId].totalFines += t.fine;
+                    if (new Date(t.createdAt) > new Date(userActivity[t.userId].lastActivity)) userActivity[t.userId].lastActivity = t.createdAt;
+                });
+                data = Object.entries(userActivity).map(([userId, activity]) => {
+                    const user = users.find(u => u.id === userId || u._id === userId) || {};
+                    return {
+                        id: userId,
+                        name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        role: user.role || '',
+                        borrowed: activity.borrowed,
+                        returned: activity.returned,
+                        totalFines: activity.totalFines,
+                        lastActivity: activity.lastActivity
+                    };
+                }).sort((a, b) => b.borrowed - a.borrowed);
+                break;
+            }
+            case 'overdue': {
+                const now = new Date();
+                const overdueTransactions = transactions.filter(t => {
+                    if (t.status !== 'borrowed') return false;
+                    if (!t.dueDate) return false;
+                    const dueDate = new Date(t.dueDate);
+                    return dueDate < now;
+                });
+                data = overdueTransactions.map(t => {
+                    const user = users.find(u => u.id === t.userId || u._id === t.userId) || {};
+                    const bookTitles = t.books && t.books.length > 0 ? t.books.map(b => b.title || 'Unknown').join(', ') : (t.items && t.items.length > 0 ? (t.items.map(it => it.title || it.isbn || it.bookId).join(', ')) : 'Unknown');
+                    const dueDate = t.dueDate;
+                    const daysOverdue = Math.floor((new Date() - new Date(dueDate)) / (1000 * 60 * 60 * 24));
+                    const fine = daysOverdue * 5;
+                    return {
+                        id: t.id || t._id,
+                        bookTitle: bookTitles,
+                        borrowerName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        dueDate: dueDate,
+                        daysOverdue,
+                        fine,
+                        status: daysOverdue > 30 ? 'Critical' : 'Overdue'
+                    };
+                });
+                break;
+            }
+            case 'fines': {
+                let filtered = transactions;
+                if (startDate && endDate) {
+                    filtered = transactions.filter(t => {
+                        const tDate = new Date(t.returnDate || t.createdAt);
+                        return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+                    });
+                }
+                const fineTransactions = filtered.filter(t => (t.fine || 0) > 0).map(t => {
+                    const user = users.find(u => u.id === t.userId || u._id === t.userId) || {};
+                    const bookTitles = t.books && t.books.length > 0 ? t.books.map(b => b.title || 'Unknown').join(', ') : (t.items && t.items.length > 0 ? t.items.map(it => it.title || it.isbn || it.bookId).join(', ') : 'Unknown');
+                    return {
+                        id: t.id || t._id,
+                        date: t.returnDate || t.createdAt,
+                        userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        bookTitle: bookTitles,
+                        amount: t.fine || 0,
+                        reason: 'Late Return',
+                        status: t.finePaid ? 'paid' : 'unpaid'
+                    };
+                });
+                data = fineTransactions;
+                break;
+            }
+            case 'inventory': {
+                data = books.map(book => {
+                    let totalCopies = 0;
+                    let available = 0;
+                    let borrowed = 0;
+                    let lostDamaged = 0;
+                    if (book.copies && Array.isArray(book.copies)) {
+                        totalCopies = book.copies.length;
+                        available = book.copies.filter(c => c.status === 'available').length;
+                        borrowed = book.copies.filter(c => c.status === 'borrowed').length;
+                        lostDamaged = book.copies.filter(c => c.status === 'lost' || c.status === 'damaged').length;
+                    }
+                    return {
+                        id: book.id,
+                        title: book.title || 'Unknown',
+                        author: book.author || 'Unknown',
+                        category: book.category || 'Uncategorized',
+                        totalCopies,
+                        available,
+                        borrowed,
+                        lostDamaged
+                    };
+                });
+                break;
+            }
+            case 'transactions_recent':
+            case 'transactions-recent':
+            case 'recent-transactions': {
+                const recent = transactions.slice(-100).reverse();
+                data = recent.map(t => {
+                    const user = users.find(u => u.id === t.userId || u._id === t.userId) || {};
+                    let bookTitle = 'Unknown';
+                    if (t.items && t.items.length > 0) {
+                        const item = t.items[0];
+                        const book = books.find(b => b.id === item.bookId || b._id === item.bookId);
+                        if (book) bookTitle = book.title;
+                    }
+                    return {
+                        id: t.id || t._id,
+                        studentId: user ? user.studentId : '',
+                        student: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        title: bookTitle,
+                        author: '',
+                        isbn: '',
+                        recordDate: t.borrowDate,
+                        returnedDate: t.returnDate
+                    };
+                });
+                break;
+            }
+            default:
+                return res.status(400).json({ message: 'Unknown export type' });
+        }
+
+        const csv = toCSV(data);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${type}_report.csv"`);
+        res.send(csv);
+    } catch (error) {
+        console.error('Export report error:', error);
+        res.status(500).json({ message: 'Failed to export report' });
+    }
+});

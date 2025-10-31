@@ -266,9 +266,9 @@ const StudentsList = () => {
         <Typography
           variant="h4"
           component="h1"
-          sx={{ fontWeight: 600, color: "#1E293B" }}
+          sx={{ fontWeight: 600, color: "#ffffffff" }}
         >
-          Students{" "}
+          Students Management{" "}
         </Typography>{" "}
         <Box display="flex" gap={2}>
           <Button

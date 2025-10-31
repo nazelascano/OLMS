@@ -4,7 +4,7 @@ import { Box, Typography, Paper } from "@mui/material";
 const StudentDashboard = () => {
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h1" sx={{ mb: 3, fontSize: "1.5rem", fontWeight: 600, color: "white" }}>
         Student Dashboard{" "}
       </Typography>{" "}
       <Paper sx={{ p: 3 }}>

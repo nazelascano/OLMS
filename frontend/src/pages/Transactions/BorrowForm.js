@@ -1,4 +1,4 @@
-﻿/* eslint-disable unicode-bom */
+/* eslint-disable unicode-bom */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {

@@ -1,4 +1,4 @@
-﻿/* eslint-disable unicode-bom */
+/* eslint-disable unicode-bom */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -305,7 +305,7 @@ const TransactionsList = () => {
           const bookData = responseBook.data || [];
           let newBookData = {
             title: bookData.title,
-            bookId: book.bookId,
+            isbn: book.isbn,
             copyId: book.copyId,
           };
           booksData.push(newBookData);
@@ -455,7 +455,7 @@ const TransactionsList = () => {
         gap={2}
         mb={3}
       >
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
+        <Typography variant="h4" sx={{ flexGrow: 1 }} color={"white"}>
           Transaction Management
         </Typography>
         {(canManageTransactions || canManageAnnualBorrowing) && (
@@ -685,7 +685,7 @@ const TransactionsList = () => {
                       transaction.copyId
                     }
                   >
-                    <TableCell sx={{ maxWidth: 200 }}>
+                    <TableCell sx={{ maxWidth: 220 }}>
                       <Typography
                         variant="body2"
                         sx={{ fontFamily: "monospace", wordBreak: "break-all" }}
@@ -705,7 +705,7 @@ const TransactionsList = () => {
                         {transaction.author || ""}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ whiteSpace: "nowrap" }}>
+                    <TableCell sx={{ whiteSpace: "nowrap", wordBreak: "break-all" }}>
                       {transaction.copyId || "-"}
                     </TableCell>
                     <TableCell sx={{ maxWidth: 200 }}>
@@ -801,12 +801,6 @@ const TransactionsList = () => {
           <MenuItem onClick={handleRenewBook}>
             <Schedule sx={{ mr: 1 }} />
             Renew Book
-          </MenuItem>
-        )}
-        {canManageTransactions && selectedTransaction && (
-          <MenuItem onClick={() => { handlePrintReceiptFor(selectedTransaction); handleMenuClose(); }}>
-            <Print sx={{ mr: 1 }} />
-            Print Receipt
           </MenuItem>
         )}
       </Menu>

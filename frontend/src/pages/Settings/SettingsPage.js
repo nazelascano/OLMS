@@ -503,7 +503,7 @@ const SettingsPage = () => {
         alignItems="center"
         mb={3}
       >
-        <Typography variant="h4">System Settings</Typography>
+        <Typography variant="h4" color={"white"}>System Settings</Typography>
         <Box>
           <Button
             variant="outlined"
