@@ -153,6 +153,14 @@ router.post('/login', async (req, res) => {
     let userData = null;
 
     // Check if it's a username (not an email)
+    // Also append to debug file to capture logs from background server
+    try {
+      const fs = require('fs');
+      const logLine = `${new Date().toISOString()}\tAUTH_DEBUG\tlookup\tusernameOrEmail=${usernameOrEmail}\tfound=${userData?userData.username:'none'}\tid=${userData?userData._id:'none'}\tpwdPrefix=${userData&&userData.password?String(userData.password).slice(0,6):'no-password'}\n`;
+      fs.appendFileSync(require('path').join(__dirname, '../tmp_auth_debug.log'), logLine);
+    } catch (e) {
+      // ignore
+    }
     if (!usernameOrEmail.includes('@')) {
       // Look up by username
       const users = await req.dbAdapter.getUsers({ username: usernameOrEmail });

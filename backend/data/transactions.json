@@ -543,5 +543,726 @@
     "_id": "mh8x53wvf0n9s",
     "returnNotes": "",
     "returnedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761958240277_r9884g",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T00:50:40.277Z",
+    "updatedAt": "2025-11-01T00:50:40.278Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfkfz86nhcd4"
+  },
+  {
+    "id": "borrow_1761958620094_msmrdx",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "approve-copy-1",
+        "bookId": "",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "createdAt": "2025-11-01T00:57:00.094Z",
+    "updatedAt": "2025-11-01T00:57:00.133Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhfko4anzmjxd",
+    "borrowDate": "2025-11-01T00:57:00.132Z",
+    "dueDate": "2025-11-15T00:57:00.132Z",
+    "updatedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761958620513_reep47",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T00:57:00.513Z",
+    "updatedAt": "2025-11-01T00:57:00.513Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfko4m9w6tcz"
+  },
+  {
+    "id": "borrow_1761958962343_w1gakt",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:02:42.343Z",
+    "updatedAt": "2025-11-01T01:02:42.390Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhfkvgdkb5cc2",
+    "rejectedAt": "2025-11-01T01:02:42.388Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761958962724_twd2rh",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "approve-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:02:42.724Z",
+    "updatedAt": "2025-11-01T01:02:42.724Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhfkvgo4bv6dg"
+  },
+  {
+    "id": "borrow_1761958963360_w7kgym",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:02:43.360Z",
+    "updatedAt": "2025-11-01T01:02:43.361Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfkvh5tdwasy"
+  },
+  {
+    "id": "borrow_1761958986846_bm0nef",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "approve-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:03:06.846Z",
+    "updatedAt": "2025-11-01T01:03:06.847Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhfkvza7gabe5"
+  },
+  {
+    "id": "borrow_1761958987202_1fy3bo",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:03:07.202Z",
+    "updatedAt": "2025-11-01T01:03:07.253Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhfkvzk3i9zfe",
+    "rejectedAt": "2025-11-01T01:03:07.244Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761958987910_g84x61",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:03:07.910Z",
+    "updatedAt": "2025-11-01T01:03:07.910Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfkw03qubeyr"
+  },
+  {
+    "id": "borrow_1761959028159_9m59pe",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "approve-copy-1",
+        "bookId": "",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "createdAt": "2025-11-01T01:03:48.159Z",
+    "updatedAt": "2025-11-01T01:03:48.190Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhfkwv5t6r8sp",
+    "borrowDate": "2025-11-01T01:03:48.189Z",
+    "dueDate": "2025-11-15T01:03:48.189Z",
+    "updatedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761959028551_in32to",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:03:48.551Z",
+    "updatedAt": "2025-11-01T01:03:48.582Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhfkwvgo0rmg8",
+    "rejectedAt": "2025-11-01T01:03:48.580Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761959029173_ucwwyz",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:03:49.173Z",
+    "updatedAt": "2025-11-01T01:03:49.173Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfkwvxx710xw"
+  },
+  {
+    "id": "borrow_1761959787207_h1kki9",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "approve-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:16:27.207Z",
+    "updatedAt": "2025-11-01T01:16:27.208Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhfld4ugb083t"
+  },
+  {
+    "id": "borrow_1761959787302_6nm0au",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "nonexistent-copy",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:16:27.302Z",
+    "updatedAt": "2025-11-01T01:16:27.303Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Missing copy test",
+    "_id": "mhfld4x30165y"
+  },
+  {
+    "id": "borrow_1761959787769_g5te14",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:16:27.769Z",
+    "updatedAt": "2025-11-01T01:16:27.818Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhfld5a34079s",
+    "rejectedAt": "2025-11-01T01:16:27.812Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761959788551_0t4kgc",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:16:28.551Z",
+    "updatedAt": "2025-11-01T01:16:28.552Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfld5vr95d0l"
+  },
+  {
+    "id": "borrow_1761959873070_3tdedu",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "approve-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:17:53.070Z",
+    "updatedAt": "2025-11-01T01:17:53.071Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhflez3jlot2i"
+  },
+  {
+    "id": "borrow_1761959873151_r62nw6",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "nonexistent-copy",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:17:53.151Z",
+    "updatedAt": "2025-11-01T01:17:53.151Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Missing copy test",
+    "_id": "mhflez5rtyigk"
+  },
+  {
+    "id": "borrow_1761959873585_dj26jg",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:17:53.585Z",
+    "updatedAt": "2025-11-01T01:17:53.615Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhflezhtxyqw8",
+    "rejectedAt": "2025-11-01T01:17:53.612Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761959874258_mbaskb",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:17:54.258Z",
+    "updatedAt": "2025-11-01T01:17:54.259Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhflf00j90rv2"
+  },
+  {
+    "id": "borrow_1761959903258_6pn9zv",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "nonexistent-copy",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:18:23.259Z",
+    "updatedAt": "2025-11-01T01:18:23.261Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Missing copy test",
+    "_id": "mhflfme5szoli"
+  },
+  {
+    "id": "borrow_1761959903652_e5u1q8",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:18:23.652Z",
+    "updatedAt": "2025-11-01T01:18:23.688Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhflfmp1gzkk0",
+    "rejectedAt": "2025-11-01T01:18:23.684Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761959903980_wix5jp",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:18:23.980Z",
+    "updatedAt": "2025-11-01T01:18:23.981Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhflfmy48vfim"
+  },
+  {
+    "id": "borrow_1761959946204_t4800t",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "bookId": "",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "createdAt": "2025-11-01T01:19:06.204Z",
+    "updatedAt": "2025-11-01T01:19:06.247Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhflgjj1ri5lj",
+    "borrowDate": "2025-11-01T01:19:06.244Z",
+    "dueDate": "2025-11-15T01:19:06.244Z",
+    "updatedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "id": "borrow_1761959946409_o6wfnr",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "nonexistent-copy",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:19:06.409Z",
+    "updatedAt": "2025-11-01T01:19:06.411Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Missing copy test",
+    "_id": "mhflgjorgudfe"
+  },
+  {
+    "id": "borrow_1761959946782_3dj4uv",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:19:06.782Z",
+    "updatedAt": "2025-11-01T01:19:06.836Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhflgjz3r20v2",
+    "rejectedAt": "2025-11-01T01:19:06.826Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761959947427_yippgh",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:19:07.427Z",
+    "updatedAt": "2025-11-01T01:19:07.427Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhflgkgz8qavy"
+  },
+  {
+    "id": "borrow_1761959969970_0u22jf",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:19:29.970Z",
+    "updatedAt": "2025-11-01T01:19:29.971Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhflh1v7jy9pe"
+  },
+  {
+    "id": "borrow_1761959970060_fvtjvu",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "nonexistent-copy",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:19:30.060Z",
+    "updatedAt": "2025-11-01T01:19:30.060Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Missing copy test",
+    "_id": "mhflh1xoykawm"
+  },
+  {
+    "id": "borrow_1761959970444_7g542i",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:19:30.444Z",
+    "updatedAt": "2025-11-01T01:19:30.477Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhflh28d0x27h",
+    "rejectedAt": "2025-11-01T01:19:30.473Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761959971020_17th0t",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:19:31.020Z",
+    "updatedAt": "2025-11-01T01:19:31.020Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhflh2ocold9b"
+  },
+  {
+    "id": "borrow_1761960013751_il64b6",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:20:13.751Z",
+    "updatedAt": "2025-11-01T01:20:13.752Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Approve flow test",
+    "_id": "mhflhzncbkivc"
+  },
+  {
+    "id": "borrow_1761960013826_tns6tf",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "nonexistent-copy",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:20:13.826Z",
+    "updatedAt": "2025-11-01T01:20:13.826Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Missing copy test",
+    "_id": "mhflhzpesviec"
+  },
+  {
+    "id": "borrow_1761960014342_oe3s5d",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "reject-copy-1",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "rejected",
+    "createdAt": "2025-11-01T01:20:14.342Z",
+    "updatedAt": "2025-11-01T01:20:14.394Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Reject flow test",
+    "_id": "mhfli03qdkpi2",
+    "rejectedAt": "2025-11-01T01:20:14.387Z",
+    "rejectedBy": "mgnhicbwhxfy9",
+    "rejectReason": "Not available for loan"
+  },
+  {
+    "id": "borrow_1761960015185_kiyfqr",
+    "userId": "mgnhicbwhxfy9",
+    "items": [
+      {
+        "copyId": "copy-1",
+        "bookId": "",
+        "status": "requested"
+      },
+      {
+        "copyId": "copy-2",
+        "bookId": "",
+        "status": "requested"
+      }
+    ],
+    "type": "regular",
+    "status": "requested",
+    "createdAt": "2025-11-01T01:20:15.185Z",
+    "updatedAt": "2025-11-01T01:20:15.186Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "notes": "Student request test",
+    "_id": "mhfli0r62athg"
   }
 ]

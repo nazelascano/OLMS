@@ -269,6 +269,21 @@ router.get('/', verifyToken, async (req, res) => {
         return;
       }
 
+      // Surface borrow requests to staff as actionable notifications
+      if (status === 'requested' && role !== 'student') {
+        notifications.push({
+          id: `request-${baseId}`,
+          type: 'request',
+          title: summary.title || 'Borrow request',
+          message: `${summary.borrower || 'A borrower'} requested this item.`,
+          timestamp: summary.timestamp || toIsoString(now),
+          severity: 'info',
+          link,
+          meta,
+        });
+        return;
+      }
+
       if (dueDate < now) {
         const overdueDays = daysOverdue(dueDate, now);
         notifications.push({
@@ -329,6 +344,83 @@ router.get('/', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Notifications fetch error:', error);
     res.status(500).json({ message: 'Failed to fetch notifications' });
+  }
+});
+
+// Persistent notifications endpoints
+router.get('/persistent', verifyToken, async (req, res) => {
+  try {
+    const role = req.user?.role || 'student';
+    let items = await req.dbAdapter.findInCollection('notifications', {});
+    // If student, filter notifications targeted to the user
+    if (role === 'student') {
+      const identifiers = collectUserIdentifiers(req.user);
+      items = items.filter(n => {
+        if (!n.recipients || !Array.isArray(n.recipients)) return false;
+        return n.recipients.some(r => identifiers.has(String(r)) || ['staff','librarian','admin'].includes(r));
+      });
+    }
+    items.sort((a,b) => new Date(b.createdAt || b.timestamp || 0) - new Date(a.createdAt || a.timestamp || 0));
+    res.json({ notifications: items });
+  } catch (error) {
+    console.error('Get persistent notifications error:', error);
+    res.status(500).json({ message: 'Failed to fetch persistent notifications' });
+  }
+});
+
+router.post('/', verifyToken, async (req, res) => {
+  try {
+    const { title, message, type, recipients, meta } = req.body || {};
+    if (!title || !message) return res.status(400).json({ message: 'Title and message required' });
+    const entry = {
+      title,
+      message,
+      type: type || 'info',
+      recipients: Array.isArray(recipients) ? recipients : [],
+      meta: meta || {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      readBy: []
+    };
+    const created = await req.dbAdapter.insertIntoCollection('notifications', entry);
+    res.status(201).json(created);
+  } catch (error) {
+    console.error('Create notification error:', error);
+    res.status(500).json({ message: 'Failed to create notification' });
+  }
+});
+
+router.put('/:id/read', verifyToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { read } = req.body || {};
+    const item = await req.dbAdapter.findOneInCollection('notifications', { id }) || await req.dbAdapter.findOneInCollection('notifications', { _id: id });
+    if (!item) return res.status(404).json({ message: 'Notification not found' });
+    const readBy = Array.isArray(item.readBy) ? item.readBy.slice() : [];
+    if (read) {
+      if (!readBy.includes(req.user.id)) readBy.push(req.user.id);
+    } else {
+      const idx = readBy.indexOf(req.user.id);
+      if (idx >= 0) readBy.splice(idx, 1);
+    }
+    const q = item.id ? { id: item.id } : { _id: item._id };
+    const updated = await req.dbAdapter.updateInCollection('notifications', q, { readBy, updatedAt: new Date() });
+    res.json(updated);
+  } catch (error) {
+    console.error('Mark read error:', error);
+    res.status(500).json({ message: 'Failed to update notification' });
+  }
+});
+
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const deleted = await req.dbAdapter.deleteFromCollection('notifications', { id }) || await req.dbAdapter.deleteFromCollection('notifications', { _id: id });
+    if (!deleted) return res.status(404).json({ message: 'Notification not found' });
+    res.json({ message: 'Deleted' });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({ message: 'Failed to delete notification' });
   }
 });
 

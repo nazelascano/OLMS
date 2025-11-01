@@ -141,7 +141,7 @@ const UsersList = () => {
   };
 
   const filteredUsers = users.filter((user) => {
-    const haystack = `${user.firstName || ""} ${user.lastName || ""} ${user.email || ""} ${user.username || ""} ${user.studentNumber || ""}`.toLowerCase();
+    const haystack = `${user.firstName || ""} ${user.lastName || ""} ${user.email || ""} ${user.username || ""} ${user.studentNumber || user.studentId || user.libraryCardNumber || (user.library && user.library.cardNumber) || ""}`.toLowerCase();
     const matchesSearch = !searchTerm || haystack.includes(searchTerm.toLowerCase());
     const matchesRole = !roleFilter || user.role === roleFilter;
     return matchesSearch && matchesRole;
@@ -286,7 +286,7 @@ const UsersList = () => {
                   <TableCell>
                     <Chip label={user.role} size="small" color={getRoleColor(user.role)} />
                   </TableCell>
-                  <TableCell>{user.studentNumber || "-"}</TableCell>
+                  <TableCell>{user.studentNumber || user.studentId || user.libraryCardNumber || (user.library && user.library.cardNumber) || "-"}</TableCell>
                   <TableCell>{user.curriculum || "-"}</TableCell>
                   <TableCell>
                     <Chip label={user.isActive ? "Active" : "Inactive"} size="small" color={getStatusColor(user.isActive)} icon={user.isActive ? <CheckCircle /> : <Block />} />

@@ -62,7 +62,9 @@ const sanitizeUserSummary = (user) => {
         username: user.username || '',
         email: user.email || '',
         role: user.role || 'student',
+    // normalize: provide both studentId and studentNumber for client compatibility
     studentId: user.studentId || user.studentNumber || '',
+    studentNumber: user.studentNumber || user.studentId || (user.library && user.library.cardNumber) || user.libraryCardNumber || '',
     curriculum: user.curriculum || '',
         gradeLevel: user.gradeLevel || user.grade || '',
         libraryCardNumber: user.library?.cardNumber || user.libraryCardNumber || '',
@@ -225,7 +227,11 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
         // Remove password field from response
         const safeUsers = paginatedUsers.map(user => {
             const { password, ...safeUser } = user;
-            return safeUser;
+            // ensure normalized studentNumber exists for clients
+            return {
+                ...safeUser,
+                studentNumber: safeUser.studentNumber || safeUser.studentId || (safeUser.library && safeUser.library.cardNumber) || safeUser.libraryCardNumber || ''
+            };
         });
 
         res.json({
@@ -293,7 +299,13 @@ router.get('/:id', verifyToken, requireStaff, async(req, res) => {
         // Remove password from response
         const { password, ...safeUser } = user;
 
-        res.json(safeUser);
+        // normalize studentNumber for client compatibility
+        const normalized = {
+            ...safeUser,
+            studentNumber: safeUser.studentNumber || safeUser.studentId || (safeUser.library && safeUser.library.cardNumber) || safeUser.libraryCardNumber || ''
+        };
+
+        res.json(normalized);
     } catch (error) {
         console.error('Get user error:', error);
         res.status(500).json({ message: 'Failed to fetch user' });

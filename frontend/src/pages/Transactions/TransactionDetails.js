@@ -424,6 +424,21 @@ const TransactionDetails = () => {
             {success}{" "}
           </Alert>
         )}
+
+        {/* If the transaction was rejected, show the reason and metadata */}
+        {transaction && transaction.status === 'rejected' && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              This request was rejected{transaction.rejectReason ? `: ${transaction.rejectReason}` : ''}
+            </Typography>
+            {transaction.rejectedBy && (
+              <Typography variant="caption" display="block">Rejected by: {transaction.rejectedBy}</Typography>
+            )}
+            {transaction.rejectedAt && (
+              <Typography variant="caption" display="block">At: {new Date(transaction.rejectedAt).toLocaleString()}</Typography>
+            )}
+          </Alert>
+        )}
         <Grid container spacing={3}>
           {" "}
           {/* Transaction Overview */}{" "}

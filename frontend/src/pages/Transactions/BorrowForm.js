@@ -69,6 +69,7 @@ const getBorrowerLabel = (borrower) => {
 const BorrowForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isStudentRequestRoute = location.pathname && location.pathname.includes("/transactions/request");
 
   const [borrowerQuery, setBorrowerQuery] = useState("");
   const [borrowerOptions, setBorrowerOptions] = useState([]);
@@ -354,7 +355,7 @@ const BorrowForm = () => {
   const openConfirmation = () => {
     clearFeedback();
 
-    if (!borrowerId) {
+    if (!isStudentRequestRoute && !borrowerId) {
       setErrorMessage("Select a borrower before submitting the transaction.");
       return;
     }
@@ -387,31 +388,36 @@ const BorrowForm = () => {
         items: selectedBooks.map((book) => ({ copyId: book.copyId })),
         notes: notes.trim() || undefined,
       };
+      // Choose endpoint depending on whether this is a student request route
+      const endpoint = isStudentRequestRoute ? "/transactions/request" : "/transactions/borrow";
 
-      const response = await api.post("/transactions/borrow", payload);
+      // For student requests, omit userId so backend will use authenticated user
+      if (isStudentRequestRoute) delete payload.userId;
 
-      setSuccessMessage(
-        response.data?.message ||
-          "Borrowing transaction submitted successfully.",
-      );
+      const response = await api.post(endpoint, payload);
+
+      setSuccessMessage(response.data?.message || (isStudentRequestRoute ? 'Borrow request submitted successfully.' : 'Borrowing transaction submitted successfully.'));
       setConfirmOpen(false);
 
       // Generate transaction receipt
       try {
+        // If the backend returned a concrete transaction, generate receipt for staff borrow flows
         const transactionData = response.data.transaction || {
           id: response.data.transactionId,
           type: transactionType,
           createdAt: new Date(),
           dueDate: new Date(Date.now() + (borrowDays * 24 * 60 * 60 * 1000)),
-          fineAmount: 0
+          fineAmount: 0,
         };
 
-        const receiptPDF = await generateTransactionReceipt(
-          transactionData,
-          selectedBorrower,
-          selectedBooks
-        );
-        downloadPDF(receiptPDF, `receipt_${transactionData.id || Date.now()}.pdf`);
+        if (!isStudentRequestRoute) {
+          const receiptPDF = await generateTransactionReceipt(
+            transactionData,
+            selectedBorrower,
+            selectedBooks
+          );
+          downloadPDF(receiptPDF, `receipt_${transactionData.id || Date.now()}.pdf`);
+        }
       } catch (receiptError) {
         console.error("Error generating receipt:", receiptError);
         // Don't show error for receipt generation failure
@@ -420,7 +426,12 @@ const BorrowForm = () => {
       resetForm();
 
       window.setTimeout(() => {
-        navigate(location.state?.from || "/transactions");
+        // For students, prefer to send them back to their dashboard or transactions list
+        if (isStudentRequestRoute) {
+          navigate(location.state?.from || "/student/dashboard");
+        } else {
+          navigate(location.state?.from || "/transactions");
+        }
       }, 1500);
     } catch (error) {
       const message =
@@ -815,9 +826,9 @@ const BorrowForm = () => {
                   color="primary"
                   startIcon={<Book />}
                   onClick={openConfirmation}
-                  disabled={!selectedBorrower || selectedBooks.length === 0}
+                  disabled={(isStudentRequestRoute ? selectedBooks.length === 0 : (!selectedBorrower || selectedBooks.length === 0))}
                 >
-                  Review Borrow Request
+                  {isStudentRequestRoute ? 'Review Request' : 'Review Borrow Request'}
                 </Button>
               </Grid>
             </Grid>
@@ -831,11 +842,11 @@ const BorrowForm = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Confirm Borrow Request</DialogTitle>
+  <DialogTitle>{isStudentRequestRoute ? 'Confirm Borrow Request' : 'Confirm Borrow Request'}</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body1" gutterBottom>
             Borrower:{" "}
-            <strong>{getBorrowerLabel(selectedBorrower)}</strong>
+            <strong>{getBorrowerLabel(selectedBorrower) || 'You'}</strong>
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {selectedBooks.length} book
@@ -883,7 +894,7 @@ const BorrowForm = () => {
             onClick={handleConfirmBorrow}
             disabled={submitting}
           >
-            {submitting ? "Submitting…" : "Confirm Borrow"}
+            {submitting ? "Submitting…" : (isStudentRequestRoute ? 'Confirm Request' : 'Confirm Borrow')}
           </Button>
         </DialogActions>
       </Dialog>

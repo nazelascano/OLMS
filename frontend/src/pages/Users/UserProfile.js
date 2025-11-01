@@ -420,17 +420,17 @@ const UserProfile = () => {
                     />{" "}
                   </ListItem>
                 )}{" "}
-                {profileData.studentNumber && (
+                {(profileData.studentNumber || profileData.studentId || profileData.libraryCardNumber || (profileData.library && profileData.library.cardNumber)) && (
                   <ListItem>
                     <ListItemIcon>
                       <School />
-                    </ListItemIcon>{" "}
+                    </ListItemIcon>
                     <ListItemText
                       primary="Student Number"
-                      secondary={profileData.studentNumber}
-                    />{" "}
+                      secondary={profileData.studentNumber || profileData.studentId || profileData.libraryCardNumber || (profileData.library && profileData.library.cardNumber)}
+                    />
                   </ListItem>
-                )}{" "}
+                )}
                 {profileData.curriculum && (
                   <ListItem>
                     <ListItemText

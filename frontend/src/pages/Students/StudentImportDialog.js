@@ -146,7 +146,6 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     // Required fields
     if (!student.firstname) errors.push("First name required");
     if (!student.lastname) errors.push("Last name required");
-    if (!student.email) errors.push("Email required");
     if (!student.studentid) errors.push("Student ID required");
     if (!student.lrn) errors.push("LRN required");
     if (!student.grade) errors.push("Grade required");
@@ -239,7 +238,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
 
             // Academic Information
             studentId: student.studentid || student.studentId,
-            lrn: student.lrn, // Learner Reference Number (used as password)
+            lrn: student.lrn, // Learner Reference Number (used as username)
             grade: student.grade,
             section: student.section,
 
@@ -257,7 +256,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
               student.parentName ||
               "",
             parentPhone: student.parentphone || student.parentPhone || "",
-            username: (student.firstname || student.firstName.charAt(0) + student.lastname || student.lastName.lastName).toLowerCase(),
+            username: student.lrn,
           });
         } else {
           invalidStudents.push({

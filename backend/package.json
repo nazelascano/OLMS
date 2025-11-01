@@ -3,11 +3,6 @@
     "version": "1.0.0",
     "description": "OLMS Backend API with Express.js and MongoDB",
     "main": "server.js",
-    "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "dev:offline": "cross-env USE_OFFLINE_DB=true nodemon server.js"
-    },
     "keywords": [
         "express",
         "mongodb",
@@ -32,8 +27,16 @@
         "qrcode": "^1.5.3",
         "validator": "^13.11.0"
     },
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js",
+        "dev:offline": "cross-env USE_OFFLINE_DB=true nodemon server.js",
+        "test": "cross-env USE_OFFLINE_DB=true jest --runInBand"
+    },
     "devDependencies": {
         "nodemon": "^3.0.1",
-        "cross-env": "^7.0.3"
+        "cross-env": "^7.0.3",
+        "jest": "^29.6.1",
+        "supertest": "^6.3.3"
     }
 }

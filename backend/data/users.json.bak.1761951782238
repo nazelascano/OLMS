@@ -20,15 +20,15 @@
       "fineBalance": 0
     },
     "borrowingStats": {
-      "totalBorrowed": 3,
-      "currentlyBorrowed": 3,
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
       "totalFines": 0,
       "totalReturned": 0
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-11-01T01:23:21.749Z",
-    "lastLoginAt": "2025-11-01T01:22:30.326Z",
-    "lastActivityAt": "2025-11-01T01:23:21.748Z"
+    "updatedAt": "2025-10-30T04:15:54.276Z",
+    "lastLoginAt": "2025-10-30T04:03:07.500Z",
+    "lastActivityAt": "2025-10-30T04:15:54.275Z"
   },
   {
     "libraryCardNumber": "LIB-25-0001",
@@ -42,7 +42,7 @@
     "lrn": "123456789012",
     "grade": "Grade 7",
     "section": "A",
-    "curriculum": "Mathematics",
+    "curriculum": "",
     "barangay": "Barangay 1",
     "municipality": "Quezon City",
     "province": "Philippines",
@@ -60,42 +60,19 @@
       "totalFines": 0,
       "totalReturned": 2
     },
-    "password": "$2b$10$aHwwcdlhGetHuibADO8LPeZYX9i9orVvTpqMP91FqwezO.HZYyEPq",
+    "password": "$2b$10$VGebBBttNbjZxFZlvzjDPebnu9TI.TvUAmkXsCcJA.oEX9eI.0Vhm",
     "_id": "mgniuxw0uslme",
     "createdAt": "2025-10-12T09:48:46.260Z",
-    "updatedAt": "2025-10-31T23:52:01.221Z",
+    "updatedAt": "2025-10-27T10:22:12.749Z",
     "lastLoginAt": "2025-10-12T09:49:31.891Z",
-    "lastActivityAt": "2025-10-12T09:49:52.776Z",
-    "mustChangePassword": true
-  },
-  {
-    "firstName": "Bulk",
-    "lastName": "User",
-    "studentId": "BULK1",
-    "lrn": "BULKLRN1",
-    "grade": "Grade 7",
-    "section": "Bulk",
-    "username": "BULKLRN1",
-    "libraryCardNumber": "LIB-25-0003",
-    "password": "$2b$10$aNU5933gSbCG0D1R0USkUu08Cw7iDteZu3ZYUgj9iIEU5iGd0WRsy",
-    "role": "student",
-    "isActive": true,
-    "borrowingStats": {
-      "totalBorrowed": 0,
-      "currentlyBorrowed": 0,
-      "totalFines": 0,
-      "totalReturned": 0
-    },
-    "_id": "mhfj9gn6u6bde",
-    "createdAt": "2025-11-01T00:17:36.642Z",
-    "updatedAt": "2025-11-01T00:17:36.642Z"
+    "lastActivityAt": "2025-10-12T09:49:52.776Z"
   },
   {
     "firstName": "Mary",
     "lastName": "Smith",
     "middleName": "Cruz",
     "email": "mary.smith@student.example.edu",
-    "phoneNumber": "9111222333",
+    "phoneNumber": "09111222333",
     "studentId": "2024002",
     "lrn": "123456789013",
     "grade": "Grade 10",
@@ -105,10 +82,10 @@
     "province": "Metro Manila",
     "fullAddress": "789 Pine St Barangay 2 Manila",
     "parentGuardianName": "Bob Smith",
-    "parentPhone": "9444555666",
-    "username": "123456789013",
-    "libraryCardNumber": "LIB-25-0004",
-    "password": "$2b$10$4XcVG8EKjleR7fcF.2ZlbuvtHlyNB6fsSKvNVjyeUIQnPEArlrQ.e",
+    "parentPhone": "09444555666",
+    "username": "mary",
+    "libraryCardNumber": "LIB-25-0002",
+    "password": "$2b$10$QCLJJ8Afi78JTLg01p2bKeGXiWeBTICk7pK9Mwg5LOPs1AIfNS80a",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -117,11 +94,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjce8m7xbuj",
-    "createdAt": "2025-11-01T00:19:53.494Z",
-    "updatedAt": "2025-11-01T00:21:11.782Z",
-    "lastLoginAt": "2025-11-01T00:21:11.696Z",
-    "lastActivityAt": "2025-11-01T00:21:11.781Z"
+    "_id": "mgvyco71noo6f",
+    "createdAt": "2025-10-18T07:24:37.117Z",
+    "updatedAt": "2025-10-18T07:24:37.117Z"
   },
   {
     "firstName": "Mary1",
@@ -140,8 +115,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789014",
-    "libraryCardNumber": "LIB-25-0005",
-    "password": "$2b$10$ZLfHzVonsfjfqBb2Beur6e5XPtQ5O5GGvYv0dbwEG7qMFt3/5nBGq",
+    "libraryCardNumber": "LIB-25-0003",
+    "password": "$2b$10$XI0M.bHBHV1aEce0PNqKSeKMmkXu8sNvpjee2GNAL..xuCkF0T1Yq",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -150,11 +125,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjceb60llf3",
-    "createdAt": "2025-11-01T00:19:53.586Z",
-    "updatedAt": "2025-11-01T01:22:22.915Z",
-    "lastLoginAt": "2025-11-01T00:39:23.975Z",
-    "lastActivityAt": "2025-11-01T01:22:22.914Z"
+    "_id": "mh8vmz5chaumg",
+    "createdAt": "2025-10-27T08:29:39.312Z",
+    "updatedAt": "2025-10-27T08:29:39.312Z"
   },
   {
     "firstName": "Mary2",
@@ -173,8 +146,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789015",
-    "libraryCardNumber": "LIB-25-0006",
-    "password": "$2b$10$52UrtoZPky9SXavLcix.i.PDWhh96ELfvkDm8kyuMwmDPdfk73XpS",
+    "libraryCardNumber": "LIB-25-0004",
+    "password": "$2b$10$CSSByvwtZLumt/RCAud57.P9/jKM5HjKwxwH/XNCi12uYZILLzWVi",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -183,9 +156,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjceepoghpy",
-    "createdAt": "2025-11-01T00:19:53.713Z",
-    "updatedAt": "2025-11-01T00:19:53.713Z"
+    "_id": "mh8vmz7uy7ua2",
+    "createdAt": "2025-10-27T08:29:39.402Z",
+    "updatedAt": "2025-10-27T08:29:39.402Z"
   },
   {
     "firstName": "Mary3",
@@ -204,8 +177,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789016",
-    "libraryCardNumber": "LIB-25-0007",
-    "password": "$2b$10$NDlMfhR/wcIb4KTc.PWIGOTmwlvc3u9BOimSReokLSk9fOZAVGe3m",
+    "libraryCardNumber": "LIB-25-0005",
+    "password": "$2b$10$64PEP.y/l4uPZi8dTWBhdeoDiKlVoBXjMyHrxQ3WneObUVJDXe292",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -214,9 +187,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcehjfmuma",
-    "createdAt": "2025-11-01T00:19:53.815Z",
-    "updatedAt": "2025-11-01T00:19:53.815Z"
+    "_id": "mh8vmzaup7fjg",
+    "createdAt": "2025-10-27T08:29:39.510Z",
+    "updatedAt": "2025-10-27T08:29:39.510Z"
   },
   {
     "firstName": "Mary4",
@@ -235,8 +208,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789017",
-    "libraryCardNumber": "LIB-25-0008",
-    "password": "$2b$10$mI5Y7dDpERIbYsNQvYimPeRVZyxjCH0CDB0ogKWvYQD7140EdC5WC",
+    "libraryCardNumber": "LIB-25-0006",
+    "password": "$2b$10$8mUyuKMCJjmkpRJFLuDNxOhTirbeFvtahGFOd0BzmG0ugu/z4A0wC",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -245,9 +218,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcel0zxj0f",
-    "createdAt": "2025-11-01T00:19:53.940Z",
-    "updatedAt": "2025-11-01T00:19:53.940Z"
+    "_id": "mh8vmzdosn1o0",
+    "createdAt": "2025-10-27T08:29:39.612Z",
+    "updatedAt": "2025-10-27T08:29:39.612Z"
   },
   {
     "firstName": "Mary5",
@@ -266,8 +239,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789018",
-    "libraryCardNumber": "LIB-25-0009",
-    "password": "$2b$10$0B9FCFYVyC5MIbI7UEd4ne8Cs9mEAvwxFfpdI7T49ZO0bWN.WhLR6",
+    "libraryCardNumber": "LIB-25-0007",
+    "password": "$2b$10$2juCvp1DsSG.8luUQ5RwcOKhp9Z4AKLXDlnPdlzFZjNQ4cBG350DS",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -276,9 +249,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjceo5tcs7d",
-    "createdAt": "2025-11-01T00:19:54.053Z",
-    "updatedAt": "2025-11-01T00:19:54.053Z"
+    "_id": "mh8vmzg6zbmsa",
+    "createdAt": "2025-10-27T08:29:39.702Z",
+    "updatedAt": "2025-10-27T08:29:39.702Z"
   },
   {
     "firstName": "Mary6",
@@ -297,8 +270,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789019",
-    "libraryCardNumber": "LIB-25-0010",
-    "password": "$2b$10$MxlVwCeRbFChdEoC4sGRJuzuQoW.vEUT4KLzGhNLj6fCvayG4dvjW",
+    "libraryCardNumber": "LIB-25-0008",
+    "password": "$2b$10$/wexm4vnVTOou0AiqhqneeLFmcjc8XxYSDZJN9ys2vgGet9asMrzC",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -307,9 +280,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjceqyvstir",
-    "createdAt": "2025-11-01T00:19:54.154Z",
-    "updatedAt": "2025-11-01T00:19:54.154Z"
+    "_id": "mh8vmzipmn9zt",
+    "createdAt": "2025-10-27T08:29:39.793Z",
+    "updatedAt": "2025-10-27T08:29:39.793Z"
   },
   {
     "firstName": "Mary7",
@@ -328,8 +301,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789020",
-    "libraryCardNumber": "LIB-25-0011",
-    "password": "$2b$10$Bm/r7OpmkGYMKethtxPVP.W/cOSLjPs1ywaoD.QivfExcw6Sw9Eo2",
+    "libraryCardNumber": "LIB-25-0009",
+    "password": "$2b$10$GYPcLj2IpyvMbAGh6N8Ktu5IRwXSrUTqLg66kMcP0Zf6cXgpTiz3m",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -338,9 +311,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcetx51ybk",
-    "createdAt": "2025-11-01T00:19:54.261Z",
-    "updatedAt": "2025-11-01T00:19:54.261Z"
+    "_id": "mh8vmzlhq8kqa",
+    "createdAt": "2025-10-27T08:29:39.893Z",
+    "updatedAt": "2025-10-27T08:29:39.893Z"
   },
   {
     "firstName": "Mary8",
@@ -359,8 +332,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789021",
-    "libraryCardNumber": "LIB-25-0012",
-    "password": "$2b$10$RPTV8GiEMtPZZI5GxabaYeTmEfMUP8z0sUyyOjgbys.EbujB4LNOa",
+    "libraryCardNumber": "LIB-25-0010",
+    "password": "$2b$10$nAH8zbAzuUojxlyCjmHf3e915aWTsPURhGfJiH8pfgZHSnoLIbCye",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -369,9 +342,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcex61g2th",
-    "createdAt": "2025-11-01T00:19:54.378Z",
-    "updatedAt": "2025-11-01T00:19:54.378Z"
+    "_id": "mh8vmzoaa8k87",
+    "createdAt": "2025-10-27T08:29:39.994Z",
+    "updatedAt": "2025-10-27T08:29:39.994Z"
   },
   {
     "firstName": "Mary9",
@@ -390,8 +363,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789022",
-    "libraryCardNumber": "LIB-25-0013",
-    "password": "$2b$10$ujcbyKyntES.guXtscgyAev0KonG7EkwcRVyR22D5vZDsCtsMLvkW",
+    "libraryCardNumber": "LIB-25-0011",
+    "password": "$2b$10$ls1fdN2Yz8cXSxwkHYHFOOfEQ0ivdQ1uUEZqCH5n6G9y1QQFraisq",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -400,9 +373,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcf0gf7d9y",
-    "createdAt": "2025-11-01T00:19:54.496Z",
-    "updatedAt": "2025-11-01T00:19:54.496Z"
+    "_id": "mh8vmzr17jh8d",
+    "createdAt": "2025-10-27T08:29:40.093Z",
+    "updatedAt": "2025-10-27T08:29:40.093Z"
   },
   {
     "firstName": "Mary10",
@@ -421,8 +394,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789023",
-    "libraryCardNumber": "LIB-25-0014",
-    "password": "$2b$10$4Kty8BWUecDxxH6GSe6hA.Ucd4T4Na7xvacZ.PfJycauKw8ZGg592",
+    "libraryCardNumber": "LIB-25-0012",
+    "password": "$2b$10$YsoDEIvGsxmE7foeM5eCT.ljv9qidQTINqhybTqr0JOpauW.AONxi",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -431,9 +404,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcf3kr20sa",
-    "createdAt": "2025-11-01T00:19:54.608Z",
-    "updatedAt": "2025-11-01T00:19:54.608Z"
+    "_id": "mh8vmzuuef0ha",
+    "createdAt": "2025-10-27T08:29:40.231Z",
+    "updatedAt": "2025-10-27T08:29:40.231Z"
   },
   {
     "firstName": "Mary11",
@@ -452,8 +425,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789024",
-    "libraryCardNumber": "LIB-25-0015",
-    "password": "$2b$10$gqhBPswU3F/pE5X8ezCC9.hcUQKGtvcfhWy7NtVGqfieBPe1GFxZO",
+    "libraryCardNumber": "LIB-25-0013",
+    "password": "$2b$10$ZhepYrY3n1xLmjckxsxhlOAq26oFDJOelNiJKgqNabpwh88/ZEZhq",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -462,9 +435,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcf5mnublm",
-    "createdAt": "2025-11-01T00:19:54.682Z",
-    "updatedAt": "2025-11-01T00:19:54.682Z"
+    "_id": "mh8vmzxgpkew6",
+    "createdAt": "2025-10-27T08:29:40.324Z",
+    "updatedAt": "2025-10-27T08:29:40.324Z"
   },
   {
     "firstName": "Mary12",
@@ -483,8 +456,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789025",
-    "libraryCardNumber": "LIB-25-0016",
-    "password": "$2b$10$paVyGSfTaYcd16g/rrbOTOOPxOrNXljkVvru7uqrSeD/oLOtq2sGO",
+    "libraryCardNumber": "LIB-25-0014",
+    "password": "$2b$10$NANgaq9CdBjkhr3khm5RneWEP2TJrYIVI..bMh7qMEsH9VSRaVb7u",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -493,9 +466,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcf9bft6i7",
-    "createdAt": "2025-11-01T00:19:54.815Z",
-    "updatedAt": "2025-11-01T00:19:54.815Z"
+    "_id": "mh8vmzzwp95wf",
+    "createdAt": "2025-10-27T08:29:40.412Z",
+    "updatedAt": "2025-10-27T08:29:40.412Z"
   },
   {
     "firstName": "Mary13",
@@ -514,8 +487,8 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789026",
-    "libraryCardNumber": "LIB-25-0017",
-    "password": "$2b$10$yuAJh/Dgna7jb0laYr5Q7OUhsCo7JNczONykaTHTR/zMCaXITPbhC",
+    "libraryCardNumber": "LIB-25-0015",
+    "password": "$2b$10$nNtg1itGTgiTW3vOUjlnluGxnM7oe.2FR2wBnuDZ5WAZqEG9BTcEW",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -524,9 +497,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcfbt4kxp3",
-    "createdAt": "2025-11-01T00:19:54.905Z",
-    "updatedAt": "2025-11-01T00:19:54.905Z"
+    "_id": "mh8vn03a0tqnh",
+    "createdAt": "2025-10-27T08:29:40.534Z",
+    "updatedAt": "2025-10-27T08:29:40.534Z"
   },
   {
     "firstName": "Mary14",
@@ -545,8 +518,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789027",
-    "libraryCardNumber": "LIB-25-0018",
-    "password": "$2b$10$.BFergdc0gyvoT3YVFSkiubZd.3SEzGQ69CKYx1Gm/xCa89IocFr6",
+    "libraryCardNumber": "LIB-25-0016",
+    "password": "$2b$10$jabvuQr227mX2JEkNZNzmexx1a4hLh1qaoSlFkOm7mPwVcdzxEOOO",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -555,9 +528,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcfe85z26g",
-    "createdAt": "2025-11-01T00:19:54.992Z",
-    "updatedAt": "2025-11-01T00:19:54.992Z"
+    "_id": "mh8vn05ixtqi1",
+    "createdAt": "2025-10-27T08:29:40.614Z",
+    "updatedAt": "2025-10-27T08:29:40.614Z"
   },
   {
     "firstName": "Mary15",
@@ -576,8 +549,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789028",
-    "libraryCardNumber": "LIB-25-0019",
-    "password": "$2b$10$SPMaHWayDBbGcydq7o9QSukUb9qyXivdSOXbA/AMMtdn704SE9J4O",
+    "libraryCardNumber": "LIB-25-0017",
+    "password": "$2b$10$i7.JUAFViYl/bzaZrTdW1.GQvGgJgp5UZlISCTycMBj3XEn6jcnae",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -586,9 +559,9 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcfgjt9dw4",
-    "createdAt": "2025-11-01T00:19:55.075Z",
-    "updatedAt": "2025-11-01T00:19:55.075Z"
+    "_id": "mh8vn08p17fna",
+    "createdAt": "2025-10-27T08:29:40.729Z",
+    "updatedAt": "2025-10-27T08:29:40.729Z"
   },
   {
     "firstName": "Mary16",
@@ -607,19 +580,19 @@
     "parentGuardianName": "Jane Doe",
     "parentPhone": "9987654321",
     "username": "123456789029",
-    "libraryCardNumber": "LIB-25-0020",
-    "password": "$2b$10$qr.xqCmdWVa4GxN2NQ.wZ.QabXLM0HhO7OXLdZ7wvDv3lm5zxu0IC",
+    "libraryCardNumber": "LIB-25-0018",
+    "password": "$2b$10$Nq0XWSPfxp3RQQ1kEl0.jeMuvg1AlDMQCZnaf/r5n6p57UTB96fky",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
       "totalBorrowed": 0,
       "currentlyBorrowed": 0,
       "totalFines": 0,
-      "totalReturned": 0
+      "totalReturned": 1
     },
-    "_id": "mhfjcfk5pe1n5",
-    "createdAt": "2025-11-01T00:19:55.205Z",
-    "updatedAt": "2025-11-01T00:19:55.205Z"
+    "_id": "mh8vn0bn8uibb",
+    "createdAt": "2025-10-27T08:29:40.835Z",
+    "updatedAt": "2025-10-28T02:57:00.121Z"
   },
   {
     "firstName": "Mary17",
@@ -638,8 +611,8 @@
     "parentGuardianName": "Bob Smith",
     "parentPhone": "9444555666",
     "username": "123456789030",
-    "libraryCardNumber": "LIB-25-0021",
-    "password": "$2b$10$vAUeaJ225j1uXWNOrELEEOkpWnMdsJLa9kq3LjpZKzD.FKJ1SBTzm",
+    "libraryCardNumber": "LIB-25-0019",
+    "password": "$2b$10$KODCMlW.EFqQmVjxUwq.K.6nwgA9h37xxaXNXgXekPEv4y19zi47.",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
@@ -648,8 +621,8 @@
       "totalFines": 0,
       "totalReturned": 0
     },
-    "_id": "mhfjcfnfxed3u",
-    "createdAt": "2025-11-01T00:19:55.323Z",
-    "updatedAt": "2025-11-01T00:19:55.323Z"
+    "_id": "mh8vn0etv5uk8",
+    "createdAt": "2025-10-27T08:29:40.949Z",
+    "updatedAt": "2025-10-27T08:29:40.949Z"
   }
 ]

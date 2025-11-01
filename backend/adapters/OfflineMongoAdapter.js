@@ -8,6 +8,7 @@ class OfflineMongoAdapter {
       users: 'users.json',
       books: 'books.json',
       transactions: 'transactions.json',
+      notifications: 'notifications.json',
       settings: 'settings.json',
       audit: 'audit.json',
       annualSets: 'annualSets.json'

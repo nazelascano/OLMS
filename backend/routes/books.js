@@ -105,7 +105,9 @@ router.get('/', verifyToken, async(req, res) => {
     }
 });
 
-router.get('/search', verifyToken, requireStaff, async(req, res) => {
+// Allow authenticated users (including students) to search books. Staff-only actions
+// remain protected elsewhere.
+router.get('/search', verifyToken, async(req, res) => {
     try {
         const {
             q = '',

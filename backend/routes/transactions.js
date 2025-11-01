@@ -811,6 +811,298 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
     }
 });
 
+// Student borrow request (creates a 'requested' transaction that staff can approve)
+router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async (req, res) => {
+    try {
+        const { userId: providedUserId, items, type = 'regular', notes } = req.body || {};
+        // If caller didn't provide userId, default to authenticated user
+        const userId = providedUserId || req.user && req.user.id;
+
+        setAuditContext(req, {
+            metadata: {
+                borrowRequest: {
+                    type,
+                    itemCount: Array.isArray(items) ? items.length : 0
+                }
+            },
+            details: {
+                requestedBy: req.user && req.user.id
+            }
+        });
+
+        if (!userId || !Array.isArray(items) || items.length === 0) {
+            setAuditContext(req, { success: false, status: 'ValidationError', description: 'Request missing userId or items' });
+            return res.status(400).json({ message: 'User ID and items are required' });
+        }
+
+        const user = await req.dbAdapter.findUserById(userId);
+        if (!user) {
+            setAuditContext(req, { success: false, status: 'UserNotFound', description: `Request failed: user ${userId} not found`, entityId: userId });
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!user.isActive) {
+            setAuditContext(req, { success: false, status: 'UserInactive', description: `Request failed: user ${userId} not active`, entityId: userId });
+            return res.status(400).json({ message: 'User account is not active' });
+        }
+
+        // Respect settings for max books per transaction if available but do not reserve copies here
+        const allSettings = await req.dbAdapter.findInCollection('settings', {});
+        const settings = {};
+        allSettings.forEach(setting => { settings[setting.id] = setting.value; });
+        const maxBooksPerTransaction = settings.MAX_BOOKS_PER_TRANSACTION || 10;
+        if (items.length > maxBooksPerTransaction) {
+            setAuditContext(req, { success: false, status: 'LimitExceeded', description: `Request exceeds maximum ${maxBooksPerTransaction} books per transaction` });
+            return res.status(400).json({ message: `Maximum ${maxBooksPerTransaction} books per transaction` });
+        }
+
+        const transactionItems = (items || []).map(item => {
+            if (typeof item === 'string') return { copyId: item, status: 'requested' };
+            return { copyId: item.copyId || '', bookId: item.bookId || '', status: 'requested' };
+        });
+
+        const transactionId = generateTransactionId('request');
+        const now = new Date();
+        const transactionData = {
+            id: transactionId,
+            userId,
+            items: transactionItems,
+            type,
+            status: 'requested',
+            createdAt: now,
+            updatedAt: now,
+            createdBy: req.user && req.user.id,
+            notes: notes || ''
+        };
+
+        await req.dbAdapter.insertIntoCollection('transactions', transactionData);
+
+        // Create a persistent notification for staff about this request
+        try {
+            await req.dbAdapter.insertIntoCollection('notifications', {
+                title: 'New borrow request',
+                message: `${getBorrowerName(user)} requested ${transactionItems.length} item(s).`,
+                type: 'request',
+                transactionId,
+                recipients: ['staff','librarian','admin'],
+                meta: { transactionId },
+                createdAt: new Date(),
+                readBy: []
+            });
+        } catch (nerr) {
+            console.error('Failed to create persistent notification for request:', nerr);
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Created',
+            entityId: transactionId,
+            resourceId: transactionId,
+            description: `Created borrow request (${transactionId}) for user ${userId}`,
+            metadata: {
+                requestId: transactionId,
+                itemCount: transactionItems.length,
+                actorId: req.user && req.user.id
+            }
+        });
+
+        res.status(201).json({ message: 'Borrow request created', transactionId, transaction: transactionData });
+    } catch (error) {
+        console.error('Create request error:', error);
+        setAuditContext(req, { success: false, status: 'Error', description: `Request creation failed: ${error.message}`, details: { error: error.message } });
+        res.status(500).json({ message: 'Failed to create borrow request' });
+    }
+});
+
+// Approve a borrow request (staff only) - converts 'requested' -> 'borrowed' and reserves copies
+router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'transaction'), async (req, res) => {
+    try {
+        const txnIdentifier = req.params.id;
+        const transaction = await findTransactionByIdentifier(req.dbAdapter, txnIdentifier);
+        if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
+
+        if (transaction.status !== 'requested') {
+            return res.status(400).json({ message: 'Only requested transactions can be approved' });
+        }
+
+        const items = Array.isArray(transaction.items) ? transaction.items : [];
+        if (items.length === 0) {
+            return res.status(400).json({ message: 'Requested transaction has no items' });
+        }
+
+        // First: validate all requested items exist and are available. Do not modify DB during validation.
+        const allBooks = await req.dbAdapter.findInCollection('books', {});
+        const validationFailures = [];
+        const readyToUpdate = []; // { targetBook, targetCopy, copyId }
+
+        for (const item of items) {
+            const copyId = item.copyId;
+            if (!copyId) {
+                validationFailures.push({ item, reason: 'missing-copyId' });
+                continue;
+            }
+
+            let targetBook = null;
+            let targetCopy = null;
+            for (const book of allBooks) {
+                const copy = (book.copies || []).find(c => String(c.copyId) === String(copyId));
+                if (copy) {
+                    targetBook = book;
+                    targetCopy = copy;
+                    break;
+                }
+            }
+
+            if (!targetBook || !targetCopy) {
+                validationFailures.push({ item, reason: 'copy-not-found' });
+                continue;
+            }
+
+            if (targetCopy.status !== 'available') {
+                validationFailures.push({ item, reason: 'copy-unavailable', copyStatus: targetCopy.status });
+                continue;
+            }
+
+            readyToUpdate.push({ targetBook, targetCopy, copyId });
+        }
+
+        // If any failures, return 400 and do not change DB state
+        if (validationFailures.length > 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationFailed',
+                description: 'Cannot approve request: one or more copies missing or unavailable',
+                details: { validationFailures }
+            });
+            return res.status(400).json({ message: 'One or more requested copies are missing or unavailable', details: validationFailures });
+        }
+
+        // All validations passed — proceed to reserve copies and update books
+        const updatedBooks = [];
+        for (const ready of readyToUpdate) {
+            const { targetBook, copyId } = ready;
+            const updatedCopies = (targetBook.copies || []).map(c => c.copyId === copyId ? { ...c, status: 'borrowed', updatedAt: new Date(), updatedBy: req.user.id } : c);
+            const bookQuery = targetBook.id ? { id: targetBook.id } : { _id: targetBook._id };
+            const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
+            await req.dbAdapter.updateInCollection('books', bookQuery, { copies: updatedCopies, availableCopies, updatedAt: new Date() });
+            updatedBooks.push({ bookId: targetBook.id || targetBook._id, copyId });
+        }
+
+        // Compute due date and borrowDate
+        const allSettings = await req.dbAdapter.findInCollection('settings', {});
+        const settings = {};
+        allSettings.forEach(s => { settings[s.id] = s.value; });
+        const maxBorrowDays = settings.MAX_BORROW_DAYS || 14;
+        const borrowDate = new Date();
+        const dueDate = calculateDueDate(borrowDate, maxBorrowDays);
+
+        // Update transaction
+        const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
+        const updatedTransaction = await req.dbAdapter.updateInCollection('transactions', txQuery, {
+            status: 'borrowed',
+            borrowDate,
+            dueDate,
+            updatedAt: new Date(),
+            updatedBy: req.user.id,
+            items: items.map(it => ({ ...it, status: 'borrowed' }))
+        });
+
+        // Update user borrowing stats
+        let user = await req.dbAdapter.findOneInCollection('users', { id: transaction.userId });
+        if (!user) user = await req.dbAdapter.findOneInCollection('users', { _id: transaction.userId });
+        if (user) {
+            const stats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
+            const updatedStats = {
+                totalBorrowed: (stats.totalBorrowed || 0) + items.length,
+                currentlyBorrowed: (stats.currentlyBorrowed || 0) + items.length,
+                totalFines: stats.totalFines || 0,
+                totalReturned: stats.totalReturned || 0
+            };
+            const userQuery = user.id ? { id: user.id } : { _id: user._id };
+            await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: new Date() });
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Approved',
+            entityId: updatedTransaction.id || updatedTransaction._id,
+            resourceId: updatedTransaction.id || updatedTransaction._id,
+            description: `Approved borrow request ${transaction.id || transaction._id}`,
+            metadata: { approvedBy: req.user.id }
+        });
+
+        // Mark related persistent notifications as read/archived
+        try {
+            const notifications = await req.dbAdapter.findInCollection('notifications', { transactionId: transaction.id || transaction._id });
+            for (const n of notifications) {
+                const q = n.id ? { id: n.id } : { _id: n._id };
+                await req.dbAdapter.updateInCollection('notifications', q, { readBy: Array.from(new Set([...(n.readBy || []), req.user.id])), updatedAt: new Date(), archived: true });
+            }
+        } catch (nerr) {
+            console.error('Failed to mark notifications after approve:', nerr);
+        }
+
+        res.json({ message: 'Borrow request approved', transactionId: updatedTransaction.id || updatedTransaction._id });
+    } catch (error) {
+        console.error('Approve request error:', error);
+        setAuditContext(req, { success: false, status: 'Error', description: `Approve failed: ${error.message}`, details: { error: error.message } });
+        res.status(500).json({ message: 'Failed to approve request' });
+    }
+});
+
+// Reject a borrow request (staff only)
+router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'transaction'), async (req, res) => {
+    try {
+        const txnIdentifier = req.params.id;
+        const { reason } = req.body || {};
+        const transaction = await findTransactionByIdentifier(req.dbAdapter, txnIdentifier);
+        if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
+
+        if (transaction.status !== 'requested') {
+            return res.status(400).json({ message: 'Only requested transactions can be rejected' });
+        }
+
+        const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
+        const updatedTransaction = await req.dbAdapter.updateInCollection('transactions', txQuery, {
+            status: 'rejected',
+            rejectedAt: new Date(),
+            rejectedBy: req.user.id,
+            rejectReason: reason || ''
+        });
+
+        // Create a notification for the requester
+        try {
+            await req.dbAdapter.insertIntoCollection('notifications', {
+                title: 'Borrow request rejected',
+                message: `Your borrow request ${transaction.id || transaction._id} was rejected${reason ? `: ${reason}` : ''}`,
+                type: 'request-rejected',
+                transactionId: transaction.id || transaction._id,
+                recipients: [transaction.userId],
+                meta: { transactionId: transaction.id || transaction._id },
+                createdAt: new Date(),
+                readBy: []
+            });
+        } catch (nerr) {
+            console.error('Failed to create notification for rejection:', nerr);
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Rejected',
+            entityId: updatedTransaction.id || updatedTransaction._id,
+            resourceId: updatedTransaction.id || updatedTransaction._id,
+            description: `Rejected borrow request ${transaction.id || transaction._id}`,
+            metadata: { rejectedBy: req.user.id, reason: reason || '' }
+        });
+
+        res.json({ message: 'Borrow request rejected', transactionId: updatedTransaction.id || updatedTransaction._id });
+    } catch (error) {
+        console.error('Reject request error:', error);
+        setAuditContext(req, { success: false, status: 'Error', description: `Reject failed: ${error.message}`, details: { error: error.message } });
+        res.status(500).json({ message: 'Failed to reject request' });
+    }
+});
+
 router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transaction'), async(req, res) => {
     try {
         const { transactions, returnDate, notes } = req.body || {};

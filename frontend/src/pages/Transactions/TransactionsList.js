@@ -349,6 +349,26 @@ const TransactionsList = () => {
     }
   };
 
+  const handleApproveRequest = async () => {
+    const transactionId = getTransactionIdentifier(selectedTransaction);
+    if (!transactionId) {
+      setError('Transaction identifier is missing');
+      return;
+    }
+
+    try {
+      await api.post(`/transactions/approve/${transactionId}`);
+      await fetchTransactions();
+      await fetchStats();
+      handleMenuClose();
+      toast.success('Request approved');
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to approve request';
+      setError(message);
+      console.error('Error approving request:', error);
+    }
+  };
+
   // Confirm and perform return — validates copy ID if available
   const handleConfirmReturn = async () => {
     // Collect expected copy IDs from transaction items (if any), fallback to single copyId
@@ -615,6 +635,7 @@ const TransactionsList = () => {
                     label="Status"
                   >
                     <MenuItem value="all">All Status</MenuItem>
+                    <MenuItem value="requested">Requested</MenuItem>
                     <MenuItem value="active">Active</MenuItem>
                     <MenuItem value="returned">Returned</MenuItem>
                     <MenuItem value="overdue">Overdue</MenuItem>
@@ -801,6 +822,12 @@ const TransactionsList = () => {
           <MenuItem onClick={handleRenewBook}>
             <Schedule sx={{ mr: 1 }} />
             Renew Book
+          </MenuItem>
+        )}
+        {canManageTransactions && selectedTransaction?.status === "requested" && (
+          <MenuItem onClick={() => { handleMenuClose(false); handleApproveRequest(); }}>
+            <CheckCircle sx={{ mr: 1 }} />
+            Approve Request
           </MenuItem>
         )}
       </Menu>

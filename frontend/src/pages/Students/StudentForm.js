@@ -413,8 +413,7 @@ const StudentForm = () => {
                       onChange={handleChange}
                       error={!!validationErrors.lrn}
                       helperText={
-                        validationErrors.lrn ||
-                        "This will be used as the student's password"
+                        validationErrors.lrn ||""
                       }
                       required
                     />

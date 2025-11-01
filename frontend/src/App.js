@@ -36,6 +36,7 @@ import BookCopies from "./pages/Books/BookCopies";
 // Transaction Management
 import TransactionsList from "./pages/Transactions/TransactionsList";
 import BorrowForm from "./pages/Transactions/BorrowForm";
+import RequestsPage from "./pages/Transactions/RequestsPage";
 import ReturnForm from "./pages/Transactions/ReturnForm";
 import TransactionDetails from "./pages/Transactions/TransactionDetails";
 import AnnualBorrowing from "./pages/Transactions/AnnualBorrowing";
@@ -43,6 +44,7 @@ import AnnualBorrowing from "./pages/Transactions/AnnualBorrowing";
 // Reports
 import ReportsPage from "./pages/Reports/ReportsPage";
 import AuditLogs from "./pages/Reports/AuditLogs";
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
 
 // Settings
 import SettingsPage from "./pages/Settings/SettingsPage";
@@ -200,7 +202,7 @@ function App() {
           <Route
             path="books"
             element={
-              <ProtectedRoute roles={["admin", "librarian", "staff"]}>
+                <ProtectedRoute roles={["admin", "librarian", "staff", "student"]}>
                 <BooksList />
               </ProtectedRoute>
             }
@@ -224,7 +226,7 @@ function App() {
           <Route
             path="books/:id"
             element={
-              <ProtectedRoute roles={["admin", "librarian", "staff"]}>
+                <ProtectedRoute roles={["admin", "librarian", "staff", "student"]}>
                 <BookDetails />
               </ProtectedRoute>
             }
@@ -245,11 +247,27 @@ function App() {
                 <TransactionsList />
               </ProtectedRoute>
             }
-          />{" "}
+          />{" "} 
           <Route
             path="transactions/borrow"
             element={
               <ProtectedRoute roles={["admin", "librarian", "staff"]}>
+                <BorrowForm />
+              </ProtectedRoute>
+            }
+          />{" "}
+          <Route
+            path="transactions/requests"
+            element={
+              <ProtectedRoute roles={["admin", "librarian", "staff"]}>
+                <RequestsPage />
+              </ProtectedRoute>
+            }
+          />{" "}
+          <Route
+            path="transactions/request"
+            element={
+              <ProtectedRoute roles={["student"]}>
                 <BorrowForm />
               </ProtectedRoute>
             }
@@ -295,6 +313,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+            <Route
+              path="notifications"
+              element={
+                <ProtectedRoute roles={["admin", "librarian", "staff", "student"]}>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />{" "}
           {/* Settings Routes */}{" "}
           <Route
             path="settings"

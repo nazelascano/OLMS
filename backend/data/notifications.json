@@ -1,0 +1,728 @@
+[
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761958962343_w1gakt",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958962343_w1gakt"
+    },
+    "createdAt": "2025-11-01T01:02:42.345Z",
+    "readBy": [],
+    "_id": "mhfkvgdmg7ubl",
+    "updatedAt": "2025-11-01T01:02:42.346Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761958962343_w1gakt was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761958962343_w1gakt",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958962343_w1gakt"
+    },
+    "createdAt": "2025-11-01T01:02:42.392Z",
+    "readBy": [],
+    "_id": "mhfkvgex56qhg",
+    "updatedAt": "2025-11-01T01:02:42.393Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761958962724_twd2rh",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958962724_twd2rh"
+    },
+    "createdAt": "2025-11-01T01:02:42.726Z",
+    "readBy": [],
+    "_id": "mhfkvgo65yf2y",
+    "updatedAt": "2025-11-01T01:02:42.726Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761958963360_w7kgym",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958963360_w7kgym"
+    },
+    "createdAt": "2025-11-01T01:02:43.362Z",
+    "readBy": [],
+    "_id": "mhfkvh5vol3de",
+    "updatedAt": "2025-11-01T01:02:43.363Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761958986846_bm0nef",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958986846_bm0nef"
+    },
+    "createdAt": "2025-11-01T01:03:06.848Z",
+    "readBy": [],
+    "_id": "mhfkvza9s7lt4",
+    "updatedAt": "2025-11-01T01:03:06.849Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761958987202_1fy3bo",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958987202_1fy3bo"
+    },
+    "createdAt": "2025-11-01T01:03:07.204Z",
+    "readBy": [],
+    "_id": "mhfkvzk5y0oq1",
+    "updatedAt": "2025-11-01T01:03:07.205Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761958987202_1fy3bo was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761958987202_1fy3bo",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958987202_1fy3bo"
+    },
+    "createdAt": "2025-11-01T01:03:07.260Z",
+    "readBy": [],
+    "_id": "mhfkvzlr1gwh3",
+    "updatedAt": "2025-11-01T01:03:07.263Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761958987910_g84x61",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761958987910_g84x61"
+    },
+    "createdAt": "2025-11-01T01:03:07.911Z",
+    "readBy": [],
+    "_id": "mhfkw03rzz6vo",
+    "updatedAt": "2025-11-01T01:03:07.911Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959028159_9m59pe",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959028159_9m59pe"
+    },
+    "createdAt": "2025-11-01T01:03:48.162Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mhfkwv5ub85xf",
+    "updatedAt": "2025-11-01T01:03:48.204Z",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959028551_in32to",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959028551_in32to"
+    },
+    "createdAt": "2025-11-01T01:03:48.553Z",
+    "readBy": [],
+    "_id": "mhfkwvgpvfm4d",
+    "updatedAt": "2025-11-01T01:03:48.553Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761959028551_in32to was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761959028551_in32to",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959028551_in32to"
+    },
+    "createdAt": "2025-11-01T01:03:48.589Z",
+    "readBy": [],
+    "_id": "mhfkwvhrze0op",
+    "updatedAt": "2025-11-01T01:03:48.591Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959029173_ucwwyz",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959029173_ucwwyz"
+    },
+    "createdAt": "2025-11-01T01:03:49.175Z",
+    "readBy": [],
+    "_id": "mhfkwvxz8kqt2",
+    "updatedAt": "2025-11-01T01:03:49.175Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959787207_h1kki9",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959787207_h1kki9"
+    },
+    "createdAt": "2025-11-01T01:16:27.210Z",
+    "readBy": [],
+    "_id": "mhfld4ujajy7o",
+    "updatedAt": "2025-11-01T01:16:27.211Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959787302_6nm0au",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959787302_6nm0au"
+    },
+    "createdAt": "2025-11-01T01:16:27.305Z",
+    "readBy": [],
+    "_id": "mhfld4x74utd5",
+    "updatedAt": "2025-11-01T01:16:27.307Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959787769_g5te14",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959787769_g5te14"
+    },
+    "createdAt": "2025-11-01T01:16:27.777Z",
+    "readBy": [],
+    "_id": "mhfld5abzi0lf",
+    "updatedAt": "2025-11-01T01:16:27.779Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761959787769_g5te14 was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761959787769_g5te14",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959787769_g5te14"
+    },
+    "createdAt": "2025-11-01T01:16:27.824Z",
+    "readBy": [],
+    "_id": "mhfld5bmnoujb",
+    "updatedAt": "2025-11-01T01:16:27.826Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959788551_0t4kgc",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959788551_0t4kgc"
+    },
+    "createdAt": "2025-11-01T01:16:28.555Z",
+    "readBy": [],
+    "_id": "mhfld5vwgvtsq",
+    "updatedAt": "2025-11-01T01:16:28.556Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959873070_3tdedu",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959873070_3tdedu"
+    },
+    "createdAt": "2025-11-01T01:17:53.073Z",
+    "readBy": [],
+    "_id": "mhflez3nr5r1g",
+    "updatedAt": "2025-11-01T01:17:53.075Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959873151_r62nw6",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959873151_r62nw6"
+    },
+    "createdAt": "2025-11-01T01:17:53.154Z",
+    "readBy": [],
+    "_id": "mhflez61z1zk2",
+    "updatedAt": "2025-11-01T01:17:53.161Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959873585_dj26jg",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959873585_dj26jg"
+    },
+    "createdAt": "2025-11-01T01:17:53.586Z",
+    "readBy": [],
+    "_id": "mhflezhvmxtxd",
+    "updatedAt": "2025-11-01T01:17:53.587Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761959873585_dj26jg was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761959873585_dj26jg",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959873585_dj26jg"
+    },
+    "createdAt": "2025-11-01T01:17:53.620Z",
+    "readBy": [],
+    "_id": "mhflezj1j7iqg",
+    "updatedAt": "2025-11-01T01:17:53.629Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959874258_mbaskb",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959874258_mbaskb"
+    },
+    "createdAt": "2025-11-01T01:17:54.260Z",
+    "readBy": [],
+    "_id": "mhflf00ntrnwh",
+    "updatedAt": "2025-11-01T01:17:54.263Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959903258_6pn9zv",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959903258_6pn9zv"
+    },
+    "createdAt": "2025-11-01T01:18:23.263Z",
+    "readBy": [],
+    "_id": "mhflfme90r734",
+    "updatedAt": "2025-11-01T01:18:23.265Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959903652_e5u1q8",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959903652_e5u1q8"
+    },
+    "createdAt": "2025-11-01T01:18:23.654Z",
+    "readBy": [],
+    "_id": "mhflfmp3djvv9",
+    "updatedAt": "2025-11-01T01:18:23.655Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761959903652_e5u1q8 was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761959903652_e5u1q8",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959903652_e5u1q8"
+    },
+    "createdAt": "2025-11-01T01:18:23.695Z",
+    "readBy": [],
+    "_id": "mhflfmq9g9oz0",
+    "updatedAt": "2025-11-01T01:18:23.697Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959903980_wix5jp",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959903980_wix5jp"
+    },
+    "createdAt": "2025-11-01T01:18:23.981Z",
+    "readBy": [],
+    "_id": "mhflfmy6idcod",
+    "updatedAt": "2025-11-01T01:18:23.982Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959946204_t4800t",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959946204_t4800t"
+    },
+    "createdAt": "2025-11-01T01:19:06.206Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mhflgjj31zocd",
+    "updatedAt": "2025-11-01T01:19:06.255Z",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959946409_o6wfnr",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959946409_o6wfnr"
+    },
+    "createdAt": "2025-11-01T01:19:06.419Z",
+    "readBy": [],
+    "_id": "mhflgjp7v6npm",
+    "updatedAt": "2025-11-01T01:19:06.427Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959946782_3dj4uv",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959946782_3dj4uv"
+    },
+    "createdAt": "2025-11-01T01:19:06.785Z",
+    "readBy": [],
+    "_id": "mhflgjz6uilr2",
+    "updatedAt": "2025-11-01T01:19:06.786Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761959946782_3dj4uv was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761959946782_3dj4uv",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959946782_3dj4uv"
+    },
+    "createdAt": "2025-11-01T01:19:06.841Z",
+    "readBy": [],
+    "_id": "mhflgk0s5ghh3",
+    "updatedAt": "2025-11-01T01:19:06.844Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959947427_yippgh",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959947427_yippgh"
+    },
+    "createdAt": "2025-11-01T01:19:07.429Z",
+    "readBy": [],
+    "_id": "mhflgkh2c9wu2",
+    "updatedAt": "2025-11-01T01:19:07.430Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959969970_0u22jf",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959969970_0u22jf"
+    },
+    "createdAt": "2025-11-01T01:19:29.973Z",
+    "readBy": [],
+    "_id": "mhflh1v9owp7k",
+    "updatedAt": "2025-11-01T01:19:29.973Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959970060_fvtjvu",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959970060_fvtjvu"
+    },
+    "createdAt": "2025-11-01T01:19:30.062Z",
+    "readBy": [],
+    "_id": "mhflh1xq51koj",
+    "updatedAt": "2025-11-01T01:19:30.062Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959970444_7g542i",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959970444_7g542i"
+    },
+    "createdAt": "2025-11-01T01:19:30.446Z",
+    "readBy": [],
+    "_id": "mhflh28etdsys",
+    "updatedAt": "2025-11-01T01:19:30.446Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761959970444_7g542i was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761959970444_7g542i",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959970444_7g542i"
+    },
+    "createdAt": "2025-11-01T01:19:30.481Z",
+    "readBy": [],
+    "_id": "mhflh29fl4wto",
+    "updatedAt": "2025-11-01T01:19:30.483Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761959971020_17th0t",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761959971020_17th0t"
+    },
+    "createdAt": "2025-11-01T01:19:31.021Z",
+    "readBy": [],
+    "_id": "mhflh2oe65udl",
+    "updatedAt": "2025-11-01T01:19:31.022Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761960013751_il64b6",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761960013751_il64b6"
+    },
+    "createdAt": "2025-11-01T01:20:13.754Z",
+    "readBy": [],
+    "_id": "mhflhzneu53bp",
+    "updatedAt": "2025-11-01T01:20:13.754Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761960013826_tns6tf",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761960013826_tns6tf"
+    },
+    "createdAt": "2025-11-01T01:20:13.828Z",
+    "readBy": [],
+    "_id": "mhflhzpgutqbv",
+    "updatedAt": "2025-11-01T01:20:13.828Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761960014342_oe3s5d",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761960014342_oe3s5d"
+    },
+    "createdAt": "2025-11-01T01:20:14.350Z",
+    "readBy": [],
+    "_id": "mhfli03zubvtn",
+    "updatedAt": "2025-11-01T01:20:14.351Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1761960014342_oe3s5d was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1761960014342_oe3s5d",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761960014342_oe3s5d"
+    },
+    "createdAt": "2025-11-01T01:20:14.399Z",
+    "readBy": [],
+    "_id": "mhfli05dm98o7",
+    "updatedAt": "2025-11-01T01:20:14.401Z"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1761960015185_kiyfqr",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1761960015185_kiyfqr"
+    },
+    "createdAt": "2025-11-01T01:20:15.187Z",
+    "readBy": [],
+    "_id": "mhfli0r8gj176",
+    "updatedAt": "2025-11-01T01:20:15.188Z"
+  }
+]

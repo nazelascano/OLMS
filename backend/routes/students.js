@@ -188,10 +188,15 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             return res.status(400).json({ message: 'Username already exists' });
         }
 
-        // Build default raw password: first letter of firstName + username
-        const rawPassword = `${(studentData.firstName || '').charAt(0)}${usernameToUse}`;
-        const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    // Build default raw password: first letter of firstName + surname (preferred) or username (fallback)
+    // Rationale: using surname (lastName) makes the default password more memorable (e.g., "JSmith")
+    // while still keeping a deterministic rule. If lastName is missing, fall back to usernameToUse.
+    const firstInitial = (studentData.firstName || '').charAt(0) || '';
+    const surname = (studentData.lastName || '').toString().replace(/\s+/g, '');
+    const rawPassword = surname ? `${firstInitial}${surname}` : `${firstInitial}${usernameToUse}`;
+        const hashedPassword = await bcrypt.hash(rawPassword.toLowerCase(), 10);
         studentData.password = hashedPassword;
+        
         // ensure username field is set to the chosen username
         studentData.username = usernameToUse;
 
@@ -499,15 +504,23 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                 // Generate library card number for each student
                 const libraryCardNumber = await generateLibraryCardNumber(req.dbAdapter);
 
-                // Determine username (prefer LRN) and generate default password (first letter of firstName + username)
+                // Determine username (prefer LRN) and generate default password (first letter + surname preferred)
                 const username = studentData.lrn || studentData.username || null;
                 let hashedPassword = null;
                 if (username) {
-                    const rawPassword = `${(studentData.firstName || '').charAt(0)}${username}`;
-                    hashedPassword = await bcrypt.hash(rawPassword, 10);
+                    const firstInitial = (studentData.firstName || '').charAt(0) || '';
+                    const surname = (studentData.lastName || '').toString().replace(/\s+/g, '');
+                    const rawPassword = surname ? `${firstInitial}${surname}` : `${firstInitial}${username}`;
+                    hashedPassword = await bcrypt.hash(rawPassword.toLowerCase(), 10);
                 } else if (studentData.password) {
-                    // fallback to provided password (already hashed or plain depending on upstream)
-                    hashedPassword = await bcrypt.hash(studentData.password, 10);
+                    // fallback to provided password: if it's already a bcrypt hash, keep it as-is;
+                    // otherwise hash the provided plaintext password before storing.
+                    const isBcrypt = (p) => typeof p === 'string' && /^\$2[aby]\$/.test(p);
+                    if (isBcrypt(studentData.password)) {
+                        hashedPassword = studentData.password;
+                    } else {
+                        hashedPassword = await bcrypt.hash(studentData.password, 10);
+                    }
                 }
 
                 const newStudent = {
