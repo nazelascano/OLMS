@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -12,6 +12,7 @@ import {
   TableRow,
   Paper,
   Chip,
+  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -63,6 +64,8 @@ const StudentsList = () => {
     ensureUserAttributes(),
   );
   const [attributeError, setAttributeError] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Menu state for per-row actions (three-dot vertical menu)
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -235,6 +238,29 @@ const StudentsList = () => {
 
     return matchesSearch && matchesGrade && matchesSection;
   });
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, gradeFilter, sectionFilter]);
+
+  useEffect(() => {
+    if (filteredStudents.length === 0) {
+      setPage(0);
+      return;
+    }
+    const maxPage = Math.max(Math.ceil(filteredStudents.length / rowsPerPage) - 1, 0);
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [filteredStudents.length, rowsPerPage, page]);
+
+  const paginatedStudents = useMemo(() => {
+    if (rowsPerPage <= 0) {
+      return filteredStudents;
+    }
+    const start = page * rowsPerPage;
+    return filteredStudents.slice(start, start + rowsPerPage);
+  }, [filteredStudents, page, rowsPerPage]);
 
   const getDuesColor = (dues) => {
     if (dues === 0) return "success";
@@ -462,7 +488,7 @@ const StudentsList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredStudents.map((student) => (
+              {paginatedStudents.map((student) => (
                 <TableRow key={student._id || student.id || student.uid || student.studentId} hover>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
@@ -638,6 +664,21 @@ const StudentsList = () => {
               ))}
             </TableBody>{" "}
           </Table>{" "}
+          <TablePagination
+            component="div"
+            count={filteredStudents.length}
+            page={page}
+            onPageChange={(event, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(event) => {
+              const value = parseInt(event.target.value, 10);
+              setRowsPerPage(Number.isNaN(value) ? 10 : value);
+              setPage(0);
+            }}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            labelRowsPerPage="Rows per page"
+            sx={{ borderTop: "1px solid", borderColor: "divider" }}
+          />
         </TableContainer>
       )}
   {/* Delete Confirmation Dialog */}

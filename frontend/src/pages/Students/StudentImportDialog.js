@@ -568,10 +568,8 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
         <Typography variant="body2">
-          Import completed!{importResults.success}
-          students imported successfully, {importResults.errors}
-          failed.{" "}
-        </Typography>{" "}
+          Import completed! {importResults.success} students imported successfully, {importResults.errors} failed.
+        </Typography>
       </Alert>
       {importResults.details && importResults.details.length > 0 && (
         <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
@@ -595,7 +593,12 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
                     />
                   </TableCell>
                   <TableCell>
-                    {detail.error || "Imported successfully"}
+                    {(() => {
+                      const issues = Array.isArray(detail.issues) && detail.issues.length > 0
+                        ? detail.issues.join(', ')
+                        : null;
+                      return detail.message || detail.error || issues || 'Imported successfully';
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}
