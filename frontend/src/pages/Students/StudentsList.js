@@ -141,7 +141,9 @@ const StudentsList = () => {
   const fetchStudents = useCallback(
     async (override = {}) => {
       const pageToFetch = override.page ?? page;
-      const limitToFetch = override.limit ?? rowsPerPage;
+  const limitToFetch = override.limit ?? rowsPerPage;
+  const limitValue = typeof limitToFetch === "string" ? limitToFetch.toLowerCase() : limitToFetch;
+  const isAllMode = limitValue === "all" || limitValue === -1;
       const gradeToFetch = override.grade ?? gradeFilter;
       const sectionToFetch = override.section ?? sectionFilter;
       const searchToFetch = override.search ?? debouncedSearchTerm;
@@ -149,8 +151,8 @@ const StudentsList = () => {
       try {
         setLoading(true);
         const params = {
-          page: pageToFetch + 1,
-          limit: limitToFetch,
+          page: isAllMode ? 1 : pageToFetch + 1,
+          limit: isAllMode ? "all" : limitToFetch,
         };
         if (gradeToFetch) params.grade = gradeToFetch;
         if (sectionToFetch) params.section = sectionToFetch;
@@ -658,7 +660,7 @@ const StudentsList = () => {
               setRowsPerPage(nextLimit);
               setPage(0);
             }}
-            rowsPerPageOptions={[10, 25, 50, 100]}
+            rowsPerPageOptions={[10, 25, 50, 100, { label: "All", value: -1 }]}
             labelRowsPerPage="Rows per page"
             sx={{ borderTop: "1px solid", borderColor: "divider" }}
           />

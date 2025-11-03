@@ -78,7 +78,7 @@ const buildBookSummary = (book) => {
 
 router.get('/', verifyToken, async(req, res) => {
     try {
-        const { page = 1, limit = 20, search, category, status, sortBy = 'title', sortOrder = 'asc' } = req.query;
+    const { page = 1, limit = 20, search, category, status, sortBy = 'title', sortOrder = 'asc' } = req.query;
         let filters = {};
         if (category) filters.category = category;
         if (status) filters.status = status;
@@ -94,11 +94,27 @@ router.get('/', verifyToken, async(req, res) => {
             return String(aVal).localeCompare(String(bVal));
         });
         const totalBooks = books.length;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + parseInt(limit);
-        const paginatedBooks = books.slice(startIndex, endIndex);
+        const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
+        const limitString = typeof limit === 'string' ? limit.toLowerCase() : limit;
+        const wantsAll = limitString === 'all' || parseInt(limit, 10) === -1;
+        const resolvedLimit = wantsAll ? totalBooks : Math.max(parseInt(limit, 10) || 20, 1);
+        const startIndex = wantsAll ? 0 : (normalizedPage - 1) * resolvedLimit;
+        const endIndex = wantsAll ? totalBooks : startIndex + resolvedLimit;
+        const paginatedBooks = wantsAll ? books : books.slice(startIndex, endIndex);
         const booksWithCopies = paginatedBooks.map(book => ({...book, copiesCount: book.copies ?.length || 0, availableCopiesCount: book.copies ?.filter(c => c.status === 'available').length || 0 }));
-        res.json({ books: booksWithCopies, pagination: { currentPage: parseInt(page), totalPages: Math.ceil(totalBooks / limit), totalBooks, hasMore: endIndex < totalBooks } });
+        const totalPages = wantsAll ? (totalBooks > 0 ? 1 : 0) : Math.ceil(totalBooks / resolvedLimit);
+        res.json({
+            books: booksWithCopies,
+            total: totalBooks,
+            pagination: {
+                currentPage: normalizedPage,
+                totalPages,
+                totalBooks,
+                hasMore: !wantsAll && endIndex < totalBooks,
+                limit: resolvedLimit,
+                mode: wantsAll ? 'all' : 'paged'
+            }
+        });
     } catch (error) {
         console.error('Get books error:', error);
         res.status(500).json({ message: 'Failed to fetch books' });

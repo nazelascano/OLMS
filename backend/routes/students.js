@@ -50,12 +50,21 @@ router.get('/next-library-card', verifyToken, requireStaff, async(req, res) => {
 // Get all students with student-specific data
 router.get('/', verifyToken, requireStaff, async(req, res) => {
     try {
-        const filters = {
-            role: 'student',
-            ...req.query
-        };
+        const {
+            page = 1,
+            limit = 20,
+            grade,
+            section,
+            curriculum,
+            search,
+            isActive
+        } = req.query;
 
-        const students = await req.dbAdapter.getUsers(filters);
+        const baseFilters = { role: 'student' };
+        if (curriculum) baseFilters.curriculum = curriculum;
+        if (isActive !== undefined) baseFilters.isActive = isActive === 'true';
+
+        const students = await req.dbAdapter.getUsers(baseFilters);
 
         // Backfill missing school year data for legacy records.
         const hydratedStudents = await Promise.all(students.map(async(student) => {
@@ -80,20 +89,73 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
             }
         }));
 
-        // Add additional student-specific processing
-        const processedStudents = hydratedStudents.map(student => ({
+        const enhancedStudents = hydratedStudents.map(student => ({
             ...student,
             grade: student.grade || student.gradeLevel || 'N/A',
             section: student.section || 'N/A',
-            dues: student.borrowingStats ?.totalFines || 0,
+            dues: student.borrowingStats?.totalFines || 0,
             studentId: student.studentId || student.studentNumber || 'N/A'
         }));
 
+        const searchTerm = typeof search === 'string' ? search.toLowerCase() : '';
+        let filteredStudents = enhancedStudents;
+
+        if (grade) {
+            const gradeLower = grade.toString().toLowerCase();
+            filteredStudents = filteredStudents.filter(student =>
+                (student.grade || '').toString().toLowerCase() === gradeLower ||
+                (student.gradeLevel || '').toString().toLowerCase() === gradeLower
+            );
+        }
+
+        if (section) {
+            const sectionLower = section.toString().toLowerCase();
+            filteredStudents = filteredStudents.filter(student =>
+                (student.section || '').toString().toLowerCase() === sectionLower
+            );
+        }
+
+        if (searchTerm) {
+            filteredStudents = filteredStudents.filter(student => {
+                const valuesToMatch = [
+                    student.firstName,
+                    student.lastName,
+                    student.middleName,
+                    student.email,
+                    student.username,
+                    student.studentId,
+                    student.studentNumber,
+                    student.libraryCardNumber,
+                    student.lrn,
+                    student.library?.cardNumber
+                ];
+                return valuesToMatch.some(value =>
+                    value && value.toString().toLowerCase().includes(searchTerm)
+                );
+            });
+        }
+
+        const total = filteredStudents.length;
+        const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
+        const limitString = typeof limit === 'string' ? limit.toLowerCase() : limit;
+        const wantsAll = limitString === 'all' || parseInt(limit, 10) === -1;
+        const resolvedLimit = wantsAll ? total : Math.max(parseInt(limit, 10) || 20, 1);
+        const offset = wantsAll ? 0 : (normalizedPage - 1) * resolvedLimit;
+        const paginatedStudents = wantsAll ? filteredStudents : filteredStudents.slice(offset, offset + resolvedLimit);
+        const totalPages = wantsAll ? (total > 0 ? 1 : 0) : Math.ceil(total / resolvedLimit);
+
         res.json({
-            students: processedStudents,
-            total: processedStudents.length,
-            page: parseInt(req.query.page) || 1,
-            totalPages: Math.ceil(processedStudents.length / (parseInt(req.query.limit) || 50))
+            students: paginatedStudents,
+            total,
+            page: normalizedPage,
+            totalPages,
+            pagination: {
+                page: normalizedPage,
+                limit: resolvedLimit,
+                total,
+                pages: totalPages,
+                mode: wantsAll ? 'all' : 'paged'
+            }
         });
     } catch (error) {
         console.error('Failed to fetch students:', error);

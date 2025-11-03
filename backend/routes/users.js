@@ -186,12 +186,12 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
     try {
         const {
             page = 1,
-                limit = 20,
-                role,
-                curriculum,
-                gradeLevel,
-                isActive,
-                search
+            limit = 20,
+            role,
+            curriculum,
+            gradeLevel,
+            isActive,
+            search
         } = req.query;
 
         // Build query filters
@@ -220,9 +220,13 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
         users.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         // Apply pagination
-        const skip = (page - 1) * limit;
-        const total = users.length;
-        const paginatedUsers = users.slice(skip, skip + parseInt(limit));
+    const total = users.length;
+    const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
+    const limitString = typeof limit === 'string' ? limit.toLowerCase() : limit;
+    const wantsAll = limitString === 'all' || parseInt(limit, 10) === -1;
+    const resolvedLimit = wantsAll ? total : Math.max(parseInt(limit, 10) || 20, 1);
+    const skip = wantsAll ? 0 : (normalizedPage - 1) * resolvedLimit;
+    const paginatedUsers = wantsAll ? users : users.slice(skip, skip + resolvedLimit);
 
         // Remove password field from response
         const safeUsers = paginatedUsers.map(user => {
@@ -237,11 +241,13 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
         res.json({
             users: safeUsers,
             pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
+                page: normalizedPage,
+                limit: resolvedLimit,
                 total,
-                pages: Math.ceil(total / limit)
-            }
+                pages: wantsAll ? (total > 0 ? 1 : 0) : Math.ceil(total / resolvedLimit),
+                mode: wantsAll ? 'all' : 'paged'
+            },
+            total
         });
 
     } catch (error) {

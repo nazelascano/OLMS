@@ -85,14 +85,18 @@ const UsersList = () => {
     async (override = {}) => {
       const pageToFetch = override.page ?? page;
       const limitToFetch = override.limit ?? rowsPerPage;
+      const limitValue = typeof limitToFetch === "string" ? limitToFetch.toLowerCase() : limitToFetch;
+      const isAllMode = limitValue === "all" || limitValue === -1;
       const roleToFetch = override.role ?? roleFilter;
       const searchToFetch = override.search ?? debouncedSearchTerm;
 
       try {
         setLoading(true);
+        const limitParam = isAllMode ? "all" : limitToFetch;
+        const pageParam = isAllMode ? 1 : pageToFetch + 1;
         const params = {
-          page: pageToFetch + 1,
-          limit: limitToFetch,
+          page: pageParam,
+          limit: limitParam,
         };
         if (roleToFetch) params.role = roleToFetch;
         if (searchToFetch) params.search = searchToFetch;
@@ -347,7 +351,7 @@ const UsersList = () => {
               setRowsPerPage(Number.isNaN(value) ? 10 : value);
               setPage(0);
             }}
-            rowsPerPageOptions={[10, 25, 50, 100]}
+            rowsPerPageOptions={[10, 25, 50, 100, { label: "All", value: -1 }]}
             labelRowsPerPage="Rows per page"
             sx={{ borderTop: "1px solid", borderColor: "divider" }}
           />

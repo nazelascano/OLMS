@@ -75,15 +75,17 @@ const BooksList = () => {
   const fetchBooks = useCallback(
     async (override = {}) => {
       const pageToFetch = override.page ?? page;
-      const limitToFetch = override.limit ?? rowsPerPage;
+  const limitToFetch = override.limit ?? rowsPerPage;
+  const limitValue = typeof limitToFetch === "string" ? limitToFetch.toLowerCase() : limitToFetch;
+  const isAllMode = limitValue === "all" || limitValue === -1;
       const categoryToFetch = override.category ?? categoryFilter;
       const searchToFetch = override.search ?? debouncedSearchTerm;
 
       try {
         setLoading(true);
         const params = {
-          page: pageToFetch + 1,
-          limit: limitToFetch,
+          page: isAllMode ? 1 : pageToFetch + 1,
+          limit: isAllMode ? "all" : limitToFetch,
         };
         if (categoryToFetch) params.category = categoryToFetch;
         if (searchToFetch) params.search = searchToFetch;
@@ -299,7 +301,7 @@ const BooksList = () => {
               setRowsPerPage(nextLimit);
               setPage(0);
             }}
-            rowsPerPageOptions={[8, 12, 24, 48]}
+            rowsPerPageOptions={[8, 12, 24, 48, { label: "All", value: -1 }]}
             labelRowsPerPage="Rows per page"
           />
         </Box>
