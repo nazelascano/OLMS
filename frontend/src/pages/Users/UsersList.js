@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -13,6 +13,7 @@ import {
   TableRow,
   Paper,
   Chip,
+  TablePagination,
   IconButton,
   Menu,
   MenuItem,
@@ -54,6 +55,8 @@ const UsersList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -146,6 +149,29 @@ const UsersList = () => {
     const matchesRole = !roleFilter || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, roleFilter]);
+
+  useEffect(() => {
+    if (filteredUsers.length === 0) {
+      setPage(0);
+      return;
+    }
+    const maxPage = Math.max(Math.ceil(filteredUsers.length / rowsPerPage) - 1, 0);
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [filteredUsers.length, rowsPerPage, page]);
+
+  const paginatedUsers = useMemo(() => {
+    if (rowsPerPage <= 0) {
+      return filteredUsers;
+    }
+    const start = page * rowsPerPage;
+    return filteredUsers.slice(start, start + rowsPerPage);
+  }, [filteredUsers, page, rowsPerPage]);
 
   const getRoleColor = (role) => {
     switch (role) {
@@ -271,7 +297,7 @@ const UsersList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <TableRow key={getUserId(user)} hover onDoubleClick={() => handleRowDoubleClick(user)} sx={{ cursor: "pointer" }}>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={2}>
@@ -301,6 +327,21 @@ const UsersList = () => {
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={filteredUsers.length}
+            page={page}
+            onPageChange={(event, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(event) => {
+              const value = parseInt(event.target.value, 10);
+              setRowsPerPage(Number.isNaN(value) ? 10 : value);
+              setPage(0);
+            }}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            labelRowsPerPage="Rows per page"
+            sx={{ borderTop: "1px solid", borderColor: "divider" }}
+          />
         </TableContainer>
       )}
 

@@ -179,7 +179,7 @@ class MongoAdapter {
 		const usersCollection = this.db.collection('users');
 
 		await usersCollection.createIndex({ username: 1 }, { unique: true, sparse: true }).catch(() => {});
-		await usersCollection.createIndex({ email: 1 }, { unique: true, sparse: true }).catch(() => {});
+		await usersCollection.createIndex({ email: 1 }, { sparse: true }).catch(() => {});
 
 		const adminUser = await usersCollection.findOne({ username: 'admin' });
 		if (!adminUser) {
