@@ -303,6 +303,26 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
 
       if (responseErrors && Array.isArray(responseErrors) && responseErrors.length > 0) {
         console.warn("Import validation errors:", responseErrors);
+        const summarized = responseErrors
+          .slice(0, 5)
+          .map((entry) => {
+            const rowNumber = typeof entry.idx === "number" ? entry.idx + 2 : "?"; // +2 accounts for header row
+            const issues = Array.isArray(entry.issues)
+              ? entry.issues
+              : Array.isArray(entry.errors)
+                ? entry.errors
+                : [entry.error || "Unknown validation issue"];
+            return `Row ${rowNumber}: ${issues.join(", ")}`;
+          })
+          .join("\n");
+
+        toast.error(
+          responseMessage
+            ? `${responseMessage}\n${summarized}`
+            : `Bulk import failed:\n${summarized}`,
+          { duration: 8000 }
+        );
+        return;
       }
 
       if (responseMessage) {
