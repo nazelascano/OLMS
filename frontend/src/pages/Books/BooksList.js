@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -21,6 +21,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  TablePagination,
 } from "@mui/material";
 import {
   Add,
@@ -34,7 +35,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/api";
+import { api, booksAPI } from "../../utils/api";
 import toast from "react-hot-toast";
 import BookImportDialog from "./BookImportDialog";
 import { PageLoading } from "../../components/Loading";
@@ -46,6 +47,10 @@ const BooksList = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const [totalBooks, setTotalBooks] = useState(0);
   const [selectedBook, setSelectedBook] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -60,18 +65,45 @@ const BooksList = () => {
   const [categories, setCategories] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("");
 
-  const fetchBooks = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/books");
-      setBooks(response.data.books || []);
-    } catch (error) {
-      console.error("Failed to fetch books:", error);
-      toast.error("Failed to load books");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchBooks = useCallback(
+    async (override = {}) => {
+      const pageToFetch = override.page ?? page;
+      const limitToFetch = override.limit ?? rowsPerPage;
+      const categoryToFetch = override.category ?? categoryFilter;
+      const searchToFetch = override.search ?? debouncedSearchTerm;
+
+      try {
+        setLoading(true);
+        const params = {
+          page: pageToFetch + 1,
+          limit: limitToFetch,
+        };
+        if (categoryToFetch) params.category = categoryToFetch;
+        if (searchToFetch) params.search = searchToFetch;
+
+        const response = await booksAPI.getAll(params);
+        const payload = response.data || {};
+        const bookList = payload.books || payload.data || [];
+        const total = payload.total || payload.pagination?.total || bookList.length || 0;
+
+        setBooks(bookList);
+        setTotalBooks(total);
+      } catch (error) {
+        console.error("Failed to fetch books:", error);
+        toast.error("Failed to load books");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, rowsPerPage, categoryFilter, debouncedSearchTerm]
+  );
 
   const fetchCategories = async () => {
     try {
@@ -84,13 +116,16 @@ const BooksList = () => {
 
   useEffect(() => {
     fetchBooks();
+  }, [fetchBooks]);
+
+  useEffect(() => {
     fetchCategories();
   }, []);
 
   const handleDeleteBook = async () => {
     try {
       await api.delete(`/books/${selectedBook.id}`);
-      setBooks((prev) => prev.filter((book) => book.id !== selectedBook.id));
+      fetchBooks();
       toast.success("Book deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedBook(null);
@@ -110,14 +145,15 @@ const BooksList = () => {
     setSelectedBook(null);
   };
 
-  const filteredBooks = books.filter((book) => {
-    const matchesText =
-      book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.isbn?.includes(searchTerm);
-    const matchesCategory = !categoryFilter || (book.category || "") === categoryFilter;
-    return matchesText && matchesCategory;
-  });
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchTerm, categoryFilter]);
+
+  useEffect(() => {
+    if (!loading && books.length === 0 && totalBooks > 0 && page > 0) {
+      setPage((prev) => Math.max(prev - 1, 0));
+    }
+  }, [loading, books.length, totalBooks, page]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -132,8 +168,7 @@ const BooksList = () => {
         return "default";
     }
   };
-
-  if (loading) return <PageLoading message="Loading books..." />;
+  if (loading && books.length === 0) return <PageLoading message="Loading books..." />;
 
   const isStudent = user?.role === "student";
   const canManageBooks = hasPermission("books.update") || hasPermission("books.delete");
@@ -199,7 +234,7 @@ const BooksList = () => {
       </Box>
 
       {/* Books Grid */}
-      {filteredBooks.length === 0 ? (
+      {!loading && totalBooks === 0 ? (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {searchTerm ? "No books found matching your search" : "No books available"}
@@ -215,7 +250,7 @@ const BooksList = () => {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {filteredBooks.map((book) => (
+          {books.map((book) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={book.id}>
               <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                 <CardContent sx={{ flexGrow: 1 }}>
@@ -246,6 +281,28 @@ const BooksList = () => {
             </Grid>
           ))}
         </Grid>
+      )}
+
+      {totalBooks > 0 && (
+        <Box display="flex" justifyContent="flex-end" mt={3}>
+          <TablePagination
+            component="div"
+            count={totalBooks}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(event, newPage) => {
+              setPage(newPage);
+            }}
+            onRowsPerPageChange={(event) => {
+              const value = parseInt(event.target.value, 10);
+              const nextLimit = Number.isNaN(value) ? rowsPerPage : value;
+              setRowsPerPage(nextLimit);
+              setPage(0);
+            }}
+            rowsPerPageOptions={[8, 12, 24, 48]}
+            labelRowsPerPage="Rows per page"
+          />
+        </Box>
       )}
 
       {/* Action Menu */}
@@ -299,7 +356,14 @@ const BooksList = () => {
         </Fab>
       )}
 
-      <BookImportDialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)} onImportComplete={fetchBooks} />
+      <BookImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onImportComplete={() => {
+          setPage(0);
+          fetchBooks({ page: 0 });
+        }}
+      />
     </Box>
   );
 };

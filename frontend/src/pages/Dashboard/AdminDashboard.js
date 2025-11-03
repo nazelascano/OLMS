@@ -136,27 +136,27 @@ const AdminDashboard = () => {
       {/* Statistics Cards in 2x3 Grid matching Figma */}
       <Grid container spacing={2} mb={3}>
         {/* First Row */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <StatCard title="Borrowed Books" value={stats?.borrowedBooks} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <StatCard title="Returned Books" value={stats?.returnedBooks} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <StatCard title="Overdue Books" value={stats?.overdueBooks} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <StatCard title="Missing Books" value={stats?.missingBooks} />
         </Grid>
 
         {/* Second Row */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={6} sm={6} md={4}>
           <StatCard title="Total Books" value={stats?.totalBooks} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={6} sm={6} md={4}>
           <StatCard title="Visitors" value={stats?.visitors} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={6} sm={6} md={4}>
           <StatCard title="New Students this S.Y" value={stats?.newStudents} />
         </Grid>
       </Grid>

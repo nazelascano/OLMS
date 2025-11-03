@@ -277,7 +277,7 @@ const StudentDashboard = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={8}>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={6} sm={4}>
               <Card>
                 <CardContent>
                   <Typography variant="subtitle2" color="textSecondary">Total Borrowed</Typography>
@@ -285,7 +285,7 @@ const StudentDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={6} sm={4}>
               <Card>
                 <CardContent>
                   <Typography variant="subtitle2" color="textSecondary">Currently Borrowed</Typography>
@@ -293,7 +293,7 @@ const StudentDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={6} sm={4}>
               <Card>
                 <CardContent>
                   <Typography variant="subtitle2" color="textSecondary">Pending / Overdue</Typography>
