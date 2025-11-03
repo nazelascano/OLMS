@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -26,8 +26,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  IconButton,
-  Menu,
 } from "@mui/material";
 import {
   TrendingUp,
@@ -49,6 +47,67 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { reportsAPI, studentsAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateReportPDF, downloadPDF } from "../../utils/pdfGenerator";
+
+const DEFAULT_STUDENT_FILTERS = {
+  grade: "",
+  section: "",
+  schoolYear: "",
+};
+
+const normalizeFilterValue = (value) => {
+  if (value === null || value === undefined) return "";
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  const lowered = trimmed.toLowerCase();
+  if (["n/a", "not assigned", "none", "unknown"].includes(lowered)) {
+    return "";
+  }
+  return trimmed;
+};
+
+const deriveFilterOptionsFromStudents = (students) => {
+  const grades = new Set();
+  const sections = new Set();
+  const schoolYears = new Set();
+
+  (students || []).forEach((student) => {
+    const grade = normalizeFilterValue(student.grade || student.gradeLevel);
+    if (grade) grades.add(grade);
+
+    const section = normalizeFilterValue(student.section);
+    if (section) sections.add(section);
+
+    const schoolYear = normalizeFilterValue(student.schoolYear || student.academicYear);
+    if (schoolYear) schoolYears.add(schoolYear);
+  });
+
+  const toSortedArray = (set) => Array.from(set).sort((a, b) => a.localeCompare(b));
+
+  return {
+    grades: toSortedArray(grades),
+    sections: toSortedArray(sections),
+    schoolYears: toSortedArray(schoolYears),
+  };
+};
+
+const filterStudentsByCriteria = (students, filters) => {
+  const gradeFilter = normalizeFilterValue(filters.grade);
+  const sectionFilter = normalizeFilterValue(filters.section);
+  const yearFilter = normalizeFilterValue(filters.schoolYear);
+
+  return (students || []).filter((student) => {
+    const grade = normalizeFilterValue(student.grade || student.gradeLevel);
+    if (gradeFilter && grade !== gradeFilter) return false;
+
+    const section = normalizeFilterValue(student.section);
+    if (sectionFilter && section !== sectionFilter) return false;
+
+    const schoolYear = normalizeFilterValue(student.schoolYear || student.academicYear);
+    if (yearFilter && schoolYear !== yearFilter) return false;
+
+    return true;
+  });
+};
 
 const initialDashboardStats = {
   totalBooks: 0,
@@ -79,22 +138,17 @@ const ReportsPage = () => {
     endDate: new Date(),
   });
 
-  const [studentFilters, setStudentFilters] = useState({
-    grade: '',
-    section: '',
-    schoolYear: '',
-  });
+  const [studentFilters, setStudentFilters] = useState(DEFAULT_STUDENT_FILTERS);
+  const [draftStudentFilters, setDraftStudentFilters] = useState(DEFAULT_STUDENT_FILTERS);
 
   const [filterOptions, setFilterOptions] = useState({
     grades: [],
     sections: [],
     schoolYears: [],
   });
-  // Filter menu state for student filters
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-  const filterOpen = Boolean(filterAnchorEl);
-  const openFilterMenu = (e) => setFilterAnchorEl(e.currentTarget);
-  const closeFilterMenu = () => setFilterAnchorEl(null);
+
+  const [allStudents, setAllStudents] = useState([]);
+  const studentFiltersRef = useRef(studentFilters);
 
   const [dashboardStats, setDashboardStats] = useState(initialDashboardStats);
   const [reportData, setReportData] = useState(initialReportData);
@@ -225,39 +279,11 @@ const ReportsPage = () => {
     return params;
   }, [dateRange.startDate, dateRange.endDate]);
 
-  const loadFilterOptions = useCallback(async () => {
-    try {
-      // Get all students to extract unique filter options
-      const response = await studentsAPI.getAll({ limit: 10000 });
-      const students = response.data?.students || response.data || [];
-
-      const grades = [...new Set(students.map(s => s.grade).filter(Boolean))].sort();
-      const sections = [...new Set(students.map(s => s.section).filter(Boolean))].sort();
-      const schoolYears = [...new Set(students.map(s => s.schoolYear).filter(Boolean))].sort();
-
-      setFilterOptions({
-        grades,
-        sections,
-        schoolYears,
-      });
-    } catch (error) {
-      console.error('Error loading filter options:', error);
-    }
-  }, []);
-
   const loadAllReports = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
       const params = getRangeParams();
-
-      // Build student filter params - only apply when not on student list tab
-      const studentParams = { limit: 1000 };
-      if (currentTab === 7) { // Student List tab
-        if (studentFilters.grade) studentParams.grade = studentFilters.grade;
-        if (studentFilters.section) studentParams.section = studentFilters.section;
-        if (studentFilters.schoolYear) studentParams.schoolYear = studentFilters.schoolYear;
-      }
 
       const [
         dashboardResponse,
@@ -268,7 +294,7 @@ const ReportsPage = () => {
         overdue,
         fine,
         inventory,
-        studentList,
+        studentsResponse,
       ] = await Promise.all([
         reportsAPI.getDashboard(params),
         reportsAPI.getStats(),
@@ -278,8 +304,14 @@ const ReportsPage = () => {
         reportsAPI.getOverdue(params),
         reportsAPI.getFines(params),
         reportsAPI.getInventory(),
-        studentsAPI.getAll(studentParams), // Use filtered params for students
+        studentsAPI.getAll(),
       ]);
+
+  const studentsRaw = studentsResponse?.data?.students || studentsResponse?.data || [];
+      setAllStudents(studentsRaw);
+      setFilterOptions(deriveFilterOptionsFromStudents(studentsRaw));
+  const activeStudentFilters = studentFiltersRef.current;
+  const filteredStudents = filterStudentsByCriteria(studentsRaw, activeStudentFilters);
 
       // Merge dashboard and stats endpoints so overview cards have all expected fields
       setDashboardStats({
@@ -295,7 +327,7 @@ const ReportsPage = () => {
         overdueReport: overdue?.data || [],
         fineReport: fine?.data || [],
         inventoryReport: inventory?.data || [],
-        studentListReport: studentList?.data?.students || studentList?.data || [],
+        studentListReport: filteredStudents,
       });
     } catch (loadError) {
       setError("Failed to load reports data");
@@ -303,39 +335,60 @@ const ReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getRangeParams, studentFilters, currentTab]);
+  }, [getRangeParams]);
 
   useEffect(() => {
     loadAllReports();
   }, [loadAllReports]);
 
   useEffect(() => {
-    // Load filter options when component mounts or when switching to student list tab
-    if (currentTab === 7) {
-      loadFilterOptions();
-    }
-  }, [currentTab, loadFilterOptions]);
+    studentFiltersRef.current = studentFilters;
+  }, [studentFilters]);
+
+  useEffect(() => {
+    setReportData((prev) => ({
+      ...prev,
+      studentListReport: filterStudentsByCriteria(allStudents, studentFilters),
+    }));
+  }, [allStudents, studentFilters]);
 
   const handleExportReport = async (type) => {
     try {
-      let response;
+      if (type === "student-list") {
+        const studentRows = (reportData.studentListReport || []).map((student) => ({
+          StudentID: student.studentId || "",
+          Name:
+            student.firstName && student.lastName
+              ? `${student.firstName} ${student.middleName || ""} ${student.lastName}`.replace(/\s+/g, " ").trim()
+              : student.name || "",
+          GradeSection:
+            student.grade && student.section
+              ? `${student.grade} - ${student.section}`
+              : student.grade || student.section || "",
+          Email: student.email || "",
+          Phone: student.phoneNumber || student.parentPhone || "",
+          LibraryCard: student.libraryCardNumber || "",
+          Status: student.isActive !== false ? "Active" : "Inactive",
+        }));
 
-      if (type === 'student-list') {
-        // For student list, use studentsAPI directly with filters
-        const studentParams = { limit: 10000 };
-        if (studentFilters.grade) studentParams.grade = studentFilters.grade;
-        if (studentFilters.section) studentParams.section = studentFilters.section;
-        if (studentFilters.schoolYear) studentParams.schoolYear = studentFilters.schoolYear;
-
-        response = await studentsAPI.getAll(studentParams);
-        // Convert to CSV format
-        const csvData = convertToCSV(response.data.students || response.data || []);
-        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-        response = { data: blob };
-      } else {
-        const params = { ...getRangeParams(), format: "csv" };
-        response = await reportsAPI.export(type, params);
+        const csvData = convertToCSV(studentRows);
+        const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute(
+          "download",
+          `${type}_report_${new Date().toISOString().split("T")[0]}.csv`,
+        );
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return;
       }
+
+      const params = { ...getRangeParams(), format: "csv" };
+      const response = await reportsAPI.export(type, params);
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -378,7 +431,7 @@ const ReportsPage = () => {
     if (value !== index) {
       return null;
     }
-    return <Box sx={{ py: 3 }}>{children}</Box>;
+    return <Box sx={{ px: { xs: 1.5, md: 3 }, py: 3 }}>{children}</Box>;
   };
 
   if (loading && currentTab === 0) {
@@ -438,35 +491,18 @@ const ReportsPage = () => {
           }}
         >
           {currentTab === 7 ? (
-            // Student List Filters (compact icon + pop-up menu)
-            <>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Student Filters
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconButton
-                  aria-label="Open student filters"
-                  onClick={openFilterMenu}
-                  sx={{ border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
-                >
-                  <FilterList />
-                </IconButton>
-
-                <Menu
-                  anchorEl={filterAnchorEl}
-                  open={filterOpen}
-                  onClose={closeFilterMenu}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  PaperProps={{ sx: { p: 2, minWidth: 300 } }}
-                >
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Student Filters
+                </Typography>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} sm={4} md={3}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Grade</InputLabel>
                       <Select
-                        value={studentFilters.grade}
+                        value={draftStudentFilters.grade}
                         label="Grade"
-                        onChange={(e) => setStudentFilters({ ...studentFilters, grade: e.target.value })}
+                        onChange={(e) => setDraftStudentFilters({ ...draftStudentFilters, grade: e.target.value })}
                       >
                         <MenuItem value="">
                           <em>All Grades</em>
@@ -478,13 +514,14 @@ const ReportsPage = () => {
                         ))}
                       </Select>
                     </FormControl>
-
+                  </Grid>
+                  <Grid item xs={12} sm={4} md={3}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Section</InputLabel>
                       <Select
-                        value={studentFilters.section}
+                        value={draftStudentFilters.section}
                         label="Section"
-                        onChange={(e) => setStudentFilters({ ...studentFilters, section: e.target.value })}
+                        onChange={(e) => setDraftStudentFilters({ ...draftStudentFilters, section: e.target.value })}
                       >
                         <MenuItem value="">
                           <em>All Sections</em>
@@ -496,13 +533,14 @@ const ReportsPage = () => {
                         ))}
                       </Select>
                     </FormControl>
-
+                  </Grid>
+                  <Grid item xs={12} sm={4} md={3}>
                     <FormControl fullWidth size="small">
                       <InputLabel>School Year</InputLabel>
                       <Select
-                        value={studentFilters.schoolYear}
+                        value={draftStudentFilters.schoolYear}
                         label="School Year"
-                        onChange={(e) => setStudentFilters({ ...studentFilters, schoolYear: e.target.value })}
+                        onChange={(e) => setDraftStudentFilters({ ...draftStudentFilters, schoolYear: e.target.value })}
                       >
                         <MenuItem value="">
                           <em>All Years</em>
@@ -514,33 +552,36 @@ const ReportsPage = () => {
                         ))}
                       </Select>
                     </FormControl>
-
-                    <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          setStudentFilters({ grade: '', section: '', schoolYear: '' });
-                          closeFilterMenu();
-                          loadAllReports();
-                        }}
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => {
-                          closeFilterMenu();
-                          loadAllReports();
-                        }}
-                      >
-                        Apply
-                      </Button>
-                    </Box>
-                  </Box>
-                </Menu>
-              </Box>
-            </>
+                  </Grid>
+                  <Grid
+                    item
+                    xs={12}
+                    sm={12}
+                    md={3}
+                    sx={{ display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" }, gap: 1 }}
+                  >
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setDraftStudentFilters(DEFAULT_STUDENT_FILTERS);
+                        setStudentFilters(DEFAULT_STUDENT_FILTERS);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<FilterList />}
+                      onClick={() => {
+                        setStudentFilters(draftStudentFilters);
+                      }}
+                    >
+                      Apply
+                    </Button>
+                  </Grid>
+                </Grid>
+              </>
           ) : (
             // Date Range Filters for other tabs
             <Grid container spacing={2} alignItems="center">

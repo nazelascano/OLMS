@@ -3,6 +3,21 @@ const bcrypt = require('bcrypt');
 const { verifyToken, requireRole, requireAdmin, requireLibrarian, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
 const router = express.Router();
 
+// Determine the current academic cycle in YYYY-YYYY format.
+const computeSchoolYearFromDate = (dateInput) => {
+    const source = dateInput ? new Date(dateInput) : new Date();
+    const baseYear = Number.isFinite(source.getFullYear()) ? source.getFullYear() : new Date().getFullYear();
+    return `${baseYear}-${baseYear + 1}`;
+};
+
+const resolveSchoolYear = (payload = {}) => {
+    const provided = (payload.schoolYear || payload.academicYear || '').toString().trim();
+    if (provided) return provided;
+
+    const timestamp = payload.createdAt || payload.updatedAt;
+    return computeSchoolYearFromDate(timestamp);
+};
+
 // Helper function to generate library card number
 const generateLibraryCardNumber = async(dbAdapter) => {
     const currentYear = new Date().getFullYear();
@@ -42,8 +57,31 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
 
         const students = await req.dbAdapter.getUsers(filters);
 
+        // Backfill missing school year data for legacy records.
+        const hydratedStudents = await Promise.all(students.map(async(student) => {
+            if (!student || student.schoolYear || student.academicYear) {
+                return student;
+            }
+
+            const computedYear = resolveSchoolYear(student);
+            try {
+                await req.dbAdapter.updateUser(student._id, {
+                    schoolYear: computedYear,
+                    academicYear: computedYear
+                });
+                return {
+                    ...student,
+                    schoolYear: computedYear,
+                    academicYear: computedYear
+                };
+            } catch (error) {
+                console.warn(`Failed to backfill school year for student ${student._id}:`, error.message);
+                return student;
+            }
+        }));
+
         // Add additional student-specific processing
-        const processedStudents = students.map(student => ({
+        const processedStudents = hydratedStudents.map(student => ({
             ...student,
             grade: student.grade || student.gradeLevel || 'N/A',
             section: student.section || 'N/A',
@@ -88,6 +126,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
     try {
         // Generate library card number automatically
         const libraryCardNumber = await generateLibraryCardNumber(req.dbAdapter);
+        const schoolYear = resolveSchoolYear(req.body);
 
         const studentData = {
             // Library Card Information (auto-generated)
@@ -109,6 +148,8 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             grade: req.body.grade,
             section: req.body.section,
             curriculum: req.body.curriculum,
+            schoolYear: schoolYear,
+            academicYear: schoolYear,
 
             // Address Information
             barangay: req.body.barangay,
@@ -141,7 +182,8 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
                     studentId: studentData.studentId || null,
                     lrn: studentData.lrn || null,
                     grade: studentData.grade || null,
-                    section: studentData.section || null
+                    section: studentData.section || null,
+                    schoolYear: studentData.schoolYear || null
                 }
             },
             details: {
@@ -503,6 +545,7 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             try {
                 // Generate library card number for each student
                 const libraryCardNumber = await generateLibraryCardNumber(req.dbAdapter);
+                const schoolYear = resolveSchoolYear(studentData);
 
                 // Determine username (prefer LRN) and generate default password (first letter + surname preferred)
                 const username = studentData.lrn || studentData.username || null;
@@ -527,6 +570,8 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     ...studentData,
                     username: username,
                     libraryCardNumber: libraryCardNumber, // Auto-generated
+                    schoolYear: schoolYear,
+                    academicYear: schoolYear,
                     password: hashedPassword,
                     role: 'student',
                     isActive: true,

@@ -18,6 +18,22 @@ const formatDueLabel = (value) => {
 };
 const limitItems = (items, limit) => items.slice(0, limit);
 
+const matchesTerm = (value, term) => {
+  if (value === null || value === undefined) {
+    return false;
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => matchesTerm(entry, term));
+  }
+
+  if (typeof value === 'object') {
+    return Object.values(value).some((entry) => matchesTerm(entry, term));
+  }
+
+  return includesTerm(value, term);
+};
+
 const registerInMap = (map, candidates, value) => {
   candidates
     .map((candidate) =>
@@ -208,13 +224,24 @@ router.get('/', verifyToken, async (req, res) => {
 
     const results = {};
 
-    const bookMatches = books.filter(
-      (book) =>
-        includesTerm(book.title, term) ||
-        includesTerm(book.author, term) ||
-        includesTerm(book.isbn, term) ||
-        includesTerm(book.publisher, term) ||
-        includesTerm(book.category, term),
+    const bookMatches = books.filter((book) =>
+      matchesTerm(
+        [
+          book.title,
+          book.author,
+          book.subtitle,
+          book.description,
+          book.summary,
+          book.isbn,
+          book.category,
+          book.publisher,
+          book.language,
+          book.tags,
+          book.subjects,
+          book.location,
+        ],
+        term,
+      ),
     );
 
     if (bookMatches.length) {
@@ -235,17 +262,25 @@ router.get('/', verifyToken, async (req, res) => {
     const canViewStaffData = role !== 'student';
 
     if (canViewStaffData) {
-      const userMatches = users.filter(
-        (user) =>
-          includesTerm(user.firstName, term) ||
-          includesTerm(user.lastName, term) ||
-          includesTerm(user.middleName, term) ||
-          includesTerm(user.username, term) ||
-          includesTerm(user.email, term) ||
-          includesTerm(user.studentNumber, term) ||
-          includesTerm(user.studentId, term) ||
-          includesTerm(user.curriculum, term) ||
-          includesTerm(user.gradeLevel, term),
+      const userMatches = users.filter((user) =>
+        matchesTerm(
+          [
+            user.firstName,
+            user.lastName,
+            user.middleName,
+            user.username,
+            user.email,
+            user.studentNumber,
+            user.studentId,
+            user.curriculum,
+            user.gradeLevel,
+            user.phoneNumber,
+            user.profile?.phone,
+            user.profile?.address,
+            user.library?.cardNumber,
+          ],
+          term,
+        ),
       );
 
       const staff = userMatches.filter((user) => user.role && user.role !== 'student');
@@ -311,7 +346,7 @@ router.get('/', verifyToken, async (req, res) => {
       );
     });
 
-    if (canViewStaffData && transactionMatches.length) {
+    if (transactionMatches.length) {
       results.transactions = limitItems(transactionMatches, limit).map((transaction) => {
         const summary = buildTransactionSummary(transaction, { bookMap, userMap });
         const id = String(transaction.id || transaction._id);
@@ -320,9 +355,11 @@ router.get('/', verifyToken, async (req, res) => {
         return {
           id,
           primary: summary.title || `Transaction ${id}`,
-          secondary: [summary.borrower, summary.dueLabel].filter(Boolean).join(' • '),
+          secondary: [summary.borrower, summary.dueLabel, transaction.referenceNumber]
+            .filter(Boolean)
+            .join(' • '),
           chip,
-          link: `/transactions/${id}`,
+          link: canViewStaffData ? `/transactions/${id}` : '/student/dashboard',
           category: 'transactions',
           timestamp: summary.timestamp,
         };
