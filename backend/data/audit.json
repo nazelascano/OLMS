@@ -11736,5 +11736,700 @@
     "_id": "mhieija0vfnbi",
     "createdAt": "2025-11-03T00:28:00.408Z",
     "updatedAt": "2025-11-03T00:28:00.408Z"
+  },
+  {
+    "timestamp": "2025-11-03T01:32:07.273Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-11-03T00:28:00.367Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhfjceb60llf3",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhigszjds9wdm",
+    "_id": "mhigszjds9wdm",
+    "createdAt": "2025-11-03T01:32:07.274Z",
+    "updatedAt": "2025-11-03T01:32:07.274Z"
+  },
+  {
+    "timestamp": "2025-11-03T01:33:33.152Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-11-03T01:32:07.233Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhfjceb60llf3",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhigutsw3p6cb",
+    "_id": "mhigutsw3p6cb",
+    "createdAt": "2025-11-03T01:33:33.152Z",
+    "updatedAt": "2025-11-03T01:33:33.152Z"
+  },
+  {
+    "timestamp": "2025-11-03T02:36:58.662Z",
+    "action": "UPDATE",
+    "entity": "preferences",
+    "entityId": "mhfjceb60llf3",
+    "resource": "preferences",
+    "resourceId": "mhfjceb60llf3",
+    "description": "Updated user preferences",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/auth/preferences",
+        "body": {
+          "preferences": {
+            "studentDashboard": {
+              "welcomeDismissed": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 7
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhfjceb60llf3",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/auth/preferences",
+    "id": "mhij4e5jbpcob",
+    "_id": "mhij4e5jbpcob",
+    "createdAt": "2025-11-03T02:36:58.663Z",
+    "updatedAt": "2025-11-03T02:36:58.663Z"
+  },
+  {
+    "timestamp": "2025-11-03T02:38:45.385Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-11-03T01:33:33.149Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhfjceb60llf3",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhij6oi18cfns",
+    "_id": "mhij6oi18cfns",
+    "createdAt": "2025-11-03T02:38:45.385Z",
+    "updatedAt": "2025-11-03T02:38:45.385Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:15:13.791Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-11-03T02:38:45.379Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhfjceb60llf3",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhikhl33stdho",
+    "_id": "mhikhl33stdho",
+    "createdAt": "2025-11-03T03:15:13.791Z",
+    "updatedAt": "2025-11-03T03:15:13.791Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:15:21.429Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-11-03T03:15:13.781Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhfjceb60llf3",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhikhqz9gecgf",
+    "_id": "mhikhqz9gecgf",
+    "createdAt": "2025-11-03T03:15:21.429Z",
+    "updatedAt": "2025-11-03T03:15:21.429Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:25:39.930Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-01T01:22:30.326Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhikv07u06f3x",
+    "_id": "mhikv07u06f3x",
+    "createdAt": "2025-11-03T03:25:39.930Z",
+    "updatedAt": "2025-11-03T03:25:39.930Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:26:47.007Z",
+    "action": "CREATE",
+    "entity": "user",
+    "entityId": null,
+    "resource": "user",
+    "resourceId": null,
+    "description": "User creation missing required fields",
+    "details": {
+      "userDraft": {
+        "username": "librarian",
+        "email": null,
+        "firstName": "sghj",
+        "lastName": "ghjk",
+        "role": "librarian",
+        "studentNumber": null,
+        "curriculum": null,
+        "gradeLevel": null
+      }
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 27,
+      "createRequest": {
+        "username": "librarian",
+        "email": null,
+        "role": "librarian"
+      }
+    },
+    "status": "ValidationError",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users",
+    "id": "mhikwfz39cl4n",
+    "_id": "mhikwfz39cl4n",
+    "createdAt": "2025-11-03T03:26:47.007Z",
+    "updatedAt": "2025-11-03T03:26:47.007Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:33:16.620Z",
+    "action": "CREATE",
+    "entity": "user",
+    "entityId": null,
+    "resource": "user",
+    "resourceId": null,
+    "description": "User creation missing required fields",
+    "details": {
+      "userDraft": {
+        "username": "librarian",
+        "email": null,
+        "firstName": "sdfghjkl",
+        "lastName": "fghjkl;",
+        "role": "librarian",
+        "studentNumber": null,
+        "curriculum": null,
+        "gradeLevel": null
+      }
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 1,
+      "createRequest": {
+        "username": "librarian",
+        "email": null,
+        "role": "librarian"
+      }
+    },
+    "status": "ValidationError",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users",
+    "id": "mhil4slo4uo0z",
+    "_id": "mhil4slo4uo0z",
+    "createdAt": "2025-11-03T03:33:16.620Z",
+    "updatedAt": "2025-11-03T03:33:16.620Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:33:18.368Z",
+    "action": "CREATE",
+    "entity": "user",
+    "entityId": null,
+    "resource": "user",
+    "resourceId": null,
+    "description": "User creation missing required fields",
+    "details": {
+      "userDraft": {
+        "username": "librarian",
+        "email": null,
+        "firstName": "sdfghjkl",
+        "lastName": "fghjkl;",
+        "role": "librarian",
+        "studentNumber": null,
+        "curriculum": null,
+        "gradeLevel": null
+      }
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 1,
+      "createRequest": {
+        "username": "librarian",
+        "email": null,
+        "role": "librarian"
+      }
+    },
+    "status": "ValidationError",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users",
+    "id": "mhil4ty81woh2",
+    "_id": "mhil4ty81woh2",
+    "createdAt": "2025-11-03T03:33:18.368Z",
+    "updatedAt": "2025-11-03T03:33:18.368Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:35:32.104Z",
+    "action": "CREATE",
+    "entity": "user",
+    "entityId": null,
+    "resource": "user",
+    "resourceId": null,
+    "description": "User creation missing required fields",
+    "details": {
+      "userDraft": {
+        "username": "librarian",
+        "email": null,
+        "firstName": "dfghjkl",
+        "lastName": "fghjkl;",
+        "role": "librarian",
+        "studentNumber": null,
+        "curriculum": null,
+        "gradeLevel": null
+      }
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 1,
+      "createRequest": {
+        "username": "librarian",
+        "email": null,
+        "role": "librarian"
+      }
+    },
+    "status": "ValidationError",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users",
+    "id": "mhil7p54hibxu",
+    "_id": "mhil7p54hibxu",
+    "createdAt": "2025-11-03T03:35:32.104Z",
+    "updatedAt": "2025-11-03T03:35:32.104Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:39:53.481Z",
+    "action": "CREATE",
+    "entity": "user",
+    "entityId": "mhildatik9wdo",
+    "resource": "user",
+    "resourceId": "mhildatik9wdo",
+    "description": "Created user librarian",
+    "details": {
+      "userDraft": {
+        "username": "librarian",
+        "email": null,
+        "firstName": "asdfghjk",
+        "lastName": "dfghjkl",
+        "role": "librarian",
+        "studentNumber": null,
+        "curriculum": null,
+        "gradeLevel": null
+      },
+      "username": "librarian",
+      "email": null,
+      "role": "librarian"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 143,
+      "createRequest": {
+        "username": "librarian",
+        "email": null,
+        "role": "librarian"
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "createdAt": "2025-11-03T03:39:53.477Z",
+      "role": "librarian"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users",
+    "id": "mhildatl253ev",
+    "_id": "mhildatl253ev",
+    "createdAt": "2025-11-03T03:39:53.481Z",
+    "updatedAt": "2025-11-03T03:39:53.481Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:40:06.901Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for librarian",
+    "details": {
+      "username": "librarian",
+      "role": "librarian",
+      "lastLoginAt": null
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhildatik9wdo",
+    "userEmail": null,
+    "userRole": "librarian",
+    "userName": "asdfghjk dfghjkl",
+    "username": "librarian",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhildl6dzc2da",
+    "_id": "mhildl6dzc2da",
+    "createdAt": "2025-11-03T03:40:06.901Z",
+    "updatedAt": "2025-11-03T03:40:06.901Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:40:42.481Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1761960015185_kiyfqr",
+    "resource": "transaction",
+    "resourceId": "borrow_1761960015185_kiyfqr",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "copyId": "copy-1",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        },
+        {
+          "item": {
+            "copyId": "copy-2",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 5
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mhildatik9wdo",
+    "userEmail": null,
+    "userRole": "librarian",
+    "userName": "asdfghjk dfghjkl",
+    "username": "librarian",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1761960015185_kiyfqr",
+    "id": "mhilecmp1paj6",
+    "_id": "mhilecmp1paj6",
+    "createdAt": "2025-11-03T03:40:42.481Z",
+    "updatedAt": "2025-11-03T03:40:42.481Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:40:50.325Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1761960015185_kiyfqr",
+    "resource": "transaction",
+    "resourceId": "borrow_1761960015185_kiyfqr",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "copyId": "copy-1",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        },
+        {
+          "item": {
+            "copyId": "copy-2",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 5
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mhildatik9wdo",
+    "userEmail": null,
+    "userRole": "librarian",
+    "userName": "asdfghjk dfghjkl",
+    "username": "librarian",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1761960015185_kiyfqr",
+    "id": "mhileiol4m07f",
+    "_id": "mhileiol4m07f",
+    "createdAt": "2025-11-03T03:40:50.325Z",
+    "updatedAt": "2025-11-03T03:40:50.325Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:42:51.102Z",
+    "action": "BORROW",
+    "entity": "transaction",
+    "entityId": null,
+    "resource": "transaction",
+    "resourceId": null,
+    "description": "Borrow request failed: book copy APPROVE-COPY-1 is not available",
+    "details": {
+      "borrowerId": "mhfjcfk5pe1n5"
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 4,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1,
+        "copyIds": [
+          "APPROVE-COPY-1"
+        ]
+      },
+      "copyId": "APPROVE-COPY-1",
+      "copyStatus": "borrowed"
+    },
+    "status": "CopyUnavailable",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mhildatik9wdo",
+    "userEmail": null,
+    "userRole": "librarian",
+    "userName": "asdfghjk dfghjkl",
+    "username": "librarian",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/borrow",
+    "id": "mhilh3vitgriy",
+    "_id": "mhilh3vitgriy",
+    "createdAt": "2025-11-03T03:42:51.102Z",
+    "updatedAt": "2025-11-03T03:42:51.102Z"
+  },
+  {
+    "timestamp": "2025-11-03T03:43:12.997Z",
+    "action": "BORROW",
+    "entity": "transaction",
+    "entityId": "borrow_1762141392976_smlm3q",
+    "resource": "transaction",
+    "resourceId": "borrow_1762141392976_smlm3q",
+    "description": "Borrowed 1 item(s) for Mary16 Santos Doe",
+    "details": {
+      "borrowerId": "mhfjcfk5pe1n5",
+      "borrower": {
+        "id": "mhfjcfk5pe1n5",
+        "name": "Mary16 Santos Doe",
+        "email": "john.doe@student.example.edu"
+      },
+      "transaction": {
+        "id": "borrow_1762141392976_smlm3q",
+        "type": "regular",
+        "notes": "",
+        "dueDate": "2025-11-17T03:43:12.973Z",
+        "items": [
+          {
+            "copyId": "APPROVE-COPY-2",
+            "bookId": "book-approve-test",
+            "isbn": "ISBN-APPROVE-1"
+          }
+        ]
+      }
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 25,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1,
+        "copyIds": [
+          "APPROVE-COPY-2"
+        ]
+      },
+      "borrowDate": "2025-11-03T03:43:12.973Z",
+      "dueDate": "2025-11-17T03:43:12.973Z",
+      "itemCount": 1,
+      "actorId": "mhildatik9wdo"
+    },
+    "status": "Completed",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mhildatik9wdo",
+    "userEmail": null,
+    "userRole": "librarian",
+    "userName": "asdfghjk dfghjkl",
+    "username": "librarian",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/borrow",
+    "id": "mhilhkrp6hpmz",
+    "_id": "mhilhkrp6hpmz",
+    "createdAt": "2025-11-03T03:43:12.997Z",
+    "updatedAt": "2025-11-03T03:43:12.997Z"
   }
 ]

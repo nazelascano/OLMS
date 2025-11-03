@@ -203,11 +203,10 @@ const UserForm = () => {
     if (!formData.role) errors.role = "Role is required";
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim() === "") {
-    if (formData.email && !emailRegex.test(formData.email)) {
+    const trimmedEmail = formData.email.trim();
+    if (trimmedEmail && !emailRegex.test(trimmedEmail)) {
       errors.email = "Please enter a valid email address";
     }
-  }
     if (!isEditing || formData.password) {
       if (!formData.password) {
         errors.password = "Password is required";
@@ -247,6 +246,11 @@ const UserForm = () => {
 
       const payload = { ...formData };
       delete payload.confirmPassword;
+
+      payload.email = (payload.email || "").trim();
+      if (!payload.email) {
+        delete payload.email;
+      }
 
       if (isEditing && !payload.password) {
         delete payload.password;
@@ -368,7 +372,9 @@ const UserForm = () => {
                       value={formData.email}
                       onChange={handleChange}
                       error={Boolean(validationErrors.email)}
-                      helperText={validationErrors.email}
+                      helperText={
+                        validationErrors.email || "Optional; leave blank if unavailable"
+                      }
                       FormHelperTextProps={{ id: "email-error" }}
                       aria-describedby={validationErrors.email ? "email-error" : undefined}
                       InputProps={{

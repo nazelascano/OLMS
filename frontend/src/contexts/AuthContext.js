@@ -63,6 +63,23 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("userData");
   };
 
+  const updateUserData = (updater) => {
+    setUser((prev) => {
+      const nextValue =
+        typeof updater === "function"
+          ? updater(prev)
+          : { ...(prev || {}), ...(updater || {}) };
+
+      if (nextValue && typeof nextValue === "object") {
+        localStorage.setItem("userData", JSON.stringify(nextValue));
+        return nextValue;
+      }
+
+      localStorage.removeItem("userData");
+      return null;
+    });
+  };
+
   const getAuthHeaders = () => {
     return authToken ? { Authorization: `Bearer ${authToken}` } : {};
   };
@@ -144,6 +161,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     hasRole,
     hasPermission,
+    updateUserData,
   };
 
   return (

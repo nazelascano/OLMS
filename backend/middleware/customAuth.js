@@ -65,14 +65,19 @@ const verifyToken = async (req, res, next) => {
     });
 
     // Attach user data to request
+    const safePreferences = userData.preferences && typeof userData.preferences === 'object'
+      ? userData.preferences
+      : {};
+
     req.user = {
+      ...userData,
       id: userData._id,
       email: userData.email,
       username: userData.username,
       role: userData.role,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      ...userData
+      preferences: safePreferences,
     };
     
     next();

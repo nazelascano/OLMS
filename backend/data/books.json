@@ -637,18 +637,18 @@
       },
       {
         "copyId": "APPROVE-COPY-2",
-        "status": "available",
+        "status": "borrowed",
         "condition": "good",
         "location": "Main",
         "createdAt": "2025-11-01T01:17:53.038Z",
-        "updatedAt": "2025-11-01T01:17:53.038Z",
+        "updatedAt": "2025-11-03T03:43:12.974Z",
         "createdBy": "mgnhicbwhxfy9"
       }
     ],
-    "availableCopies": 2,
+    "availableCopies": 1,
     "_id": "mhfko497eon81",
     "createdAt": "2025-11-01T00:57:00.043Z",
-    "updatedAt": "2025-11-01T01:19:06.242Z",
+    "updatedAt": "2025-11-03T03:43:12.975Z",
     "totalCopies": 4,
     "updatedBy": "mgnhicbwhxfy9",
     "status": "active"

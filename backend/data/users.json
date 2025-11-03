@@ -26,9 +26,9 @@
       "totalReturned": 0
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-11-01T01:23:21.749Z",
-    "lastLoginAt": "2025-11-01T01:22:30.326Z",
-    "lastActivityAt": "2025-11-01T01:23:21.748Z"
+    "updatedAt": "2025-11-03T03:39:55.535Z",
+    "lastLoginAt": "2025-11-03T03:25:39.920Z",
+    "lastActivityAt": "2025-11-03T03:39:55.535Z"
   },
   {
     "libraryCardNumber": "LIB-25-0001",
@@ -152,9 +152,14 @@
     },
     "_id": "mhfjceb60llf3",
     "createdAt": "2025-11-01T00:19:53.586Z",
-    "updatedAt": "2025-11-03T00:57:44.599Z",
-    "lastLoginAt": "2025-11-03T00:28:00.367Z",
-    "lastActivityAt": "2025-11-03T00:57:44.596Z"
+    "updatedAt": "2025-11-03T03:25:23.571Z",
+    "lastLoginAt": "2025-11-03T03:15:21.426Z",
+    "lastActivityAt": "2025-11-03T03:25:23.563Z",
+    "preferences": {
+      "studentDashboard": {
+        "welcomeDismissed": true
+      }
+    }
   },
   {
     "firstName": "Mary2",
@@ -651,5 +656,40 @@
     "_id": "mhfjcfnfxed3u",
     "createdAt": "2025-11-01T00:19:55.323Z",
     "updatedAt": "2025-11-01T00:19:55.323Z"
+  },
+  {
+    "username": "librarian",
+    "email": null,
+    "password": "$2b$10$c5EN9I0e5rF6BYvEW7Mdp.nDxKh8e2ilgwA4hiEMc1HKfS.tgt1ji",
+    "firstName": "asdfghjk",
+    "lastName": "dfghjkl",
+    "role": "librarian",
+    "studentNumber": null,
+    "curriculum": null,
+    "gradeLevel": null,
+    "isActive": true,
+    "createdAt": "2025-11-03T03:39:53.477Z",
+    "updatedAt": "2025-11-03T03:47:04.229Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "lastLoginAt": "2025-11-03T03:40:06.897Z",
+    "profile": {
+      "phone": "",
+      "address": "",
+      "dateOfBirth": null
+    },
+    "library": {
+      "cardNumber": "USER-1762141193477",
+      "membershipDate": "2025-11-03T03:39:53.477Z",
+      "borrowingLimit": 10,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalReturned": 0,
+      "totalFines": 0
+    },
+    "_id": "mhildatik9wdo",
+    "lastActivityAt": "2025-11-03T03:47:04.225Z"
   }
 ]

@@ -317,7 +317,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
     try {
         const {
             username,
-            email,
+            email: rawEmail,
             password,
             firstName,
             lastName,
@@ -327,18 +327,20 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             gradeLevel
         } = req.body;
 
+        const trimmedEmail = typeof rawEmail === 'string' ? rawEmail.trim() : '';
+
         setAuditContext(req, {
             metadata: {
                 createRequest: {
                     username: username || null,
-                    email: email || null,
+                    email: trimmedEmail || null,
                     role: role || null
                 }
             },
             details: {
                 userDraft: {
                     username: username || null,
-                    email: email || null,
+                    email: trimmedEmail || null,
                     firstName: firstName || null,
                     lastName: lastName || null,
                     role: role || null,
@@ -350,13 +352,21 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
         });
 
         // Validate required fields
-        if (!username || !email || !password || !firstName || !lastName || !role) {
+        const missingFields = [];
+        if (!username || !String(username).trim()) missingFields.push('username');
+        if (!password) missingFields.push('password');
+        if (!firstName || !String(firstName).trim()) missingFields.push('firstName');
+        if (!lastName || !String(lastName).trim()) missingFields.push('lastName');
+        if (!role) missingFields.push('role');
+
+        if (missingFields.length > 0) {
             setAuditContext(req, {
                 success: false,
                 status: 'ValidationError',
-                description: 'User creation missing required fields'
+                description: 'User creation missing required fields',
+                metadata: { missingFields }
             });
-            return res.status(400).json({ message: 'Username, email, password, firstName, lastName, and role are required' });
+            return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
         }
 
         // Validate password length
@@ -386,18 +396,31 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             return res.status(400).json({ message: 'Username already exists' });
         }
 
-        // Check if email already exists
-        const existingEmails = await req.dbAdapter.findInCollection('users', { email });
-        if (existingEmails.length > 0) {
-            setAuditContext(req, {
-                success: false,
-                status: 'Conflict',
-                description: `User creation failed: email ${email} already exists`,
-                metadata: {
-                    email
-                }
-            });
-            return res.status(400).json({ message: 'Email already exists' });
+        // Validate email format and uniqueness when provided
+        if (trimmedEmail) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(trimmedEmail)) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'ValidationError',
+                    description: 'User creation failed due to invalid email format',
+                    metadata: { email: trimmedEmail }
+                });
+                return res.status(400).json({ message: 'Invalid email address' });
+            }
+
+            const existingEmails = await req.dbAdapter.findInCollection('users', { email: trimmedEmail });
+            if (existingEmails.length > 0) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'Conflict',
+                    description: `User creation failed: email ${trimmedEmail} already exists`,
+                    metadata: {
+                        email: trimmedEmail
+                    }
+                });
+                return res.status(400).json({ message: 'Email already exists' });
+            }
         }
 
         // Validate role permissions
@@ -416,7 +439,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
         // Create user document
         const userData = {
             username,
-            email,
+            email: trimmedEmail || null,
             password: hashedPassword,
             firstName,
             lastName,

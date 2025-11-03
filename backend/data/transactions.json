@@ -1264,5 +1264,29 @@
     "createdBy": "mgnhicbwhxfy9",
     "notes": "Student request test",
     "_id": "mhfli0r62athg"
+  },
+  {
+    "id": "borrow_1762141392976_smlm3q",
+    "userId": "mhfjcfk5pe1n5",
+    "items": [
+      {
+        "copyId": "APPROVE-COPY-2",
+        "bookId": "book-approve-test",
+        "isbn": "ISBN-APPROVE-1",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "borrowDate": "2025-11-03T03:43:12.973Z",
+    "dueDate": "2025-11-17T03:43:12.973Z",
+    "returnDate": null,
+    "fineAmount": 0,
+    "notes": "",
+    "renewalCount": 0,
+    "createdAt": "2025-11-03T03:43:12.976Z",
+    "updatedAt": "2025-11-03T03:43:12.977Z",
+    "createdBy": "mhildatik9wdo",
+    "_id": "mhilhkr58nr34"
   }
 ]

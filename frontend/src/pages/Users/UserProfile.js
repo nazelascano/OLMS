@@ -82,6 +82,31 @@ const UserProfile = () => {
 
   const getUserIdentifier = (value) => value?._id || value?.id || value?.uid;
 
+  const resolveInitial = (value) => {
+    if (!value || (typeof value !== "string" && typeof value !== "number")) {
+      return "";
+    }
+
+    const normalized = String(value).trim();
+    if (!normalized) {
+      return "";
+    }
+
+    return normalized.charAt(0).toUpperCase();
+  };
+
+  const getAvatarInitial = (data) => {
+    if (!data || typeof data !== "object") {
+      return "";
+    }
+
+    return (
+      [data.firstName, data.lastName, data.username, data.email]
+        .map(resolveInitial)
+        .find(Boolean) || ""
+    );
+  };
+
   const computeStatsFromHistory = (history = []) => {
     const now = new Date();
     return {
@@ -325,11 +350,10 @@ const UserProfile = () => {
                     mb: 2,
                     bgcolor: "primary.main",
                     fontSize: "2.5rem",
+                    color: "primary.contrastText",
                   }}
                 >
-                  {profileData.firstName?.[0] || profileData.username?.[0] || (
-                    <Person />
-                  )}{" "}
+                  {getAvatarInitial(profileData) || <Person />}{" "}
                 </Avatar>{" "}
                 <Typography variant="h6">
                   {" "}

@@ -116,6 +116,9 @@ export const authAPI = {
   getProfile: () => api.get("/auth/profile"),
   updateProfile: (data) => api.put("/auth/profile", data),
   verifyToken: () => api.get("/auth/verify"),
+  getPreferences: () => api.get("/auth/preferences"),
+  updatePreferences: (preferences) =>
+    api.put("/auth/preferences", { preferences }),
 };
 
 export const usersAPI = {
@@ -162,6 +165,7 @@ export const transactionsAPI = {
   update: (id, data) => api.put(`/transactions/${id}`, data),
   return: (id, data) => api.post(`/transactions/${id}/return`, data),
   renew: (id, data) => api.post(`/transactions/${id}/renew`, data),
+  cancelRequest: (id, data) => api.post(`/transactions/cancel/${id}`, data),
   bulkReturn: (data) => api.post("/transactions/bulk-return", data),
   bulkAssign: (data) => api.post("/transactions/bulk-assign", data),
   generateReceipt: (id) => api.get(`/transactions/${id}/receipt`),

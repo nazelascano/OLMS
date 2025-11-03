@@ -1,17 +1,35 @@
-import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Grid, Card, CardContent, Button, Avatar, Stack, Divider } from "@mui/material";
-import { School, Email, Phone, Badge } from "@mui/icons-material";
-import { api } from "../../utils/api";
+import React, { useCallback, useEffect, useState } from "react";
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Grid, Card, CardContent, Button, Avatar, Stack, Divider, IconButton } from "@mui/material";
+import { School, Email, Phone, Badge, Close } from "@mui/icons-material";
+import toast from "react-hot-toast";
+import { api, authAPI, transactionsAPI } from "../../utils/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const StudentDashboard = () => {
-  const { user } = useAuth();
+  const { user, updateUserData } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [cancelingId, setCancelingId] = useState(null);
+  const [showWelcomeCard, setShowWelcomeCard] = useState(() => {
+    const dismissed = Boolean(
+      user?.preferences?.studentDashboard?.welcomeDismissed,
+    );
+    return !dismissed;
+  });
   const navigate = useNavigate();
 
+  const resolveTransactionId = useCallback((tx) => {
+    if (!tx) return "";
+    return tx.id || tx._id || tx.transactionId || tx.documentId || "";
+  }, []);
+
   useEffect(() => {
+    const dismissed = Boolean(
+      user?.preferences?.studentDashboard?.welcomeDismissed,
+    );
+    setShowWelcomeCard(!dismissed);
+
     const fetchUserTransactions = async () => {
       if (!user || !user.id) return;
       try {
@@ -30,6 +48,36 @@ const StudentDashboard = () => {
     fetchUserTransactions();
   }, [user]);
 
+  const handleDismissWelcomeCard = async () => {
+    setShowWelcomeCard(false);
+    try {
+      await authAPI.updatePreferences({
+        studentDashboard: { welcomeDismissed: true },
+      });
+      updateUserData((previous) => {
+        const base = previous && typeof previous === "object" ? previous : {};
+        const existingPreferences =
+          base.preferences && typeof base.preferences === "object"
+            ? base.preferences
+            : {};
+        const updatedPreferences = {
+          ...existingPreferences,
+          studentDashboard: {
+            ...(existingPreferences.studentDashboard || {}),
+            welcomeDismissed: true,
+          },
+        };
+
+        return {
+          ...base,
+          preferences: updatedPreferences,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to persist welcome preference", error);
+    }
+  };
+
   const currentBorrows = transactions.filter(t => (t.status === 'borrowed' || t.status === 'active' || t.status === 'pending'));
   const requests = transactions.filter(t => t.status === 'requested');
   const overdue = transactions.filter(t => {
@@ -44,18 +92,62 @@ const StudentDashboard = () => {
   const currentlyBorrowed = user?.borrowingStats?.currentlyBorrowed ?? currentBorrows.length;
   const pendingRequestsCount = requests.length;
 
+  const handleCancelRequest = async (transactionId) => {
+    if (!transactionId) return;
+    const confirmed = window.confirm('Are you sure you want to cancel this request?');
+    if (!confirmed) return;
+
+    try {
+      setCancelingId(transactionId);
+      const response = await transactionsAPI.cancelRequest(transactionId);
+      toast.success(response?.data?.message || 'Request cancelled');
+      setTransactions((prev) =>
+        prev.map((entry) => {
+          const entryId = resolveTransactionId(entry);
+          if (entryId !== transactionId) {
+            return entry;
+          }
+          const updated = response?.data?.transaction;
+          if (updated) {
+            return updated;
+          }
+          return {
+            ...entry,
+            status: 'cancelled',
+            cancelledAt: new Date().toISOString()
+          };
+        })
+      );
+    } catch (error) {
+      console.error('Failed to cancel request', error);
+      toast.error(error?.response?.data?.message || 'Failed to cancel request');
+    } finally {
+      setCancelingId(null);
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h1" sx={{ mb: 3, fontSize: "1.5rem", fontWeight: 600, color: "white" }}>
         Student Dashboard
       </Typography>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6">Welcome to your library portal!</Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-          View your borrowed books, due dates, and borrowing history.
-          <br />Request borrowing of books easily.
-        </Typography>
-      </Paper>
+      {showWelcomeCard ? (
+        <Paper sx={{ p: 3, mb: 3, position: "relative" }}>
+          <IconButton
+            size="small"
+            aria-label="Dismiss welcome message"
+            onClick={handleDismissWelcomeCard}
+            sx={{ position: "absolute", top: 12, right: 12 }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+          <Typography variant="h6">Welcome to your library portal!</Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            View your borrowed books, due dates, and borrowing history.
+            <br />Request borrowing of books easily.
+          </Typography>
+        </Paper>
+      ) : null}
 
       {/* Student details card (polished layout) */}
       <Paper
@@ -269,20 +361,35 @@ const StudentDashboard = () => {
                   <TableCell>Items</TableCell>
                   <TableCell>Created</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell align="right">Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {requests.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} align="center">No pending requests</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} align="center">No pending requests</TableCell></TableRow>
                 ) : (
-                  requests.map(tx => (
-                    <TableRow key={tx.id || tx._id || tx.transactionId}>
-                      <TableCell>{tx.id || tx.transactionId || tx._id}</TableCell>
+                  requests.map(tx => {
+                    const transactionId = resolveTransactionId(tx);
+                    return (
+                      <TableRow key={transactionId}>
+                        <TableCell>{transactionId}</TableCell>
                       <TableCell>{(tx.items || []).length}</TableCell>
                       <TableCell>{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : ''}</TableCell>
-                      <TableCell><Chip label={String(tx.status).toUpperCase()} size="small" /></TableCell>
-                    </TableRow>
-                  ))
+                        <TableCell><Chip label={String(tx.status).toUpperCase()} size="small" /></TableCell>
+                        <TableCell align="right">
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => handleCancelRequest(transactionId)}
+                            disabled={cancelingId === transactionId}
+                          >
+                            {cancelingId === transactionId ? 'Cancelling...' : 'Cancel Request'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

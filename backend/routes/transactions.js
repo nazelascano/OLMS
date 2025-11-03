@@ -1007,6 +1007,129 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
     }
 });
 
+router.post('/cancel/:id', verifyToken, logAction('CANCEL', 'transaction'), async (req, res) => {
+    try {
+        const txnIdentifier = req.params.id;
+        const reason = req.body && typeof req.body === 'object' ? req.body.reason : '';
+
+        setAuditContext(req, {
+            details: {
+                transactionId: txnIdentifier,
+                reason: reason || undefined
+            },
+            metadata: {
+                cancelRequest: {
+                    transactionId: txnIdentifier,
+                    actorId: req.user && req.user.id || null
+                }
+            }
+        });
+
+        const transaction = await findTransactionByIdentifier(req.dbAdapter, txnIdentifier);
+        if (!transaction) {
+            setAuditContext(req, {
+                success: false,
+                status: 'TransactionNotFound',
+                description: `Cancel request failed: transaction ${txnIdentifier} not found`,
+                entityId: txnIdentifier
+            });
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+
+        const transactionOwnerId = normalizeIdValue(transaction.userId || transaction.user?._id || transaction.user?.id);
+        const requesterIds = [
+            normalizeIdValue(req.user && req.user.id),
+            normalizeIdValue(req.user && req.user._id),
+            normalizeIdValue(req.user && req.user.userId)
+        ].filter(Boolean);
+
+        const privilegedRoles = new Set(['admin', 'librarian', 'staff']);
+        const actorRole = (req.user && req.user.role) ? String(req.user.role).toLowerCase() : '';
+        const hasOwnership = transactionOwnerId && requesterIds.some(id => id === transactionOwnerId);
+        const isPrivileged = privilegedRoles.has(actorRole);
+
+        if (!hasOwnership && !isPrivileged) {
+            setAuditContext(req, {
+                success: false,
+                status: 'Forbidden',
+                description: `Cancel request failed: user ${req.user && req.user.id} is not authorized`,
+                entityId: transaction.id || transaction._id
+            });
+            return res.status(403).json({ message: 'You are not allowed to cancel this request' });
+        }
+
+        const cancellableStatuses = new Set(['requested', 'pending']);
+        if (!cancellableStatuses.has(String(transaction.status || '').toLowerCase())) {
+            setAuditContext(req, {
+                success: false,
+                status: 'InvalidStatus',
+                description: `Cancel request failed: transaction ${transaction.id || transaction._id} is not pending`,
+                entityId: transaction.id || transaction._id,
+                metadata: {
+                    currentStatus: transaction.status || null
+                }
+            });
+            return res.status(400).json({ message: 'Only pending requests can be cancelled' });
+        }
+
+        const updatePayload = {
+            status: 'cancelled',
+            cancelledAt: new Date(),
+            cancelledBy: req.user && req.user.id,
+            cancelReason: reason || '',
+            updatedAt: new Date()
+        };
+
+        const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
+        const updatedTransaction = await req.dbAdapter.updateInCollection('transactions', txQuery, updatePayload);
+        const responseTransaction = (updatedTransaction && typeof updatedTransaction === 'object')
+            ? updatedTransaction
+            : { ...transaction, ...updatePayload };
+
+        try {
+            const notifications = await req.dbAdapter.findInCollection('notifications', { transactionId: transaction.id || transaction._id });
+            for (const notification of notifications) {
+                const notificationQuery = notification.id ? { id: notification.id } : { _id: notification._id };
+                await req.dbAdapter.updateInCollection('notifications', notificationQuery, {
+                    archived: true,
+                    updatedAt: new Date(),
+                    readBy: Array.from(new Set([...(notification.readBy || []), req.user && req.user.id].filter(Boolean)))
+                });
+            }
+        } catch (notifyError) {
+            console.error('Failed to mark notifications after cancel:', notifyError);
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Cancelled',
+            description: `Cancelled borrow request ${transaction.id || transaction._id}`,
+            entityId: transaction.id || transaction._id,
+            resourceId: transaction.id || transaction._id,
+            metadata: {
+                actorId: req.user && req.user.id,
+                reason: reason || '',
+                previousStatus: transaction.status || null
+            }
+        });
+
+        res.json({
+            message: 'Borrow request cancelled',
+            transactionId: transaction.id || transaction._id,
+            transaction: responseTransaction
+        });
+    } catch (error) {
+        console.error('Cancel request error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: `Cancel failed: ${error.message}`,
+            details: { error: error.message }
+        });
+        res.status(500).json({ message: 'Failed to cancel borrow request' });
+    }
+});
+
 // Approve a borrow request (staff only) - converts 'requested' -> 'borrowed' and reserves copies
 router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'transaction'), async (req, res) => {
     try {

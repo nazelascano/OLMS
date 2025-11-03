@@ -10,6 +10,24 @@ const {
 } = require('../middleware/customAuth');
 const router = express.Router();
 
+const isPlainObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const mergePreferences = (base = {}, updates = {}) => {
+  if (!isPlainObject(base)) base = {};
+  if (!isPlainObject(updates)) return { ...base };
+
+  const result = { ...base };
+  for (const [key, value] of Object.entries(updates)) {
+    if (isPlainObject(value)) {
+      result[key] = mergePreferences(base[key], value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+};
+
 // Register a new user
 router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
   try {
@@ -244,11 +262,17 @@ router.post('/login', async (req, res) => {
 
     // Remove password from response
     const { password: _, ...userResponse } = userData;
+    const safeUser = {
+      ...userResponse,
+      preferences: userResponse.preferences && typeof userResponse.preferences === 'object'
+        ? userResponse.preferences
+        : {},
+    };
 
     const responsePayload = {
       message: 'Login successful',
       token,
-      user: userResponse
+      user: safeUser
     };
 
     await recordAuditEvent(req, {
@@ -265,7 +289,7 @@ router.post('/login', async (req, res) => {
       },
     });
 
-    res.json(responsePayload);
+  res.json(responsePayload);
 
   } catch (error) {
     console.error('Login error:', error);
@@ -286,10 +310,16 @@ router.get('/verify', verifyToken, async (req, res) => {
   try {
     // Token is valid if we reach here (verifyToken middleware passed)
     const { password: _, ...userResponse } = req.user;
+    const safeUser = {
+      ...userResponse,
+      preferences: userResponse.preferences && typeof userResponse.preferences === 'object'
+        ? userResponse.preferences
+        : {},
+    };
     
     res.json({
       message: 'Token is valid',
-      user: userResponse
+      user: safeUser
     });
   } catch (error) {
     console.error('Token verification error:', error);
@@ -372,5 +402,82 @@ router.post('/logout', verifyToken, async (req, res) => {
   });
   res.json({ message: 'Logged out successfully' });
 });
+
+router.get('/preferences', verifyToken, async (req, res) => {
+  try {
+    const preferences = isPlainObject(req.user.preferences)
+      ? req.user.preferences
+      : {};
+    res.json({ preferences });
+  } catch (error) {
+    console.error('Get preferences error:', error);
+    res.status(500).json({ message: 'Failed to fetch preferences' });
+  }
+});
+
+router.put(
+  '/preferences',
+  verifyToken,
+  logAction('UPDATE', 'preferences'),
+  async (req, res) => {
+    try {
+      const incoming = req.body?.preferences;
+      if (!isPlainObject(incoming)) {
+        setAuditContext(req, {
+          success: false,
+          status: 'ValidationError',
+          description: 'Invalid preferences payload',
+        });
+        return res.status(400).json({ message: 'Preferences object is required' });
+      }
+
+      const userId = req.user.id;
+      const currentUser = await req.dbAdapter.findUserById(userId);
+      if (!currentUser) {
+        setAuditContext(req, {
+          success: false,
+          status: 'UserNotFound',
+          description: 'Failed to update preferences: user not found',
+        });
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const merged = mergePreferences(currentUser.preferences, incoming);
+      const updatedUser = await req.dbAdapter.updateUser(userId, {
+        preferences: merged,
+        updatedAt: new Date(),
+      });
+
+      if (!updatedUser) {
+        setAuditContext(req, {
+          success: false,
+          status: 'UpdateFailed',
+          description: 'Failed to persist user preferences',
+        });
+        return res.status(500).json({ message: 'Failed to update preferences' });
+      }
+
+      req.user.preferences = merged;
+
+      setAuditContext(req, {
+        success: true,
+        status: 'Updated',
+        entityId: userId,
+        description: 'Updated user preferences',
+      });
+
+      res.json({ message: 'Preferences updated', preferences: merged });
+    } catch (error) {
+      console.error('Update preferences error:', error);
+      setAuditContext(req, {
+        success: false,
+        status: 'Failed',
+        description: 'Failed to update preferences',
+        details: { error: error.message },
+      });
+      res.status(500).json({ message: 'Failed to update preferences' });
+    }
+  },
+);
 
 module.exports = router;

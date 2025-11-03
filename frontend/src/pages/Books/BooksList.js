@@ -41,7 +41,7 @@ import { PageLoading } from "../../components/Loading";
 
 const BooksList = () => {
   const navigate = useNavigate();
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,12 +135,16 @@ const BooksList = () => {
 
   if (loading) return <PageLoading message="Loading books..." />;
 
+  const isStudent = user?.role === "student";
+  const canManageBooks = hasPermission("books.update") || hasPermission("books.delete");
+  const headerTitle = isStudent ? "Browse Books" : "Books Management";
+
   return (
     <Box>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1" color={"white"}>
-          Books Management
+          {headerTitle}
         </Typography>
 
         {hasPermission("books.create") && (
@@ -217,7 +221,15 @@ const BooksList = () => {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                     <Typography variant="h6" component="h2" noWrap>{book.title}</Typography>
-                    <IconButton size="small" onClick={(e) => handleMenuClick(e, book)} aria-label={`Actions for ${book.title}`}><MoreVert /></IconButton>
+                    {canManageBooks ? (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuClick(e, book)}
+                        aria-label={`Actions for ${book.title}`}
+                      >
+                        <MoreVert />
+                      </IconButton>
+                    ) : null}
                   </Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>by {book.author}</Typography>
                   <Typography variant="body2" gutterBottom>ISBN: {book.isbn}</Typography>
@@ -237,22 +249,48 @@ const BooksList = () => {
       )}
 
       {/* Action Menu */}
-      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
-        {hasPermission("books.update") && (<MenuItem onClick={() => { navigate(`/books/${selectedBook?.id}/edit`); handleMenuClose(); }}><Edit sx={{ mr: 1 }} /> Edit Book</MenuItem>)}
-        {hasPermission("books.delete") && (<MenuItem onClick={() => { setDeleteDialogOpen(true); handleMenuClose(); }}><Delete sx={{ mr: 1 }} /> Delete Book</MenuItem>)}
-      </Menu>
+      {canManageBooks ? (
+        <>
+          <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
+            {hasPermission("books.update") && (
+              <MenuItem
+                onClick={() => {
+                  navigate(`/books/${selectedBook?.id}/edit`);
+                  handleMenuClose();
+                }}
+              >
+                <Edit sx={{ mr: 1 }} /> Edit Book
+              </MenuItem>
+            )}
+            {hasPermission("books.delete") && (
+              <MenuItem
+                onClick={() => {
+                  setDeleteDialogOpen(true);
+                  handleMenuClose();
+                }}
+              >
+                <Delete sx={{ mr: 1 }} /> Delete Book
+              </MenuItem>
+            )}
+          </Menu>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Book</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure you want to delete "{selectedBook?.title}" ? This action cannot be undone.</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteBook} color="error" variant="contained">Delete</Button>
-        </DialogActions>
-      </Dialog>
+          {/* Delete Confirmation Dialog */}
+          <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <DialogTitle>Delete Book</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Are you sure you want to delete "{selectedBook?.title}" ? This action cannot be undone.
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleDeleteBook} color="error" variant="contained">
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </>
+      ) : null}
 
       {/* Floating Add Button for Mobile */}
       {hasPermission("books.create") && (

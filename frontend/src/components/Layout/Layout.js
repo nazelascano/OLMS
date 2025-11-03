@@ -172,6 +172,14 @@ const Layout = () => {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [liveRegionMessage, setLiveRegionMessage] = useState("");
 
+  const handleSearchResultsWheel = (event) => {
+    event.stopPropagation();
+  };
+
+  const handleSearchResultsTouchMove = (event) => {
+    event.stopPropagation();
+  };
+
   // Reset focused index when search results change
   useEffect(() => {
     setFocusedIndex(-1);
@@ -360,6 +368,23 @@ const Layout = () => {
     loadNotifications();
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return undefined;
+    }
+
+    if (!searchOpen) {
+      return undefined;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [searchOpen]);
+
   const handleNotificationsOpen = (event) => {
     setNotificationsAnchorEl(event.currentTarget);
     const staleAfter = 5 * 60 * 1000;
@@ -433,10 +458,23 @@ const Layout = () => {
     0,
   );
 
-  const userInitial = (user?.firstName || user?.username || "U")
-    .toString()
-    .charAt(0)
-    .toUpperCase();
+  const resolveInitial = (value) => {
+    if (!value || (typeof value !== "string" && typeof value !== "number")) {
+      return "";
+    }
+
+    const normalized = String(value).trim();
+    if (!normalized) {
+      return "";
+    }
+
+    return normalized.charAt(0).toUpperCase();
+  };
+
+  const userInitial =
+    [user?.firstName, user?.lastName, user?.username, user?.email]
+      .map(resolveInitial)
+      .find((initial) => Boolean(initial)) || "U";
   const userDisplayName = (() => {
     const composed = [user?.firstName, user?.lastName]
       .filter((value) => Boolean(value && value.trim()))
@@ -466,6 +504,7 @@ const Layout = () => {
           width: 30,
           height: 30,
           backgroundColor: "#2563EB",
+          color: "#FFFFFF",
           fontSize: "0.85rem",
           fontWeight: 600,
           boxShadow: "0 2px 6px rgba(37, 99, 235, 0.35)",
@@ -502,6 +541,7 @@ const Layout = () => {
           width: 32,
           height: 32,
           backgroundColor: "#2563EB",
+          color: "#FFFFFF",
           fontSize: "0.85rem",
           fontWeight: 600,
           boxShadow: "0 2px 6px rgba(37, 99, 235, 0.35)",
@@ -736,28 +776,6 @@ const Layout = () => {
                     mt: 1,
                   }}
                 />
-                <Box
-                  sx={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    flexWrap: "wrap",
-                    mt: 1,
-                  }}
-                >
-                  <Chip
-                    label={userRoleLabel}
-                    sx={{
-                      backgroundColor: "#EEF2FF",
-                      border: "1px solid #CBD5E1",
-                      fontSize: "0.7rem",
-                      height: 32,
-                      color: "#334155",
-                      textTransform: "capitalize",
-                    }}
-                  />
-                </Box>
               </>
             ) : (
               <>
@@ -1045,122 +1063,131 @@ const Layout = () => {
                       ) : null}
                     </Box>
                     <Divider />
-                    {searchLoading ? (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          p: 2,
-                        }}
-                      >
-                        <CircularProgress size={20} />
-                      </Box>
-                    ) : searchError ? (
-                      <Box sx={{ p: 2 }}>
-                        <Typography variant="body2" color="error">
-                          {searchError}
-                        </Typography>
-                      </Box>
-                    ) : searchResults.length > 0 ? (
-                      <List dense disablePadding>
-                        {searchResults.map((section, index) => (
-                          <Box key={section.key}>
-                            <Box
-                              sx={{
-                                px: 2,
-                                pt: index === 0 ? 1 : 1.5,
-                                pb: 0.5,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                color: "#64748B",
-                              }}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{ fontWeight: 600, letterSpacing: "0.08em" }}
+                    <Box
+                      sx={{
+                        maxHeight: { xs: "65vh", sm: 360 },
+                        overflowY: "auto",
+                      }}
+                      onWheel={handleSearchResultsWheel}
+                      onTouchMove={handleSearchResultsTouchMove}
+                    >
+                      {searchLoading ? (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            p: 2,
+                          }}
+                        >
+                          <CircularProgress size={20} />
+                        </Box>
+                      ) : searchError ? (
+                        <Box sx={{ p: 2 }}>
+                          <Typography variant="body2" color="error">
+                            {searchError}
+                          </Typography>
+                        </Box>
+                      ) : searchResults.length > 0 ? (
+                        <List dense disablePadding>
+                          {searchResults.map((section, index) => (
+                            <Box key={section.key}>
+                              <Box
+                                sx={{
+                                  px: 2,
+                                  pt: index === 0 ? 1 : 1.5,
+                                  pb: 0.5,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                  color: "#64748B",
+                                }}
                               >
-                                {SEARCH_SECTION_LABELS[section.key] || section.key}
-                              </Typography>
-                            </Box>
-                            {section.items.map((item, itemIndex) => {
-                              let globalIndex = 0;
-                              for (let i = 0; i < searchResults.indexOf(section); i++) {
-                                globalIndex += searchResults[i].items.length;
-                              }
-                              globalIndex += itemIndex;
-                              const isFocused = globalIndex === focusedIndex;
-
-                              return (
-                                <ListItemButton
-                                  key={`${section.key}-${item.id}`}
-                                  onClick={() => handleSearchResultClick(item)}
-                                  alignItems="flex-start"
-                                  sx={{
-                                    px: 2,
-                                    py: 1.25,
-                                    gap: 1.5,
-                                    backgroundColor: isFocused ? '#EEF2FF' : 'transparent',
-                                    '&:hover': {
-                                      backgroundColor: isFocused ? '#E0E7FF' : '#F8FAFC',
-                                    },
-                                  }}
+                                <Typography
+                                  variant="caption"
+                                  sx={{ fontWeight: 600, letterSpacing: "0.08em" }}
                                 >
-                                  <ListItemIcon
+                                  {SEARCH_SECTION_LABELS[section.key] || section.key}
+                                </Typography>
+                              </Box>
+                              {section.items.map((item, itemIndex) => {
+                                let globalIndex = 0;
+                                for (let i = 0; i < searchResults.indexOf(section); i++) {
+                                  globalIndex += searchResults[i].items.length;
+                                }
+                                globalIndex += itemIndex;
+                                const isFocused = globalIndex === focusedIndex;
+
+                                return (
+                                  <ListItemButton
+                                    key={`${section.key}-${item.id}`}
+                                    onClick={() => handleSearchResultClick(item)}
+                                    alignItems="flex-start"
                                     sx={{
-                                      minWidth: 32,
-                                      color: "#2563EB",
-                                      mt: 0.25,
+                                      px: 2,
+                                      py: 1.25,
+                                      gap: 1.5,
+                                      backgroundColor: isFocused ? '#EEF2FF' : 'transparent',
+                                      '&:hover': {
+                                        backgroundColor: isFocused ? '#E0E7FF' : '#F8FAFC',
+                                      },
                                     }}
                                   >
-                                    {renderSectionIcon(section.key)}
-                                  </ListItemIcon>
-                                  <ListItemText
-                                    primary={item.primary}
-                                    primaryTypographyProps={{
-                                      variant: "body2",
-                                      fontWeight: 600,
-                                      color: "text.primary",
-                                    }}
-                                    secondary={
-                                      item.secondary ? (
-                                        <Typography
-                                          variant="caption"
-                                          color="text.secondary"
-                                          sx={{ display: "block", mt: 0.25 }}
-                                        >
-                                          {item.secondary}
-                                        </Typography>
-                                      ) : null
-                                    }
-                                  />
-                                  {item.chip ? (
-                                    <Chip
-                                      label={item.chip}
-                                      size="small"
+                                    <ListItemIcon
                                       sx={{
-                                        fontSize: "0.65rem",
-                                        height: 18,
-                                        backgroundColor: "#EFF6FF",
-                                        color: "#1D4ED8",
+                                        minWidth: 32,
+                                        color: "#2563EB",
+                                        mt: 0.25,
                                       }}
+                                    >
+                                      {renderSectionIcon(section.key)}
+                                    </ListItemIcon>
+                                    <ListItemText
+                                      primary={item.primary}
+                                      primaryTypographyProps={{
+                                        variant: "body2",
+                                        fontWeight: 600,
+                                        color: "text.primary",
+                                      }}
+                                      secondary={
+                                        item.secondary ? (
+                                          <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ display: "block", mt: 0.25 }}
+                                          >
+                                            {item.secondary}
+                                          </Typography>
+                                        ) : null
+                                      }
                                     />
-                                  ) : null}
-                                </ListItemButton>
-                              );
-                            })}
-                            {index < searchResults.length - 1 ? <Divider /> : null}
-                          </Box>
-                        ))}
-                      </List>
-                    ) : (
-                      <Box sx={{ p: 2 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No results found.
-                        </Typography>
-                      </Box>
-                    )}
+                                    {item.chip ? (
+                                      <Chip
+                                        label={item.chip}
+                                        size="small"
+                                        sx={{
+                                          fontSize: "0.65rem",
+                                          height: 18,
+                                          backgroundColor: "#EFF6FF",
+                                          color: "#1D4ED8",
+                                        }}
+                                      />
+                                    ) : null}
+                                  </ListItemButton>
+                                );
+                              })}
+                              {index < searchResults.length - 1 ? <Divider /> : null}
+                            </Box>
+                          ))}
+                        </List>
+                      ) : (
+                        <Box sx={{ p: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No results found.
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
                   </Box>
                 </ClickAwayListener>
               </Paper>
