@@ -13211,5 +13211,112 @@
     "_id": "mhj22c0s9m72a",
     "createdAt": "2025-11-03T11:27:15.292Z",
     "updatedAt": "2025-11-03T11:27:15.292Z"
+  },
+  {
+    "timestamp": "2025-11-03T11:46:19.945Z",
+    "action": "BULK_IMPORT",
+    "entity": "students",
+    "entityId": null,
+    "resource": "students",
+    "resourceId": null,
+    "description": "Imported 11 students (0 failed)",
+    "details": {
+      "success": 11,
+      "errors": 0
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 3000,
+      "bulkImportRequest": {
+        "count": 11
+      },
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Completed",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/students/bulk-import",
+    "id": "mhj2qv8pxt7hy",
+    "_id": "mhj2qv8pxt7hy",
+    "createdAt": "2025-11-03T11:46:19.945Z",
+    "updatedAt": "2025-11-03T11:46:19.945Z"
+  },
+  {
+    "timestamp": "2025-11-03T11:46:46.606Z",
+    "action": "DELETE",
+    "entity": "student",
+    "entityId": "mhfjcfk5pe1n5",
+    "resource": "student",
+    "resourceId": "mhfjcfk5pe1n5",
+    "description": "Deleted student Mary16 Doe",
+    "details": {
+      "studentId": "2024018"
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 10,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Deleted",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "DELETE",
+    "requestPath": "/api/students/mhfjcfk5pe1n5",
+    "id": "mhj2rfta0wn68",
+    "_id": "mhj2rfta0wn68",
+    "createdAt": "2025-11-03T11:46:46.606Z",
+    "updatedAt": "2025-11-03T11:46:46.606Z"
+  },
+  {
+    "timestamp": "2025-11-03T11:46:55.005Z",
+    "action": "BULK_IMPORT",
+    "entity": "students",
+    "entityId": null,
+    "resource": "students",
+    "resourceId": null,
+    "description": "Imported 1 students (0 failed)",
+    "details": {
+      "success": 1,
+      "errors": 0
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 265,
+      "bulkImportRequest": {
+        "count": 1
+      },
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Completed",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/students/bulk-import",
+    "id": "mhj2rmalt259q",
+    "_id": "mhj2rmalt259q",
+    "createdAt": "2025-11-03T11:46:55.005Z",
+    "updatedAt": "2025-11-03T11:46:55.005Z"
   }
 ]

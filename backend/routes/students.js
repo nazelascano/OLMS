@@ -518,15 +518,14 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
         }
 
         // If any validation errors, abort and return consolidated list
-        if (errors.length > 0) {
-            setAuditContext(req, {
-                success: false,
-                status: 'ValidationError',
-                description: 'Bulk import validation failed',
-                details: { errors }
-            });
-            return res.status(400).json({ message: 'Bulk import validation failed', errors });
-        }
+        const validationErrorsByIndex = new Map();
+        errors.forEach((entry) => {
+            if (!validationErrorsByIndex.has(entry.idx)) {
+                validationErrorsByIndex.set(entry.idx, []);
+            }
+            const issues = Array.isArray(entry.issues) ? entry.issues : (entry.errors || []);
+            validationErrorsByIndex.get(entry.idx).push(...issues);
+        });
 
         setAuditContext(req, {
             metadata: {
@@ -541,8 +540,18 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             failed: []
         };
 
-        for (const studentData of students) {
+        for (const [idx, studentData] of students.entries()) {
             try {
+                if (validationErrorsByIndex.has(idx)) {
+                    const issues = validationErrorsByIndex.get(idx) || ['Validation failed'];
+                    results.failed.push({
+                        studentData,
+                        error: issues.join('; '),
+                        issues
+                    });
+                    continue;
+                }
+
                 // Generate library card number for each student
                 const libraryCardNumber = await generateLibraryCardNumber(req.dbAdapter);
                 const schoolYear = resolveSchoolYear(studentData);
@@ -594,24 +603,28 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             }
         }
 
+        const successCount = results.successful.length;
+        const failureCount = results.failed.length;
+        const statusCode = successCount > 0 ? 200 : 400;
+
         setAuditContext(req, {
-            success: true,
-            status: 'Completed',
-            description: `Imported ${results.successful.length} students (${results.failed.length} failed)`,
+            success: successCount > 0,
+            status: successCount > 0 ? 'CompletedWithWarnings' : 'ValidationError',
+            description: `Imported ${successCount} students (${failureCount} failed)`,
             details: {
-                success: results.successful.length,
-                errors: results.failed.length,
+                success: successCount,
+                errors: failureCount,
             },
             metadata: {
                 actorId: req.user.id
             }
         });
 
-        res.json({
-            message: `Bulk import completed. ${results.successful.length} successful, ${results.failed.length} failed.`,
+        res.status(statusCode).json({
+            message: `Bulk import completed. ${successCount} successful, ${failureCount} failed.`,
             results: {
-                success: results.successful.length,
-                errors: results.failed.length,
+                success: successCount,
+                errors: failureCount,
                 details: [
                     ...results.successful.map(s => ({
                         studentId: s.studentId,
@@ -621,7 +634,8 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     ...results.failed.map(f => ({
                         studentId: f.studentData.studentId,
                         status: 'error',
-                        message: f.error
+                        message: f.error,
+                        issues: f.issues || []
                     }))
                 ]
             }
