@@ -298,7 +298,18 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
       }
     } catch (error) {
       console.error("Import error:", error);
-      toast.error("Failed to import students");
+      const responseMessage = error?.response?.data?.message;
+      const responseErrors = error?.response?.data?.errors;
+
+      if (responseErrors && Array.isArray(responseErrors) && responseErrors.length > 0) {
+        console.warn("Import validation errors:", responseErrors);
+      }
+
+      if (responseMessage) {
+        toast.error(responseMessage);
+      } else {
+        toast.error("Failed to import students");
+      }
     } finally {
       setImporting(false);
     }
