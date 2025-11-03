@@ -119,6 +119,76 @@ const buildBorrowedRecord = ({ transaction, item, lookups }) => {
     };
 };
 
+const normalizeIdValue = (value) => {
+    if (value === undefined || value === null) return '';
+    return String(value).trim();
+};
+
+const mergeRequestAssignments = (items = [], assignments = []) => {
+    const consumedIndices = new Set();
+
+    const findMatchIndex = (matcher) => {
+        for (let idx = 0; idx < assignments.length; idx += 1) {
+            if (consumedIndices.has(idx)) continue;
+            const assignment = assignments[idx];
+            if (matcher(assignment, idx)) {
+                return idx;
+            }
+        }
+        return -1;
+    };
+
+    const mergedItems = [];
+    const missingAssignments = [];
+
+    items.forEach((item, index) => {
+        const merged = { ...item };
+        if (merged.copyId) {
+            mergedItems.push(merged);
+            return;
+        }
+
+        const requestItemId = normalizeIdValue(merged.requestItemId);
+        const bookId = normalizeIdValue(merged.bookId);
+
+        let matchIndex = -1;
+        if (requestItemId) {
+            matchIndex = findMatchIndex((assignment) => normalizeIdValue(assignment.requestItemId) === requestItemId);
+        }
+        if (matchIndex === -1 && bookId) {
+            matchIndex = findMatchIndex((assignment) => normalizeIdValue(assignment.bookId) === bookId);
+        }
+        if (matchIndex === -1) {
+            matchIndex = findMatchIndex((assignment) => Boolean(normalizeIdValue(assignment.copyId)));
+        }
+
+        if (matchIndex === -1) {
+            missingAssignments.push({
+                index,
+                requestItemId: requestItemId || null,
+                bookId: bookId || null
+            });
+            mergedItems.push(merged);
+            return;
+        }
+
+        const assignment = assignments[matchIndex];
+        consumedIndices.add(matchIndex);
+
+        mergedItems.push({
+            ...merged,
+            copyId: normalizeIdValue(assignment.copyId),
+            bookId: normalizeIdValue(assignment.bookId) || bookId
+        });
+    });
+
+    const unusedAssignments = assignments
+        .map((assignment, index) => ({ ...assignment, index }))
+        .filter(entry => !consumedIndices.has(entry.index));
+
+    return { mergedItems, missingAssignments, unusedAssignments };
+};
+
 const processReturnTransaction = async({
     dbAdapter,
     transaction,
@@ -817,12 +887,13 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         const { userId: providedUserId, items, type = 'regular', notes } = req.body || {};
         // If caller didn't provide userId, default to authenticated user
         const userId = providedUserId || req.user && req.user.id;
+        const requestItems = Array.isArray(items) ? items : [];
 
         setAuditContext(req, {
             metadata: {
                 borrowRequest: {
                     type,
-                    itemCount: Array.isArray(items) ? items.length : 0
+                    itemCount: requestItems.length
                 }
             },
             details: {
@@ -830,7 +901,7 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
             }
         });
 
-        if (!userId || !Array.isArray(items) || items.length === 0) {
+        if (!userId || requestItems.length === 0) {
             setAuditContext(req, { success: false, status: 'ValidationError', description: 'Request missing userId or items' });
             return res.status(400).json({ message: 'User ID and items are required' });
         }
@@ -850,18 +921,40 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         const allSettings = await req.dbAdapter.findInCollection('settings', {});
         const settings = {};
         allSettings.forEach(setting => { settings[setting.id] = setting.value; });
-        const maxBooksPerTransaction = settings.MAX_BOOKS_PER_TRANSACTION || 10;
-        if (items.length > maxBooksPerTransaction) {
+        const parsedMaxBooks = parseInt(settings.MAX_BOOKS_PER_TRANSACTION, 10);
+        const maxBooksPerTransaction = Number.isFinite(parsedMaxBooks) && parsedMaxBooks > 0 ? parsedMaxBooks : 10;
+        if (requestItems.length > maxBooksPerTransaction) {
             setAuditContext(req, { success: false, status: 'LimitExceeded', description: `Request exceeds maximum ${maxBooksPerTransaction} books per transaction` });
             return res.status(400).json({ message: `Maximum ${maxBooksPerTransaction} books per transaction` });
         }
 
-        const transactionItems = (items || []).map(item => {
-            if (typeof item === 'string') return { copyId: item, status: 'requested' };
-            return { copyId: item.copyId || '', bookId: item.bookId || '', status: 'requested' };
+        const transactionId = generateTransactionId('request');
+        const transactionItems = requestItems.map((item, index) => {
+            if (typeof item === 'string') {
+                return {
+                    requestItemId: `${transactionId}_item_${index + 1}`,
+                    copyId: item,
+                    bookId: '',
+                    status: 'requested'
+                };
+            }
+
+            const copyId = item && item.copyId ? normalizeIdValue(item.copyId) : '';
+            const bookId = item && item.bookId ? normalizeIdValue(item.bookId) : '';
+
+            return {
+                requestItemId: `${transactionId}_item_${index + 1}`,
+                copyId,
+                bookId,
+                status: 'requested'
+            };
         });
 
-        const transactionId = generateTransactionId('request');
+        const invalidItems = transactionItems.filter(entry => !entry.copyId && !entry.bookId);
+        if (invalidItems.length > 0) {
+            setAuditContext(req, { success: false, status: 'ValidationError', description: 'Each requested item must reference a book copy or book ID' });
+            return res.status(400).json({ message: 'Each requested item must reference a book copy or book ID' });
+        }
         const now = new Date();
         const transactionData = {
             id: transactionId,
@@ -925,9 +1018,92 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             return res.status(400).json({ message: 'Only requested transactions can be approved' });
         }
 
-        const items = Array.isArray(transaction.items) ? transaction.items : [];
+        const items = Array.isArray(transaction.items)
+            ? transaction.items.map(item => ({ ...item }))
+            : [];
         if (items.length === 0) {
             return res.status(400).json({ message: 'Requested transaction has no items' });
+        }
+
+        const bodyPayload = req.body && typeof req.body === 'object' ? req.body : {};
+        const assignmentPayload = Array.isArray(bodyPayload.items)
+            ? bodyPayload.items
+            : Array.isArray(bodyPayload.assignments)
+                ? bodyPayload.assignments
+                : [];
+
+        const normalizedAssignments = assignmentPayload
+            .map(entry => ({
+                copyId: normalizeIdValue(entry && entry.copyId),
+                bookId: normalizeIdValue(entry && entry.bookId),
+                requestItemId: normalizeIdValue(entry && entry.requestItemId)
+            }))
+            .filter(entry => Boolean(entry.copyId));
+
+        const itemsMissingCopy = items.filter(item => !item.copyId);
+
+        if (itemsMissingCopy.length > 0 && normalizedAssignments.length === 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationFailed',
+                description: 'Copy assignments are required to approve this request',
+                details: { itemsMissingCopy }
+            });
+            return res.status(400).json({ message: 'Copy assignments are required to approve this request' });
+        }
+
+        if (normalizedAssignments.length > 0) {
+            const { mergedItems, missingAssignments } = mergeRequestAssignments(items, normalizedAssignments);
+            if (missingAssignments.length > 0) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'ValidationFailed',
+                    description: 'Missing copy assignments for one or more request items',
+                    details: { missingAssignments }
+                });
+                return res.status(400).json({ message: 'Missing copy assignments for requested items', details: missingAssignments });
+            }
+            items.length = 0;
+            mergedItems.forEach(entry => items.push(entry));
+        }
+
+        const duplicateCopyAssignments = [];
+        const missingCopyAssignments = [];
+        const copyTracker = new Set();
+        items.forEach((item, idx) => {
+            const copyId = normalizeIdValue(item.copyId);
+            if (!copyId) {
+                missingCopyAssignments.push({ index: idx, reason: 'missing-copyId', requestItemId: normalizeIdValue(item.requestItemId) || null });
+                return;
+            }
+            const key = copyId.toLowerCase();
+            if (copyTracker.has(key)) {
+                duplicateCopyAssignments.push({ index: idx, copyId });
+            } else {
+                copyTracker.add(key);
+            }
+            item.copyId = copyId;
+            item.bookId = normalizeIdValue(item.bookId);
+        });
+
+        if (missingCopyAssignments.length > 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationFailed',
+                description: 'Copy assignments are required for each requested item',
+                details: { missingCopyAssignments }
+            });
+            return res.status(400).json({ message: 'Copy assignments are required for each requested item', details: missingCopyAssignments });
+        }
+
+        if (duplicateCopyAssignments.length > 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationFailed',
+                description: 'Invalid or duplicate copy assignments provided',
+                details: { duplicateCopyAssignments }
+            });
+            return res.status(400).json({ message: 'Invalid or duplicate copy assignments provided', details: duplicateCopyAssignments });
         }
 
         // First: validate all requested items exist and are available. Do not modify DB during validation.
@@ -961,6 +1137,10 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             if (targetCopy.status !== 'available') {
                 validationFailures.push({ item, reason: 'copy-unavailable', copyStatus: targetCopy.status });
                 continue;
+            }
+
+            if (!item.bookId) {
+                item.bookId = normalizeIdValue(targetBook.id || targetBook._id);
             }
 
             readyToUpdate.push({ targetBook, targetCopy, copyId });

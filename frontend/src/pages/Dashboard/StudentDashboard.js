@@ -1,18 +1,294 @@
-import React from "react";
-import { Box, Typography, Paper } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Grid, Card, CardContent, Button, Avatar, Stack, Divider } from "@mui/material";
+import { School, Email, Phone, Badge } from "@mui/icons-material";
+import { api } from "../../utils/api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const StudentDashboard = () => {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserTransactions = async () => {
+      if (!user || !user.id) return;
+      try {
+        setLoading(true);
+        const resp = await api.get(`/transactions/user/${user.id}`);
+        const txs = Array.isArray(resp.data) ? resp.data : resp.data?.transactions || [];
+        setTransactions(txs);
+      } catch (err) {
+        console.error('Failed to load user transactions', err);
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserTransactions();
+  }, [user]);
+
+  const currentBorrows = transactions.filter(t => (t.status === 'borrowed' || t.status === 'active' || t.status === 'pending'));
+  const requests = transactions.filter(t => t.status === 'requested');
+  const overdue = transactions.filter(t => {
+    try {
+      if (!t.dueDate) return false;
+      const due = new Date(t.dueDate);
+      return (t.status === 'borrowed' || t.status === 'active') && due < new Date();
+    } catch (e) { return false; }
+  });
+
+  const totalBorrowed = user?.borrowingStats?.totalBorrowed ?? transactions.filter(t => t.status === 'borrowed' || t.status === 'returned' || t.status === 'active').length;
+  const currentlyBorrowed = user?.borrowingStats?.currentlyBorrowed ?? currentBorrows.length;
+  const pendingRequestsCount = requests.length;
+
   return (
     <Box>
       <Typography variant="h1" sx={{ mb: 3, fontSize: "1.5rem", fontWeight: 600, color: "white" }}>
-        Student Dashboard{" "}
-      </Typography>{" "}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6">Welcome to your library portal!</Typography>{" "}
+        Student Dashboard
+      </Typography>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6">Welcome to your library portal!</Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-          View your borrowed books, due dates, and borrowing history.{" "}
-        </Typography>{" "}
-      </Paper>{" "}
+          View your borrowed books, due dates, and borrowing history.
+          <br />Request borrowing of books easily.
+        </Typography>
+      </Paper>
+
+      {/* Student details card (polished layout) */}
+      <Paper
+        sx={{
+          p: { xs: 2.5, sm: 3 },
+          mb: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 6,
+          backgroundColor: '#fff',
+        }}
+      >
+        <Grid container spacing={3} alignItems="center">
+          <Grid item xs={12} md={4} lg={3}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Avatar sx={{ width: 80, height: 80, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 34 }}>
+                {user ? ((user.firstName || user.username || 'U').charAt(0).toUpperCase()) : 'U'}
+              </Avatar>
+              <Box>
+                <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>
+                  Student
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                  {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username : 'Student'}
+                </Typography>
+                <Stack direction="row" spacing={1} mt={1} flexWrap="wrap" useFlexGap>
+                  {user?.curriculum && <Chip size="small" color="primary" variant="outlined" label={`Curriculum: ${user.curriculum}`} />}
+                  {(user?.grade || user?.section) && (
+                    <Chip
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      label={`Grade ${user?.grade || '—'}${user?.section ? ` • ${user.section}` : ''}`}
+                    />
+                  )}
+                  {user?.libraryCardNumber && (
+                    <Chip size="small" variant="outlined" color="secondary" label={`Library ID ${user.libraryCardNumber}`} />
+                  )}
+                </Stack>
+              </Box>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={4} lg={4}>
+            <Stack spacing={1.25}>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                  Student Number
+                </Typography>
+                <Box display="flex" alignItems="center" gap={1.25}>
+                  <Badge fontSize="small" color="action" />
+                  <Typography variant="body1" fontWeight={600}>
+                    {user ? (user.studentNumber || user.studentId || '—') : '—'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Divider flexItem sx={{ borderStyle: 'dashed', borderColor: 'divider' }} />
+
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                  Contact Information
+                </Typography>
+                <Stack spacing={0.5}>
+                  <Box display="flex" alignItems="center" gap={1.25}>
+                    <Email fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                      {user?.email || '—'}
+                    </Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={1.25}>
+                    <Phone fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {user?.phoneNumber || user?.profile?.phone || '—'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12} md={4} lg={5}>
+            <Box
+              sx={{
+                px: { xs: 2, sm: 3 },
+                py: { xs: 2, sm: 2.5 },
+                borderRadius: 2,
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(25, 118, 210, 0.15)'
+                    : 'rgba(25, 118, 210, 0.08)',
+              }}
+            >
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.5, sm: 3 }} divider={<Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, borderStyle: 'dashed', borderColor: 'primary.light' }} />}>
+                <Box>
+                  <Typography variant="caption" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <School fontSize="inherit" /> Active Borrows
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }}>
+                    {currentlyBorrowed || 0}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Pending Requests
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }}>
+                    {pendingRequestsCount}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Overdue Items
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }} color={overdue.length > 0 ? 'error.main' : 'text.primary'}>
+                    {overdue.length}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Stat cards + quick actions */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={8}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle2" color="textSecondary">Total Borrowed</Typography>
+                  <Typography variant="h5">{totalBorrowed}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle2" color="textSecondary">Currently Borrowed</Typography>
+                  <Typography variant="h5">{currentlyBorrowed}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card>
+                <CardContent>
+                  <Typography variant="subtitle2" color="textSecondary">Pending / Overdue</Typography>
+                  <Typography variant="h5">{pendingRequestsCount + overdue.length}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant="subtitle2" color="textSecondary">Quick Actions</Typography>
+              <Box mt={2} display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
+                <Button variant="contained" color="primary" onClick={() => navigate('/transactions/request')}>Request Borrow</Button>
+                <Button variant="outlined" onClick={() => navigate('/books')}>Browse Books</Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Box mb={3}>
+        <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>Current Borrows</Typography>
+        <Paper>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Transaction ID</TableCell>
+                  <TableCell>Book</TableCell>
+                  <TableCell>Borrow Date</TableCell>
+                  <TableCell>Due Date</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {currentBorrows.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} align="center">{loading ? 'Loading...' : 'No current borrows'}</TableCell></TableRow>
+                ) : (
+                  currentBorrows.map(tx => (
+                    <TableRow key={tx.id || tx._id || tx.transactionId}>
+                      <TableCell>{tx.id || tx.transactionId || tx._id}</TableCell>
+                      <TableCell>{(tx.items && tx.items[0]) ? (tx.items[0].title || tx.items[0].bookTitle || tx.items[0].bookId) : (tx.bookTitle || '')}</TableCell>
+                      <TableCell>{tx.borrowDate ? new Date(tx.borrowDate).toLocaleDateString() : ''}</TableCell>
+                      <TableCell>{tx.dueDate ? new Date(tx.dueDate).toLocaleDateString() : ''}</TableCell>
+                      <TableCell><Chip label={String(tx.status).toUpperCase()} size="small" /></TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Box>
+
+      <Box>
+        <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>Pending Requests</Typography>
+        <Paper>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Request ID</TableCell>
+                  <TableCell>Items</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {requests.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} align="center">No pending requests</TableCell></TableRow>
+                ) : (
+                  requests.map(tx => (
+                    <TableRow key={tx.id || tx._id || tx.transactionId}>
+                      <TableCell>{tx.id || tx.transactionId || tx._id}</TableCell>
+                      <TableCell>{(tx.items || []).length}</TableCell>
+                      <TableCell>{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : ''}</TableCell>
+                      <TableCell><Chip label={String(tx.status).toUpperCase()} size="small" /></TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Box>
     </Box>
   );
 };

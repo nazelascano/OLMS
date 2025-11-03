@@ -33,7 +33,7 @@ import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
-
+import { useAuth } from "../../contexts/AuthContext";
 const normalizeNumber = (value, fallback) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -47,12 +47,16 @@ const normalizeBoolean = (value, fallback) => {
     if (["true", "1", "yes"].includes(normalized)) return true;
     if (["false", "0", "no"].includes(normalized)) return false;
   }
-  return Boolean(value);
+  return fallback;
 };
 
 const getBorrowerLabel = (borrower) => {
   if (!borrower) return "";
-  const name = [borrower.firstName, borrower.middleName, borrower.lastName]
+  const name = [
+    borrower.firstName,
+    borrower.middleName,
+    borrower.lastName,
+  ]
     .filter(Boolean)
     .join(" ")
     .trim();
@@ -69,7 +73,12 @@ const getBorrowerLabel = (borrower) => {
 const BorrowForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isStudentRequestRoute = location.pathname && location.pathname.includes("/transactions/request");
+  const { user: authUser } = useAuth();
+  const isStudentRequestRoute =
+    location.pathname && location.pathname.includes("/transactions/request");
+  const isStudentMode = Boolean(
+    isStudentRequestRoute && authUser && authUser.role === "student",
+  );
 
   const [borrowerQuery, setBorrowerQuery] = useState("");
   const [borrowerOptions, setBorrowerOptions] = useState([]);
@@ -101,7 +110,19 @@ const BorrowForm = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const borrowerId = selectedBorrower?.id || selectedBorrower?._id || null;
+  const borrowerId = useMemo(() => {
+    if (isStudentMode) {
+      return (
+        authUser?.id ||
+        authUser?._id ||
+        authUser?.userId ||
+        authUser?.studentId ||
+        null
+      );
+    }
+    return selectedBorrower?.id || selectedBorrower?._id || null;
+  }, [authUser, isStudentMode, selectedBorrower]);
+
   const maxBooksPerTransaction = normalizeNumber(
     rules.maxBooksPerTransaction,
     0,
@@ -118,6 +139,11 @@ const BorrowForm = () => {
   const finesEnabled = normalizeBoolean(rules.enableFines, true);
 
   useEffect(() => {
+    if (isStudentMode) {
+      // Students reuse default client-side rules if they cannot access settings.
+      return;
+    }
+
     let mounted = true;
     api
       .get("/settings/borrowing-rules")
@@ -140,9 +166,16 @@ const BorrowForm = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isStudentMode]);
 
   useEffect(() => {
+    if (isStudentMode) {
+      setBorrowerOptions([]);
+      setBorrowerLoading(false);
+      setBorrowerSearchError("");
+      return;
+    }
+
     if (!borrowerQuery.trim()) {
       setBorrowerOptions([]);
       setBorrowerLoading(false);
@@ -177,7 +210,7 @@ const BorrowForm = () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [borrowerQuery]);
+  }, [borrowerQuery, isStudentMode]);
 
   useEffect(() => {
     if (!bookQuery.trim()) {
@@ -194,10 +227,36 @@ const BorrowForm = () => {
     const timer = setTimeout(() => {
       api
         .get("/books/search", {
-          params: { q: bookQuery.trim(), available: true, limit: 20 },
+          params: {
+            q: bookQuery.trim(),
+            available: !isStudentMode,
+            limit: 20,
+          },
         })
         .then((response) => {
           if (!active) return;
+
+          if (isStudentMode) {
+            const uniqueBooks = new Map();
+            (response.data || []).forEach((book) => {
+              const bookId = book.id || book._id;
+              if (!bookId || uniqueBooks.has(bookId)) return;
+              uniqueBooks.set(bookId, {
+                bookId,
+                title: book.title || "Untitled",
+                author: book.author || "",
+                isbn: book.isbn || "",
+                category: book.category || "",
+                publisher: book.publisher || "",
+                availableCopies: Array.isArray(book.copies)
+                  ? book.copies.filter((copy) => copy.status === "available").length
+                  : book.availableCopies ?? 0,
+              });
+            });
+            setBookOptions(Array.from(uniqueBooks.values()));
+            return;
+          }
+
           const selectedCopyIds = new Set(
             selectedBooks.map((book) => book.copyId),
           );
@@ -233,9 +292,15 @@ const BorrowForm = () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [bookQuery, selectedBooks]);
+  }, [bookQuery, selectedBooks, isStudentMode]);
 
   useEffect(() => {
+    if (isStudentMode) {
+      setBorrowerStatus(null);
+      setStatusLoading(false);
+      return;
+    }
+
     if (!borrowerId) {
       setBorrowerStatus(null);
       return;
@@ -262,7 +327,7 @@ const BorrowForm = () => {
     return () => {
       active = false;
     };
-  }, [borrowerId]);
+  }, [borrowerId, isStudentMode]);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -276,29 +341,23 @@ const BorrowForm = () => {
   }, []);
 
   const resetForm = useCallback(() => {
-    setSelectedBorrower(null);
-    setBorrowerQuery("");
-    setBorrowerStatus(null);
+    if (!isStudentMode) {
+      setSelectedBorrower(null);
+      setBorrowerQuery("");
+      setBorrowerStatus(null);
+    }
     setSelectedBooks([]);
     setBookQuery("");
+    setBookOptions([]);
+    setBookSearchError("");
     setTransactionType("regular");
     setNotes("");
-    setBookSearchError("");
     setBorrowerSearchError("");
-  }, []);
+  }, [isStudentMode]);
 
   const handleAddBook = (option) => {
     if (!option) return;
     clearFeedback();
-
-    if (
-      selectedBooks.some(
-        (book) => book.copyId.toLowerCase() === option.copyId.toLowerCase(),
-      )
-    ) {
-      setBookSearchError("This copy is already selected.");
-      return;
-    }
 
     if (borrowLimitReached) {
       setBookSearchError(
@@ -307,17 +366,62 @@ const BorrowForm = () => {
       return;
     }
 
+    if (isStudentMode) {
+      const bookId = option.bookId || option.id || option._id;
+      if (!bookId) {
+        setBookSearchError("Unable to determine selected book.");
+        return;
+      }
+
+      if (
+        selectedBooks.some(
+          (book) => (book.bookId || book.id || book._id) === bookId,
+        )
+      ) {
+        setBookSearchError("You already added this book to your request.");
+        return;
+      }
+
+      setSelectedBooks((prev) => [
+        ...prev,
+        {
+          bookId,
+          title: option.title || "Untitled",
+          author: option.author || "",
+          isbn: option.isbn || "",
+          category: option.category || "",
+          publisher: option.publisher || "",
+          availableCopies: option.availableCopies ?? null,
+        },
+      ]);
+      setBookQuery("");
+      setBookOptions([]);
+      return;
+    }
+
+    if (
+      selectedBooks.some(
+        (book) =>
+          book.copyId &&
+          option.copyId &&
+          book.copyId.toLowerCase() === option.copyId.toLowerCase(),
+      )
+    ) {
+      setBookSearchError("This copy is already selected.");
+      return;
+    }
+
     setSelectedBooks((prev) => [...prev, option]);
     setBookQuery("");
     setBookOptions([]);
   };
 
-  // When a QR is scanned in Borrow form, attempt to find and add that copy automatically
   const handleBorrowScan = async (raw) => {
     const scanned = String(raw || "").trim();
     if (!scanned) return;
-    // Try to find the copy in current bookOptions first
-    const inOptions = bookOptions.find((o) => String(o.copyId).toLowerCase() === scanned.toLowerCase());
+    const inOptions = bookOptions.find(
+      (o) => String(o.copyId).toLowerCase() === scanned.toLowerCase(),
+    );
     if (inOptions) {
       handleAddBook(inOptions);
       setScannerOpen(false);
@@ -325,43 +429,73 @@ const BorrowForm = () => {
       return;
     }
 
-    // Fallback: search server for the copy using books search
     try {
-      const resp = await api.get('/books/search', { params: { q: scanned, limit: 20 } });
-      const options = (resp.data || []).flatMap((book) => (book.copies || [])
-        .filter((c) => c.status === 'available')
-        .map((c) => ({ copyId: c.copyId, bookId: book.id || book._id, title: book.title || 'Untitled', author: book.author || '', isbn: book.isbn || '', location: c.location || 'Main Library' })));
-      const match = options.find((o) => String(o.copyId).toLowerCase() === scanned.toLowerCase());
+      const resp = await api.get("/books/search", {
+        params: { q: scanned, limit: 20 },
+      });
+      const options = (resp.data || [])
+        .flatMap((book) =>
+          (book.copies || [])
+            .filter((c) => c.status === "available")
+            .map((c) => ({
+              copyId: c.copyId,
+              bookId: book.id || book._id,
+              title: book.title || "Untitled",
+              author: book.author || "",
+              isbn: book.isbn || "",
+              location: c.location || "Main Library",
+            })),
+        );
+      const match = options.find(
+        (o) => String(o.copyId).toLowerCase() === scanned.toLowerCase(),
+      );
       if (match) {
         handleAddBook(match);
         setScannerOpen(false);
         toast.success(`Added copy ${scanned}`);
         return;
       }
-      toast.error('Scanned copy not available');
+      toast.error("Scanned copy not available");
     } catch (err) {
-      console.error('Error searching copy by scanned value', err);
-      toast.error('Failed to search scanned copy');
+      console.error("Error searching copy by scanned value", err);
+      toast.error("Failed to search scanned copy");
     }
   };
 
-  const handleRemoveBook = (copyId) => {
+  const handleRemoveBook = (identifier) => {
     clearFeedback();
+    if (isStudentMode) {
+      const targetId =
+        identifier && typeof identifier === "object"
+          ? identifier.bookId || identifier.id || identifier._id
+          : identifier;
+      setSelectedBooks((prev) =>
+        prev.filter(
+          (book) => (book.bookId || book.id || book._id) !== targetId,
+        ),
+      );
+      return;
+    }
+
     setSelectedBooks((prev) =>
-      prev.filter((book) => book.copyId !== copyId),
+      prev.filter((book) => book.copyId !== identifier),
     );
   };
 
   const openConfirmation = () => {
     clearFeedback();
 
-    if (!isStudentRequestRoute && !borrowerId) {
+    if (!isStudentMode && !borrowerId) {
       setErrorMessage("Select a borrower before submitting the transaction.");
       return;
     }
 
     if (selectedBooks.length === 0) {
-      setErrorMessage("Add at least one available book copy to proceed.");
+      setErrorMessage(
+        isStudentMode
+          ? "Add at least one book to request."
+          : "Add at least one available book copy to proceed.",
+      );
       return;
     }
 
@@ -376,58 +510,71 @@ const BorrowForm = () => {
   };
 
   const handleConfirmBorrow = async () => {
-    if (!borrowerId || submitting) return;
+    if (submitting) return;
+    if (!isStudentMode && !borrowerId) return;
 
     setSubmitting(true);
     clearFeedback();
 
     try {
       const payload = {
-        userId: borrowerId,
         type: transactionType,
-        items: selectedBooks.map((book) => ({ copyId: book.copyId })),
+        items: selectedBooks.map((book) =>
+          isStudentMode
+            ? { bookId: book.bookId || book.id || book._id }
+            : { copyId: book.copyId },
+        ),
         notes: notes.trim() || undefined,
       };
-      // Choose endpoint depending on whether this is a student request route
-      const endpoint = isStudentRequestRoute ? "/transactions/request" : "/transactions/borrow";
 
-      // For student requests, omit userId so backend will use authenticated user
-      if (isStudentRequestRoute) delete payload.userId;
+      const endpoint = isStudentMode
+        ? "/transactions/request"
+        : "/transactions/borrow";
+      if (!isStudentMode) {
+        payload.userId = borrowerId;
+      }
 
       const response = await api.post(endpoint, payload);
 
-      setSuccessMessage(response.data?.message || (isStudentRequestRoute ? 'Borrow request submitted successfully.' : 'Borrowing transaction submitted successfully.'));
+      setSuccessMessage(
+        response.data?.message ||
+          (isStudentMode
+            ? "Borrow request submitted successfully."
+            : "Borrowing transaction submitted successfully."),
+      );
+
       setConfirmOpen(false);
 
-      // Generate transaction receipt
-      try {
-        // If the backend returned a concrete transaction, generate receipt for staff borrow flows
-        const transactionData = response.data.transaction || {
-          id: response.data.transactionId,
-          type: transactionType,
-          createdAt: new Date(),
-          dueDate: new Date(Date.now() + (borrowDays * 24 * 60 * 60 * 1000)),
-          fineAmount: 0,
-        };
+      if (!isStudentMode) {
+        try {
+          const transactionData = response.data.transaction || {
+            id: response.data.transactionId,
+            type: transactionType,
+            createdAt: new Date(),
+            dueDate: new Date(
+              Date.now() + borrowDays * 24 * 60 * 60 * 1000,
+            ),
+            fineAmount: 0,
+          };
 
-        if (!isStudentRequestRoute) {
           const receiptPDF = await generateTransactionReceipt(
             transactionData,
             selectedBorrower,
-            selectedBooks
+            selectedBooks,
           );
-          downloadPDF(receiptPDF, `receipt_${transactionData.id || Date.now()}.pdf`);
+          downloadPDF(
+            receiptPDF,
+            `receipt_${transactionData.id || Date.now()}.pdf`,
+          );
+        } catch (receiptError) {
+          console.error("Error generating receipt:", receiptError);
         }
-      } catch (receiptError) {
-        console.error("Error generating receipt:", receiptError);
-        // Don't show error for receipt generation failure
       }
 
       resetForm();
 
       window.setTimeout(() => {
-        // For students, prefer to send them back to their dashboard or transactions list
-        if (isStudentRequestRoute) {
+        if (isStudentMode) {
           navigate(location.state?.from || "/student/dashboard");
         } else {
           navigate(location.state?.from || "/transactions");
@@ -450,7 +597,7 @@ const BorrowForm = () => {
         <IconButton
           onClick={() => navigate(-1)}
           edge="start"
-          sx={{ mr: 2, color: 'text.primary' }}
+          sx={{ mr: 2, color: "text.primary" }}
           aria-label="Go back"
         >
           <ArrowBack />
@@ -479,31 +626,344 @@ const BorrowForm = () => {
               Borrower Details
             </Typography>
 
+            {isStudentMode ? (
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  You are requesting on your own behalf.
+                </Typography>
+                <Box mt={1}>
+                  <Typography variant="body1" fontWeight={600}>
+                    {getBorrowerLabel(authUser) || "You"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {[
+                      authUser?.email,
+                      authUser?.studentNumber || authUser?.studentId,
+                      authUser?.libraryCardNumber,
+                    ]
+                      .filter(Boolean)
+                      .join(" • ")}
+                  </Typography>
+                  <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+                    {authUser?.curriculum && (
+                      <Chip
+                        label={`Curriculum: ${authUser.curriculum}`}
+                        size="small"
+                      />
+                    )}
+                    {authUser?.grade && (
+                      <Chip label={`Grade: ${authUser.grade}`} size="small" />
+                    )}
+                    {authUser?.section && (
+                      <Chip
+                        label={`Section: ${authUser.section}`}
+                        size="small"
+                      />
+                    )}
+                  </Box>
+                </Box>
+
+                {authUser?.borrowingStats && (
+                  <Box mt={2}>
+                    <Divider sx={{ my: 1 }} />
+                    <Typography variant="subtitle2" gutterBottom>
+                      Your Borrowing Summary
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      <Chip
+                        icon={<Assignment fontSize="small" />}
+                        label={`Active: ${
+                          authUser.borrowingStats.currentlyBorrowed || 0
+                        }`}
+                        size="small"
+                        color={
+                          (authUser.borrowingStats.currentlyBorrowed || 0) > 0
+                            ? "primary"
+                            : "default"
+                        }
+                      />
+                      <Chip
+                        icon={<Book fontSize="small" />}
+                        label={`Total: ${
+                          authUser.borrowingStats.totalBorrowed || 0
+                        }`}
+                        size="small"
+                      />
+                      <Chip
+                        label={`Returned: ${
+                          authUser.borrowingStats.totalReturned || 0
+                        }`}
+                        size="small"
+                      />
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              <>
+                <Autocomplete
+                  value={selectedBorrower}
+                  onChange={(_, value) => {
+                    clearFeedback();
+                    setSelectedBorrower(value);
+                    setBorrowerQuery("");
+                    setBorrowerSearchError("");
+                  }}
+                  inputValue={borrowerQuery}
+                  onInputChange={(_, value) => setBorrowerQuery(value)}
+                  options={borrowerOptions}
+                  loading={borrowerLoading}
+                  getOptionLabel={getBorrowerLabel}
+                  isOptionEqualToValue={(option, value) =>
+                    (option.id || option._id) === (value.id || value._id)
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Search borrower"
+                      placeholder="Type name, email, or ID"
+                      error={Boolean(borrowerSearchError)}
+                      helperText={
+                        borrowerSearchError ||
+                        "Borrowers must have an active account to borrow."
+                      }
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <>
+                            <InputAdornment position="start">
+                              <Search fontSize="small" />
+                            </InputAdornment>
+                            {params.InputProps.startAdornment}
+                          </>
+                        ),
+                        endAdornment: (
+                          <>
+                            {borrowerLoading ? (
+                              <CircularProgress color="inherit" size={20} />
+                            ) : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                />
+
+                {selectedBorrower && (
+                  <Box mt={2}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Selected Borrower
+                    </Typography>
+                    <Box mt={1}>
+                      <Typography variant="body1" fontWeight={600}>
+                        {getBorrowerLabel(selectedBorrower)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {[
+                          selectedBorrower.email,
+                          selectedBorrower.studentId,
+                          selectedBorrower.libraryCardNumber,
+                        ]
+                          .filter(Boolean)
+                          .join(" • ")}
+                      </Typography>
+                      <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+                        {selectedBorrower.role && (
+                          <Chip
+                            label={`Role: ${selectedBorrower.role}`}
+                            size="small"
+                          />
+                        )}
+                        {selectedBorrower.curriculum && (
+                          <Chip
+                            label={`Curriculum: ${selectedBorrower.curriculum}`}
+                            size="small"
+                          />
+                        )}
+                        {selectedBorrower.gradeLevel && (
+                          <Chip
+                            label={`Grade: ${selectedBorrower.gradeLevel}`}
+                            size="small"
+                          />
+                        )}
+                      </Box>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {statusLoading ? (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <CircularProgress size={18} />
+                        <Typography variant="body2" color="text.secondary">
+                          Fetching borrowing status…
+                        </Typography>
+                      </Box>
+                    ) : (
+                      borrowerStatus && (
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Borrowing Status
+                          </Typography>
+                          <Box display="flex" flexWrap="wrap" gap={1}>
+                            <Chip
+                              icon={<Assignment fontSize="small" />}
+                              label={`Active: ${
+                                borrowerStatus.currentlyBorrowed || 0
+                              }`}
+                              size="small"
+                              color={
+                                borrowerStatus.currentlyBorrowed > 0
+                                  ? "primary"
+                                  : "default"
+                              }
+                            />
+                            <Chip
+                              icon={<Book fontSize="small" />}
+                              label={`Total: ${
+                                borrowerStatus.totalBorrowed || 0
+                              }`}
+                              size="small"
+                            />
+                            <Chip
+                              label={`Limit: ${
+                                borrowerStatus.borrowingLimit ??
+                                  maxBooksPerTransaction ??
+                                  "N/A"
+                              }`}
+                              size="small"
+                            />
+                            {remainingSlots !== null && (
+                              <Chip
+                                label={`Remaining this transaction: ${remainingSlots}`}
+                                size="small"
+                                color={remainingSlots > 0 ? "success" : "warning"}
+                              />
+                            )}
+                            {borrowerStatus.overdueBooks > 0 && (
+                              <Chip
+                                label={`Overdue: ${borrowerStatus.overdueBooks}`}
+                                size="small"
+                                color="warning"
+                              />
+                            )}
+                            {borrowerStatus.fineBalance > 0 && (
+                              <Chip
+                                label={`Fines: ${formatCurrency(
+                                  borrowerStatus.fineBalance,
+                                )}`}
+                                size="small"
+                                color="error"
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      )
+                    )}
+
+                    {borrowerStatus?.overdueBooks > 0 && (
+                      <Alert severity="warning" sx={{ mt: 2 }}>
+                        Borrower currently has {borrowerStatus.overdueBooks} overdue
+                        book
+                        {borrowerStatus.overdueBooks > 1 ? "s" : ""}.
+                      </Alert>
+                    )}
+                  </Box>
+                )}
+              </>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={7}>
+          <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {isStudentMode
+                ? "Select Books to Request"
+                : "Add Available Book Copies"}
+            </Typography>
             <Autocomplete
-              value={selectedBorrower}
-              onChange={(_, value) => {
-                clearFeedback();
-                setSelectedBorrower(value);
-                setBorrowerQuery("");
-                setBorrowerSearchError("");
-              }}
-              inputValue={borrowerQuery}
-              onInputChange={(_, value) => setBorrowerQuery(value)}
-              options={borrowerOptions}
-              loading={borrowerLoading}
-              getOptionLabel={getBorrowerLabel}
-              isOptionEqualToValue={(option, value) =>
-                (option.id || option._id) === (value.id || value._id)
+              value={null}
+              onChange={(_, option) => handleAddBook(option)}
+              inputValue={bookQuery}
+              onInputChange={(_, value) => setBookQuery(value)}
+              options={bookOptions}
+              loading={bookLoading}
+              getOptionLabel={(option) =>
+                isStudentMode
+                  ? option.title || "Untitled"
+                  : `${option.title} (${option.copyId})`
               }
+              isOptionEqualToValue={(option, value) =>
+                isStudentMode
+                  ? (option.bookId || option.id || option._id) ===
+                    (value.bookId || value.id || value._id)
+                  : option.copyId === value.copyId
+              }
+              filterOptions={(options) => options}
+              renderOption={(props, option) => {
+                if (isStudentMode) {
+                  const key = option.bookId || option.id || option._id;
+                  const available =
+                    typeof option.availableCopies === "number"
+                      ? option.availableCopies
+                      : undefined;
+                  return (
+                    <li {...props} key={key || option.title}>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                          {option.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {[option.author, option.isbn]
+                            .filter(Boolean)
+                            .join(" • ")}
+                        </Typography>
+                        {available !== undefined && (
+                          <Typography variant="caption" color="text.secondary">
+                            {available} {available === 1 ? "copy" : "copies"} available
+                          </Typography>
+                        )}
+                      </Box>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li {...props} key={option.copyId}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        {option.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Copy ID: {option.copyId}
+                        {option.isbn ? ` • ISBN ${option.isbn}` : ""}
+                        {option.author ? ` • ${option.author}` : ""}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Location: {option.location}
+                      </Typography>
+                    </Box>
+                  </li>
+                );
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Search borrower"
-                  placeholder="Type name, email, or ID"
-                  error={Boolean(borrowerSearchError)}
+                  label={
+                    isStudentMode
+                      ? "Search library books"
+                      : "Search available books"
+                  }
+                  placeholder="Search by title, author, or ISBN"
+                  error={Boolean(bookSearchError)}
                   helperText={
-                    borrowerSearchError ||
-                    "Borrowers must have an active account to borrow."
+                    bookSearchError ||
+                    (borrowLimitReached
+                      ? "Borrow limit reached. Remove a book to add another."
+                      : isStudentMode
+                        ? "Select books you want to request."
+                        : "Select copies to include in this transaction.")
                   }
                   InputProps={{
                     ...params.InputProps,
@@ -517,186 +977,6 @@ const BorrowForm = () => {
                     ),
                     endAdornment: (
                       <>
-                        {borrowerLoading ? (
-                          <CircularProgress color="inherit" size={20} />
-                        ) : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-            />
-
-            {selectedBorrower && (
-              <Box mt={2}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Selected Borrower
-                </Typography>
-                <Box mt={1}>
-                  <Typography variant="body1" fontWeight={600}>
-                    {getBorrowerLabel(selectedBorrower)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {[
-                      selectedBorrower.email,
-                      selectedBorrower.studentId,
-                      selectedBorrower.libraryCardNumber,
-                    ]
-                      .filter(Boolean)
-                      .join(" • ")}
-                  </Typography>
-                  <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
-                    {selectedBorrower.role && (
-                      <Chip label={`Role: ${selectedBorrower.role}`} size="small" />
-                    )}
-                    {selectedBorrower.curriculum && (
-                      <Chip
-                        label={`Curriculum: ${selectedBorrower.curriculum}`}
-                        size="small"
-                      />
-                    )}
-                    {selectedBorrower.gradeLevel && (
-                      <Chip
-                        label={`Grade: ${selectedBorrower.gradeLevel}`}
-                        size="small"
-                      />
-                    )}
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                {statusLoading ? (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <CircularProgress size={18} />
-                    <Typography variant="body2" color="text.secondary">
-                      Fetching borrowing status…
-                    </Typography>
-                  </Box>
-                ) : (
-                  borrowerStatus && (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Borrowing Status
-                      </Typography>
-                      <Box display="flex" flexWrap="wrap" gap={1}>
-                        <Chip
-                          icon={<Assignment fontSize="small" />}
-                          label={`Active: ${borrowerStatus.currentlyBorrowed || 0}`}
-                          size="small"
-                          color={
-                            borrowerStatus.currentlyBorrowed > 0
-                              ? "primary"
-                              : "default"
-                          }
-                        />
-                        <Chip
-                          icon={<Book fontSize="small" />}
-                          label={`Total: ${borrowerStatus.totalBorrowed || 0}`}
-                          size="small"
-                        />
-                        <Chip
-                          label={`Limit: ${(borrowerStatus.borrowingLimit ?? maxBooksPerTransaction) ?? "N/A"}`}
-                          size="small"
-                        />
-                        {remainingSlots !== null && (
-                          <Chip
-                            label={`Remaining this transaction: ${remainingSlots}`}
-                            size="small"
-                            color={remainingSlots > 0 ? "success" : "warning"}
-                          />
-                        )}
-                        {borrowerStatus.overdueBooks > 0 && (
-                          <Chip
-                            label={`Overdue: ${borrowerStatus.overdueBooks}`}
-                            size="small"
-                            color="warning"
-                          />
-                        )}
-                        {borrowerStatus.fineBalance > 0 && (
-                          <Chip
-                            label={`Fines: ${formatCurrency(borrowerStatus.fineBalance)}`}
-                            size="small"
-                            color="error"
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  )
-                )}
-
-                {borrowerStatus?.overdueBooks > 0 && (
-                  <Alert severity="warning" sx={{ mt: 2 }}>
-                    Borrower currently has {borrowerStatus.overdueBooks} overdue book
-                    {borrowerStatus.overdueBooks > 1 ? "s" : ""}.
-                  </Alert>
-                )}
-              </Box>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={7}>
-          <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Add Available Book Copies
-            </Typography>
-            <Autocomplete
-              value={null}
-              onChange={(_, option) => handleAddBook(option)}
-              inputValue={bookQuery}
-              onInputChange={(_, value) => setBookQuery(value)}
-              options={bookOptions}
-              loading={bookLoading}
-              getOptionLabel={(option) =>
-                `${option.title} (${option.copyId})`
-              }
-              isOptionEqualToValue={(option, value) =>
-                option.copyId === value.copyId
-              }
-              filterOptions={(options) => options}
-              renderOption={(props, option) => (
-                <li {...props} key={option.copyId}>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      {option.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Copy ID: {option.copyId}
-                      {option.isbn ? ` • ISBN ${option.isbn}` : ""}
-                      {option.author ? ` • ${option.author}` : ""}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Location: {option.location}
-                    </Typography>
-                  </Box>
-                </li>
-              )}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Search available books"
-                  placeholder="Search by title, author, or ISBN"
-                  error={Boolean(bookSearchError)}
-                  helperText={
-                    bookSearchError ||
-                    (borrowLimitReached
-                      ? "Borrow limit reached. Remove a book to add another."
-                      : "Select copies to include in this transaction.")
-                  }
-                  InputProps={{
-                    ...params.InputProps,
-                      startAdornment: (
-                        <>
-                          <InputAdornment position="start">
-                            <Search fontSize="small" />
-                          </InputAdornment>
-                          {params.InputProps.startAdornment}
-                        </>
-                      ),
-                    endAdornment: (
-                      <>
                         {bookLoading ? (
                           <CircularProgress color="inherit" size={20} />
                         ) : null}
@@ -708,65 +988,116 @@ const BorrowForm = () => {
               )}
             />
 
-            {/* Scanner dialog for BorrowForm (auto-add scanned copy) */}
-            <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="xs" fullWidth>
-              <DialogTitle>Scan Copy QR</DialogTitle>
-              <DialogContent>
-                <QRScanner elementId="borrow-qr-scanner" onDetected={(v) => handleBorrowScan(v)} onClose={() => setScannerOpen(false)} />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
-              </DialogActions>
-            </Dialog>
+            {!isStudentMode && (
+              <Dialog
+                open={scannerOpen}
+                onClose={() => setScannerOpen(false)}
+                maxWidth="xs"
+                fullWidth
+              >
+                <DialogTitle>Scan Copy QR</DialogTitle>
+                <DialogContent>
+                  <QRScanner
+                    elementId="borrow-qr-scanner"
+                    onDetected={(v) => handleBorrowScan(v)}
+                    onClose={() => setScannerOpen(false)}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+                </DialogActions>
+              </Dialog>
+            )}
 
             <Box mt={3}>
               <Typography variant="subtitle2" gutterBottom>
-                Selected Copies ({selectedBooks.length})
+                {isStudentMode
+                  ? `Requested Books (${selectedBooks.length})`
+                  : `Selected Copies (${selectedBooks.length})`}
               </Typography>
               {selectedBooks.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
-                  No book copies selected yet.
+                  {isStudentMode
+                    ? "No books requested yet."
+                    : "No book copies selected yet."}
                 </Typography>
               ) : (
                 <List disablePadding>
-                  {selectedBooks.map((book, index) => (
-                    <React.Fragment key={book.copyId}>
-                      <ListItem
-                        disableGutters
-                        secondaryAction={
-                          <IconButton
-                            edge="end"
-                            aria-label={`Remove copy ${book.copyId}`}
-                            onClick={() => handleRemoveBook(book.copyId)}
-                          >
-                            <Remove />
-                          </IconButton>
-                        }
-                      >
-                        <ListItemText
-                          primary={
-                            <Typography variant="body1" fontWeight={600}>
-                              {book.title}
-                            </Typography>
-                          }
-                          secondary={
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
+                  {selectedBooks.map((book, index) => {
+                    const key = isStudentMode
+                      ? book.bookId || book.id || book._id || book.title || index
+                      : book.copyId;
+                    const details = [];
+                    if (isStudentMode) {
+                      if (book.author) details.push(`Author: ${book.author}`);
+                      if (book.isbn) details.push(`ISBN: ${book.isbn}`);
+                      if (typeof book.availableCopies === "number") {
+                        details.push(
+                          `${book.availableCopies} ${
+                            book.availableCopies === 1 ? "copy" : "copies"
+                          } available`,
+                        );
+                      }
+                    }
+
+                    return (
+                      <React.Fragment key={key}>
+                        <ListItem
+                          disableGutters
+                          secondaryAction={
+                            <IconButton
+                              edge="end"
+                              aria-label={
+                                isStudentMode
+                                  ? `Remove book ${book.title}`
+                                  : `Remove copy ${book.copyId}`
+                              }
+                              onClick={() =>
+                                handleRemoveBook(
+                                  isStudentMode
+                                    ? book.bookId || book.id || book._id
+                                    : book.copyId,
+                                )
+                              }
                             >
-                              Copy ID: {book.copyId}
-                              {book.isbn ? ` • ISBN ${book.isbn}` : ""}
-                              {book.author ? ` • ${book.author}` : ""}
-                              {book.location ? ` • ${book.location}` : ""}
-                            </Typography>
+                              <Remove />
+                            </IconButton>
                           }
-                        />
-                      </ListItem>
-                      {index < selectedBooks.length - 1 && (
-                        <Divider component="li" sx={{ my: 1 }} />
-                      )}
-                    </React.Fragment>
-                  ))}
+                        >
+                          <ListItemText
+                            primary={
+                              <Typography variant="body1" fontWeight={600}>
+                                {book.title}
+                              </Typography>
+                            }
+                            secondary={
+                              isStudentMode ? (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  {details.join(" • ")}
+                                </Typography>
+                              ) : (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Copy ID: {book.copyId}
+                                  {book.isbn ? ` • ISBN ${book.isbn}` : ""}
+                                  {book.author ? ` • ${book.author}` : ""}
+                                  {book.location ? ` • ${book.location}` : ""}
+                                </Typography>
+                              )
+                            }
+                          />
+                        </ListItem>
+                        {index < selectedBooks.length - 1 && (
+                          <Divider component="li" sx={{ my: 1 }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </List>
               )}
             </Box>
@@ -804,7 +1135,9 @@ const BorrowForm = () => {
                   <Typography variant="body2" color="text.secondary">
                     Due in {borrowDays} day{borrowDays !== 1 ? "s" : ""}.
                     {finesEnabled
-                      ? ` ${formatCurrency(finePerDay)} fine per day if overdue.`
+                      ? ` ${formatCurrency(
+                          finePerDay,
+                        )} fine per day if overdue.`
                       : " Fines disabled."}
                   </Typography>
                 </Box>
@@ -826,9 +1159,13 @@ const BorrowForm = () => {
                   color="primary"
                   startIcon={<Book />}
                   onClick={openConfirmation}
-                  disabled={(isStudentRequestRoute ? selectedBooks.length === 0 : (!selectedBorrower || selectedBooks.length === 0))}
+                  disabled={
+                    isStudentMode
+                      ? selectedBooks.length === 0
+                      : !selectedBorrower || selectedBooks.length === 0
+                  }
                 >
-                  {isStudentRequestRoute ? 'Review Request' : 'Review Borrow Request'}
+                  {isStudentMode ? "Review Request" : "Review Borrow Request"}
                 </Button>
               </Grid>
             </Grid>
@@ -842,11 +1179,16 @@ const BorrowForm = () => {
         maxWidth="sm"
         fullWidth
       >
-  <DialogTitle>{isStudentRequestRoute ? 'Confirm Borrow Request' : 'Confirm Borrow Request'}</DialogTitle>
+        <DialogTitle>
+          {isStudentMode ? "Confirm Borrow Request" : "Confirm Borrow Request"}
+        </DialogTitle>
         <DialogContent dividers>
           <Typography variant="body1" gutterBottom>
             Borrower:{" "}
-            <strong>{getBorrowerLabel(selectedBorrower) || 'You'}</strong>
+            <strong>
+              {getBorrowerLabel(isStudentMode ? authUser : selectedBorrower) ||
+                "You"}
+            </strong>
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {selectedBooks.length} book
@@ -855,19 +1197,41 @@ const BorrowForm = () => {
           </Typography>
 
           <List dense disablePadding sx={{ mt: 2 }}>
-            {selectedBooks.map((book) => (
-              <React.Fragment key={book.copyId}>
-                <ListItem disableGutters>
-                  <ListItemText
-                    primary={book.title}
-                    secondary={`Copy ID: ${book.copyId}${
-                      book.isbn ? ` • ISBN ${book.isbn}` : ""
-                    }${book.location ? ` • ${book.location}` : ""}`}
-                  />
-                </ListItem>
-                <Divider component="li" />
-              </React.Fragment>
-            ))}
+            {selectedBooks.map((book, index) => {
+              const key = isStudentMode
+                ? book.bookId || book.id || book._id || `${book.title}-${index}`
+                : book.copyId;
+              const details = [];
+
+              if (isStudentMode) {
+                if (book.author) details.push(`Author: ${book.author}`);
+                if (book.isbn) details.push(`ISBN: ${book.isbn}`);
+                if (typeof book.availableCopies === "number") {
+                  details.push(
+                    `${book.availableCopies} ${
+                      book.availableCopies === 1 ? "copy" : "copies"
+                    } available`,
+                  );
+                }
+              } else {
+                details.push(`Copy ID: ${book.copyId}`);
+                if (book.isbn) details.push(`ISBN ${book.isbn}`);
+                if (book.author) details.push(book.author);
+                if (book.location) details.push(book.location);
+              }
+
+              return (
+                <React.Fragment key={key}>
+                  <ListItem disableGutters>
+                    <ListItemText
+                      primary={book.title}
+                      secondary={details.join(" • ")}
+                    />
+                  </ListItem>
+                  <Divider component="li" />
+                </React.Fragment>
+              );
+            })}
           </List>
 
           {notes.trim() && (
@@ -894,7 +1258,11 @@ const BorrowForm = () => {
             onClick={handleConfirmBorrow}
             disabled={submitting}
           >
-            {submitting ? "Submitting…" : (isStudentRequestRoute ? 'Confirm Request' : 'Confirm Borrow')}
+            {submitting
+              ? "Submitting…"
+              : isStudentMode
+                ? "Confirm Request"
+                : "Confirm Borrow"}
           </Button>
         </DialogActions>
       </Dialog>

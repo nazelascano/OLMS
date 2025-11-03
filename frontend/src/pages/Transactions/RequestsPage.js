@@ -1,5 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Paper, Table, TableHead, TableRow, TableCell, TableBody, Button, Typography, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Checkbox, TableContainer, TablePagination } from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  List,
+  ListItem,
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+  Typography,
+  Divider,
+} from '@mui/material';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,6 +41,33 @@ const RequestsPage = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
+
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [approveAssignments, setApproveAssignments] = useState({});
+  const [approveBooks, setApproveBooks] = useState({});
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
+  const [approveError, setApproveError] = useState('');
+
+  const approveTransaction = (txId, payload) => api.post(`/transactions/approve/${txId}`, payload);
+
+  const resolveTransactionId = (entry) =>
+    entry?.id || entry?.transactionId || entry?._id || entry?.resolvedId || null;
+
+  const getTransactionItems = (entry) => {
+    if (!entry) return [];
+    if (Array.isArray(entry.items)) return entry.items;
+    if (entry.transaction && Array.isArray(entry.transaction.items)) return entry.transaction.items;
+    return [];
+  };
+
+  const buildItemKey = (item, index) => {
+    if (!item) return `item-${index}`;
+    if (item.requestItemId) return String(item.requestItemId);
+    const bookId = item.bookId ? String(item.bookId) : 'book';
+    return `${bookId}-${index}`;
+  };
 
   const fetchRequests = async () => {
     try {
@@ -30,12 +85,13 @@ const RequestsPage = () => {
 
   useEffect(() => { fetchRequests(); }, []);
 
-  const handleApprove = async (tx) => {
-    const id = tx.id || tx.transactionId || tx._id;
+  const approveWithoutAssignments = async (tx) => {
+    const id = resolveTransactionId(tx);
     if (!id) return;
     try {
-      await api.post(`/transactions/approve/${id}`);
+      await approveTransaction(id);
       toast.success('Request approved');
+      setSelected((prev) => prev.filter((value) => value !== id));
       fetchRequests();
     } catch (err) {
       console.error('Approve failed', err);
@@ -43,21 +99,222 @@ const RequestsPage = () => {
     }
   };
 
+  const startApproveWorkflow = (tx) => {
+    const items = getTransactionItems(tx);
+    if (items.some((item) => !item?.copyId)) {
+      openApproveDialog(tx);
+      return;
+    }
+    approveWithoutAssignments(tx);
+  };
+
+  const openApproveDialog = async (tx) => {
+    const id = resolveTransactionId(tx);
+    const items = getTransactionItems(tx).map((item) => ({ ...item }));
+    if (!id) return;
+
+    setApproveDialogOpen(true);
+    setApproveTarget({ id, transaction: tx, items });
+    setApproveAssignments({});
+    setApproveBooks({});
+    setApproveError('');
+    setApproveSubmitting(false);
+    setApproveLoading(true);
+
+    try {
+      const missingBookRefs = items.some((item) => !item.copyId && !item.bookId);
+      if (missingBookRefs) {
+        setApproveError('Some requested items do not reference a specific book. Please review the request.');
+      }
+
+      const uniqueBookIds = Array.from(
+        new Set(
+          items
+            .map((item) => (item.bookId ? String(item.bookId) : ''))
+            .filter((value) => Boolean(value))
+        )
+      );
+
+      let booksMap = {};
+      if (uniqueBookIds.length > 0) {
+        const responses = await Promise.all(
+          uniqueBookIds.map(async (bookId) => {
+            try {
+              const resp = await api.get(`/books/${bookId}`);
+              return { bookId, data: resp.data };
+            } catch (err) {
+              console.error('Failed to load book details', bookId, err);
+              return { bookId, error: err };
+            }
+          })
+        );
+
+        const failedBooks = [];
+        responses.forEach(({ bookId, data, error }) => {
+          if (data) {
+            const normalizedId = String(data.id || data._id || bookId);
+            booksMap[normalizedId] = data;
+            booksMap[String(bookId)] = data;
+          } else {
+            failedBooks.push(bookId);
+          }
+        });
+
+        if (failedBooks.length > 0) {
+          setApproveError((prev) =>
+            prev || 'Some book details could not be loaded. Please verify availability before approving.'
+          );
+        }
+      }
+
+      setApproveBooks(booksMap);
+
+      setApproveAssignments(() => {
+        const initial = {};
+        items.forEach((item, index) => {
+          const key = buildItemKey(item, index);
+          if (item.copyId) {
+            initial[key] = item.copyId;
+            return;
+          }
+
+          const bookId = item.bookId ? String(item.bookId) : '';
+          const book = booksMap[bookId];
+          const availableCopies = Array.isArray(book?.copies)
+            ? book.copies.filter((copy) => copy.status === 'available')
+            : [];
+
+          if (availableCopies.length === 1) {
+            initial[key] = availableCopies[0].copyId;
+          } else {
+            initial[key] = '';
+          }
+        });
+        return initial;
+      });
+    } catch (err) {
+      console.error('Failed to prepare approval dialog', err);
+      setApproveError(err.response?.data?.message || 'Failed to load book details');
+    } finally {
+      setApproveLoading(false);
+    }
+  };
+
+  const handleAssignmentChange = (itemKey, copyId) => {
+    setApproveAssignments((prev) => ({ ...prev, [itemKey]: copyId }));
+    setApproveError('');
+  };
+
+  const closeApproveDialog = () => {
+    if (approveSubmitting) return;
+    setApproveDialogOpen(false);
+    setApproveTarget(null);
+    setApproveAssignments({});
+    setApproveBooks({});
+    setApproveError('');
+  };
+
+  const handleSubmitAssignments = async () => {
+    if (!approveTarget) return;
+    const { id, items } = approveTarget;
+    setApproveSubmitting(true);
+    setApproveError('');
+
+    try {
+      const payloadItems = items.map((item, index) => {
+        const key = buildItemKey(item, index);
+        const selectedCopyId = (approveAssignments[key] || item.copyId || '').toString().trim();
+        const normalizedBookId = item.bookId ? String(item.bookId) : undefined;
+        return {
+          requestItemId: item.requestItemId,
+          bookId: normalizedBookId,
+          copyId: selectedCopyId,
+        };
+      });
+
+      const missingAssignments = payloadItems.filter((entry) => !entry.copyId);
+      if (missingAssignments.length > 0) {
+        setApproveError('Please assign a copy for each requested book.');
+        setApproveSubmitting(false);
+        return;
+      }
+
+      await approveTransaction(id, { items: payloadItems });
+      toast.success('Request approved');
+      closeApproveDialog();
+      fetchRequests();
+      setSelected((prev) => prev.filter((value) => value !== id));
+    } catch (err) {
+      console.error('Approve failed', err);
+      setApproveError(err.response?.data?.message || 'Approve failed');
+    } finally {
+      setApproveSubmitting(false);
+    }
+  };
+
+  const takenCopyMap = useMemo(() => {
+    const mapping = {};
+    Object.entries(approveAssignments).forEach(([key, value]) => {
+      if (!value) return;
+      mapping[String(value).toLowerCase()] = key;
+    });
+    return mapping;
+  }, [approveAssignments]);
+
+  const dialogItems = useMemo(() => approveTarget?.items || [], [approveTarget]);
+
+  const assignmentsReady = useMemo(() => {
+    if (!approveDialogOpen || approveLoading) return false;
+    return dialogItems.every((item, index) => {
+      const key = buildItemKey(item, index);
+      const assigned = approveAssignments[key] || item.copyId;
+      return Boolean((assigned || '').toString().trim());
+    });
+  }, [approveAssignments, approveDialogOpen, approveLoading, dialogItems]);
+
   const handleBulkApprove = async () => {
     if (!selected || selected.length === 0) return;
+    const autoApprove = [];
+    const needsManual = [];
+
+    selected.forEach((txId) => {
+      const tx = requests.find((entry) => resolveTransactionId(entry) === txId);
+      const items = getTransactionItems(tx);
+      if (items.some((item) => !item?.copyId)) {
+        needsManual.push(txId);
+      } else {
+        autoApprove.push(txId);
+      }
+    });
+
+    if (needsManual.length > 0) {
+      toast.error(`Cannot bulk approve ${needsManual.length} request${needsManual.length > 1 ? 's' : ''} without assigning copies first.`);
+    }
+
+    if (autoApprove.length === 0) {
+      return;
+    }
+
     const results = { success: 0, failed: 0, details: [] };
-    for (const txId of selected) {
+    for (const txId of autoApprove) {
       try {
-        await api.post(`/transactions/approve/${txId}`);
-        results.success++;
+        await approveTransaction(txId);
+        results.success += 1;
       } catch (err) {
-        results.failed++;
+        results.failed += 1;
         results.details.push({ id: txId, message: err.response?.data?.message || err.message });
       }
     }
+
     fetchRequests();
     setSelected([]);
-    toast.success(`Approved ${results.success} requests${results.failed ? `, ${results.failed} failed` : ''}`);
+
+    if (results.success > 0) {
+      toast.success(`Approved ${results.success} request${results.success > 1 ? 's' : ''}${results.failed ? `, ${results.failed} failed` : ''}`);
+    } else if (results.failed > 0) {
+      toast.error(`Failed to approve ${results.failed} request${results.failed > 1 ? 's' : ''}`);
+    }
+
     if (results.failed) console.error('Bulk approve failures', results.details);
   };
 
@@ -139,7 +396,7 @@ const RequestsPage = () => {
                       <TableCell>{(tx.items || []).length}</TableCell>
                       <TableCell>{new Date(tx.createdAt || tx.borrowDate || Date.now()).toLocaleString()}</TableCell>
                       <TableCell>
-                        <Button size="small" onClick={() => handleApprove(tx)} sx={{ mr: 1 }}>Approve</Button>
+                        <Button size="small" onClick={() => startApproveWorkflow(tx)} sx={{ mr: 1 }}>Approve</Button>
                         <Button size="small" color="error" onClick={() => { setSelected([txId]); setRejectDialogOpen(true); setRejectReason(''); }}>Reject</Button>
                       </TableCell>
                     </TableRow>
@@ -157,6 +414,119 @@ const RequestsPage = () => {
           <TablePagination component="div" count={requests.length} page={page} onPageChange={handleChangePage} rowsPerPage={rowsPerPage} onRowsPerPageChange={handleChangeRowsPerPage} rowsPerPageOptions={[10,25,50,100]} />
         </Box>
       </Paper>
+
+      <Dialog
+        open={approveDialogOpen}
+        onClose={closeApproveDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Assign Copies</DialogTitle>
+        <DialogContent dividers>
+          {approveError && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {approveError}
+            </Alert>
+          )}
+
+          {approveLoading ? (
+            <Box display="flex" alignItems="center" justifyContent="center" minHeight={160}>
+              <CircularProgress />
+            </Box>
+          ) : dialogItems.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No items to assign for this request.
+            </Typography>
+          ) : (
+            <List disablePadding>
+              {dialogItems.map((item, index) => {
+                const key = buildItemKey(item, index);
+                const assignedCopyId = approveAssignments[key] || item.copyId || '';
+                const bookId = item.bookId ? String(item.bookId) : '';
+                const bookDetails = approveBooks[bookId];
+                const availableCopies = Array.isArray(bookDetails?.copies)
+                  ? bookDetails.copies.filter((copy) => copy.status === 'available')
+                  : [];
+                const hasBookDetails = Boolean(bookDetails);
+                const title = bookDetails?.title || item.title || 'Unknown title';
+                const author = bookDetails?.author || item.author || '';
+                const isbn = bookDetails?.isbn || item.isbn || '';
+                const secondary = [
+                  author ? `Author: ${author}` : null,
+                  isbn ? `ISBN: ${isbn}` : null,
+                  bookDetails?.category ? `Category: ${bookDetails.category}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' • ');
+
+                const isOptionTaken = (copyId) => {
+                  const mapKey = String(copyId).toLowerCase();
+                  const owner = takenCopyMap[mapKey];
+                  return owner && owner !== key;
+                };
+
+                return (
+                  <React.Fragment key={key}>
+                    <ListItem disableGutters sx={{ flexDirection: 'column', alignItems: 'stretch', py: 1 }}>
+                      <ListItemText primary={title} secondary={secondary || undefined} />
+
+                      {item.copyId ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Copy already assigned: {item.copyId}
+                        </Typography>
+                      ) : hasBookDetails && availableCopies.length > 0 ? (
+                        <FormControl fullWidth size="small" sx={{ mt: 1 }}>
+                          <InputLabel id={`copy-select-${key}`}>Available Copy</InputLabel>
+                          <Select
+                            labelId={`copy-select-${key}`}
+                            label="Available Copy"
+                            value={assignedCopyId}
+                            onChange={(event) => handleAssignmentChange(key, event.target.value)}
+                            disabled={approveSubmitting}
+                          >
+                            <MenuItem value="">
+                              <em>Select copy</em>
+                            </MenuItem>
+                            {availableCopies.map((copy) => (
+                              <MenuItem
+                                key={copy.copyId}
+                                value={copy.copyId}
+                                disabled={isOptionTaken(copy.copyId)}
+                              >
+                                {copy.copyId}
+                                {copy.location ? ` • ${copy.location}` : ''}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      ) : (
+                        <Alert severity={hasBookDetails ? 'warning' : 'error'} sx={{ mt: 1 }}>
+                          {hasBookDetails
+                            ? 'No available copies for this book.'
+                            : 'Unable to load available copies for this book.'}
+                        </Alert>
+                      )}
+                    </ListItem>
+                    {index < dialogItems.length - 1 && <Divider component="li" />}
+                  </React.Fragment>
+                );
+              })}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeApproveDialog} disabled={approveSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitAssignments}
+            disabled={!assignmentsReady || approveSubmitting}
+          >
+            {approveSubmitting ? 'Assigning…' : 'Assign Copies'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)}>
         <DialogTitle>Reject Request</DialogTitle>
