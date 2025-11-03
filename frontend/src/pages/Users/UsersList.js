@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -57,6 +57,8 @@ const UsersList = () => {
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -73,21 +75,48 @@ const UsersList = () => {
   const roles = ["admin", "librarian", "staff", "student"];
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/users");
-      setUsers(response.data.users || response.data || []);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-      toast.error("Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadUsers = useCallback(
+    async (override = {}) => {
+      const pageToFetch = override.page ?? page;
+      const limitToFetch = override.limit ?? rowsPerPage;
+      const roleToFetch = override.role ?? roleFilter;
+      const searchToFetch = override.search ?? debouncedSearchTerm;
+
+      try {
+        setLoading(true);
+        const params = {
+          page: pageToFetch + 1,
+          limit: limitToFetch,
+        };
+        if (roleToFetch) params.role = roleToFetch;
+        if (searchToFetch) params.search = searchToFetch;
+
+        const response = await api.get("/users", { params });
+        const payload = response.data || {};
+        const userList = payload.users || payload.data || [];
+        const total = payload.pagination?.total ?? payload.total ?? userList.length ?? 0;
+
+        setUsers(userList);
+        setTotalUsers(total);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        toast.error("Failed to load users");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, rowsPerPage, roleFilter, debouncedSearchTerm]
+  );
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const getUserId = (user) => user?._id || user?.id || user?.userId || null;
 
@@ -112,7 +141,7 @@ const UsersList = () => {
       const userId = getUserId(selectedUser);
       if (!userId) return;
       await api.delete(`/users/${userId}`);
-      setUsers((prev) => prev.filter((u) => getUserId(u) !== userId));
+      await loadUsers();
       toast.success("User deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedUser(null);
@@ -143,35 +172,15 @@ const UsersList = () => {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const haystack = `${user.firstName || ""} ${user.lastName || ""} ${user.email || ""} ${user.username || ""} ${user.studentNumber || user.studentId || user.libraryCardNumber || (user.library && user.library.cardNumber) || ""}`.toLowerCase();
-    const matchesSearch = !searchTerm || haystack.includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
-
   useEffect(() => {
     setPage(0);
-  }, [searchTerm, roleFilter]);
+  }, [debouncedSearchTerm, roleFilter]);
 
   useEffect(() => {
-    if (filteredUsers.length === 0) {
-      setPage(0);
-      return;
+    if (!loading && users.length === 0 && totalUsers > 0 && page > 0) {
+      setPage((prev) => Math.max(prev - 1, 0));
     }
-    const maxPage = Math.max(Math.ceil(filteredUsers.length / rowsPerPage) - 1, 0);
-    if (page > maxPage) {
-      setPage(maxPage);
-    }
-  }, [filteredUsers.length, rowsPerPage, page]);
-
-  const paginatedUsers = useMemo(() => {
-    if (rowsPerPage <= 0) {
-      return filteredUsers;
-    }
-    const start = page * rowsPerPage;
-    return filteredUsers.slice(start, start + rowsPerPage);
-  }, [filteredUsers, page, rowsPerPage]);
+  }, [loading, users.length, totalUsers, page]);
 
   const getRoleColor = (role) => {
     switch (role) {
@@ -267,7 +276,7 @@ const UsersList = () => {
         </Box>
       </Box>
 
-      {filteredUsers.length === 0 ? (
+      {!loading && totalUsers === 0 ? (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {searchTerm || roleFilter ? "No users found matching your criteria" : "No users available"}
@@ -297,7 +306,7 @@ const UsersList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedUsers.map((user) => (
+              {users.map((user) => (
                 <TableRow key={getUserId(user)} hover onDoubleClick={() => handleRowDoubleClick(user)} sx={{ cursor: "pointer" }}>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={2}>
@@ -329,7 +338,7 @@ const UsersList = () => {
           </Table>
           <TablePagination
             component="div"
-            count={filteredUsers.length}
+            count={totalUsers}
             page={page}
             onPageChange={(event, newPage) => setPage(newPage)}
             rowsPerPage={rowsPerPage}

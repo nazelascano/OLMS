@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -41,7 +41,7 @@ import {
   Payments,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
-import { api, studentsAPI, settingsAPI } from "../../utils/api";
+import { studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
 import StudentImportDialog from "./StudentImportDialog";
 import { ensureUserAttributes } from "../../utils/userAttributes";
@@ -56,6 +56,8 @@ const StudentsList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -90,14 +92,6 @@ const StudentsList = () => {
 
   const handleOpenFilters = (e) => setFilterAnchorEl(e.currentTarget);
   const handleCloseFilters = () => setFilterAnchorEl(null);
-
-  useEffect(() => {
-    fetchStudents();
-    // Clear the refresh state after fetching
-    if (location.state?.refresh) {
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state?.refresh]);
 
   useEffect(() => {
     setGradeFilter((previous) => {
@@ -137,47 +131,65 @@ const StudentsList = () => {
     };
   }, []);
 
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      const response = await studentsAPI.getAll();
-      setStudents(response.data.students || []);
-    } catch (error) {
-      console.error("Failed to fetch students:", error);
-      // Fallback to users API with student filter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchStudents = useCallback(
+    async (override = {}) => {
+      const pageToFetch = override.page ?? page;
+      const limitToFetch = override.limit ?? rowsPerPage;
+      const gradeToFetch = override.grade ?? gradeFilter;
+      const sectionToFetch = override.section ?? sectionFilter;
+      const searchToFetch = override.search ?? debouncedSearchTerm;
+
       try {
-        const response = await api.get("/users", {
-          params: { role: "student" },
-        });
-        const studentsData =
-          response.data.users?.map((user) => ({
-            ...user,
-            grade: user.gradeLevel || "N/A",
-            section: user.section || "N/A",
-            dues: user.borrowingStats?.totalFines || 0,
-            studentId: user.studentNumber || user.studentId || "N/A",
-            curriculum: user.curriculum || "N/A",
-          })) || [];
-        setStudents(studentsData);
-      } catch (fallbackError) {
-        console.error("Failed to fetch students from users:", fallbackError);
+        setLoading(true);
+        const params = {
+          page: pageToFetch + 1,
+          limit: limitToFetch,
+        };
+        if (gradeToFetch) params.grade = gradeToFetch;
+        if (sectionToFetch) params.section = sectionToFetch;
+        if (searchToFetch) params.search = searchToFetch;
+
+        const response = await studentsAPI.getAll(params);
+        const payload = response.data || {};
+        const studentList = payload.students || payload.data || [];
+        const total = payload.total || payload.pagination?.total || studentList.length || 0;
+
+        setStudents(studentList);
+        setTotalStudents(total);
+      } catch (error) {
+        console.error("Failed to fetch students:", error);
         toast.error("Failed to load students");
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
+    },
+    [page, rowsPerPage, gradeFilter, sectionFilter, debouncedSearchTerm]
+  );
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
+
+  useEffect(() => {
+    if (location.state?.refresh) {
+      fetchStudents({ page: 0 });
+      window.history.replaceState({}, document.title);
     }
-  };
+  }, [location.state?.refresh, fetchStudents]);
 
   const handleDeleteStudent = async () => {
     try {
       const studentId =
         selectedStudent._id || selectedStudent.id || selectedStudent.uid;
       await studentsAPI.delete(studentId);
-      setStudents(
-        students.filter(
-          (student) => (student._id || student.id || student.uid) !== studentId,
-        ),
-      );
+      fetchStudents();
       toast.success("Student deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedStudent(null);
@@ -192,12 +204,7 @@ const StudentsList = () => {
       const studentId =
         selectedStudent._id || selectedStudent.id || selectedStudent.uid;
       await studentsAPI.payDues(studentId, { amount: selectedStudent.dues });
-      setStudents(
-        students.map((student) => {
-          const currentId = student._id || student.id || student.uid;
-          return currentId === studentId ? { ...student, dues: 0 } : student;
-        }),
-      );
+      fetchStudents();
       toast.success("Dues paid successfully");
       setPaymentDialogOpen(false);
       setSelectedStudent(null);
@@ -222,45 +229,18 @@ const StudentsList = () => {
   };
 
   const handleImportComplete = () => {
-    fetchStudents(); // Refresh the student list after import
+    fetchStudents();
   };
-
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch =
-      student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentId?.toString().includes(searchTerm) ||
-      student.curriculum?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesGrade = !gradeFilter || student.grade === gradeFilter;
-    const matchesSection = !sectionFilter || student.section === sectionFilter;
-
-    return matchesSearch && matchesGrade && matchesSection;
-  });
 
   useEffect(() => {
     setPage(0);
-  }, [searchTerm, gradeFilter, sectionFilter]);
+  }, [debouncedSearchTerm, gradeFilter, sectionFilter]);
 
   useEffect(() => {
-    if (filteredStudents.length === 0) {
-      setPage(0);
-      return;
+    if (!loading && students.length === 0 && totalStudents > 0 && page > 0) {
+      setPage((prev) => Math.max(prev - 1, 0));
     }
-    const maxPage = Math.max(Math.ceil(filteredStudents.length / rowsPerPage) - 1, 0);
-    if (page > maxPage) {
-      setPage(maxPage);
-    }
-  }, [filteredStudents.length, rowsPerPage, page]);
-
-  const paginatedStudents = useMemo(() => {
-    if (rowsPerPage <= 0) {
-      return filteredStudents;
-    }
-    const start = page * rowsPerPage;
-    return filteredStudents.slice(start, start + rowsPerPage);
-  }, [filteredStudents, page, rowsPerPage]);
+  }, [loading, students.length, totalStudents, page]);
 
   const getDuesColor = (dues) => {
     if (dues === 0) return "success";
@@ -425,7 +405,7 @@ const StudentsList = () => {
         )}
       </Box>
   {/* Students Table */}
-      {filteredStudents.length === 0 ? (
+      {!loading && totalStudents === 0 ? (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {" "}
@@ -488,7 +468,7 @@ const StudentsList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedStudents.map((student) => (
+              {students.map((student) => (
                 <TableRow key={student._id || student.id || student.uid || student.studentId} hover>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
@@ -666,13 +646,16 @@ const StudentsList = () => {
           </Table>{" "}
           <TablePagination
             component="div"
-            count={filteredStudents.length}
+            count={totalStudents}
             page={page}
-            onPageChange={(event, newPage) => setPage(newPage)}
+            onPageChange={(event, newPage) => {
+              setPage(newPage);
+            }}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={(event) => {
               const value = parseInt(event.target.value, 10);
-              setRowsPerPage(Number.isNaN(value) ? 10 : value);
+              const nextLimit = Number.isNaN(value) ? 10 : value;
+              setRowsPerPage(nextLimit);
               setPage(0);
             }}
             rowsPerPageOptions={[10, 25, 50, 100]}
