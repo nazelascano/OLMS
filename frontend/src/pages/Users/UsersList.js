@@ -45,6 +45,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
+import { resolveEntityAvatar } from "../../utils/media";
 import toast from "react-hot-toast";
 
 const UsersList = () => {
@@ -310,17 +311,35 @@ const UsersList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={getUserId(user)} hover onDoubleClick={() => handleRowDoubleClick(user)} sx={{ cursor: "pointer" }}>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar sx={{ bgcolor: "primary.main" }}>{user.firstName?.[0] || user.username?.[0] || <Person />}</Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">{user.firstName} {user.lastName}</Typography>
-                        <Typography variant="caption" color="text.secondary">@ {user.username}</Typography>
+              {users.map((user) => {
+                const avatarSrc = resolveEntityAvatar(user);
+                const fallbackInitial = [user.firstName, user.lastName, user.username, user.email]
+                  .map((value) => (typeof value === "string" && value.trim() ? value.trim().charAt(0).toUpperCase() : ""))
+                  .find(Boolean);
+                const avatarAlt = [user.firstName, user.lastName]
+                  .filter((value) => typeof value === "string" && value.trim())
+                  .join(" ") || user.username || user.email || "User avatar";
+
+                return (
+                  <TableRow key={getUserId(user)} hover onDoubleClick={() => handleRowDoubleClick(user)} sx={{ cursor: "pointer" }}>
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar
+                          src={avatarSrc || undefined}
+                          alt={avatarAlt}
+                          sx={{
+                            bgcolor: avatarSrc ? "transparent" : "primary.main",
+                            color: avatarSrc ? "inherit" : "primary.contrastText",
+                          }}
+                        >
+                          {fallbackInitial || <Person fontSize="small" />}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">{user.firstName} {user.lastName}</Typography>
+                          <Typography variant="caption" color="text.secondary">@ {user.username}</Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  </TableCell>
+                    </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip label={user.role} size="small" color={getRoleColor(user.role)} />
@@ -336,8 +355,9 @@ const UsersList = () => {
                       <MoreVert />
                     </IconButton>
                   </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           <TablePagination

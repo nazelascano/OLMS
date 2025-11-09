@@ -42,6 +42,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { studentsAPI, settingsAPI } from "../../utils/api";
+import { resolveEntityAvatar } from "../../utils/media";
 import toast from "react-hot-toast";
 import StudentImportDialog from "./StudentImportDialog";
 import { ensureUserAttributes } from "../../utils/userAttributes";
@@ -470,40 +471,60 @@ const StudentsList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {students.map((student) => (
-                <TableRow key={student._id || student.id || student.uid || student.studentId} hover>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {student.grade}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar
-                        sx={{ bgcolor: "primary.main", width: 32, height: 32 }}
-                      >
-                        {student.firstName?.[0] || <Person />}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">
-                          {student.fullName ||
-                            `${student.firstName || ""} ${student.middleName ? student.middleName + " " : ""}${student.lastName || ""}`}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          ID: {student.studentId}
-                        </Typography>
-                        {student.email && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display="block"
-                          >
-                            {student.email}
+              {students.map((student) => {
+                const avatarSrc = resolveEntityAvatar(student);
+                const fallbackInitial = [student.firstName, student.lastName, student.username, student.email]
+                  .map((value) => (typeof value === "string" && value.trim() ? value.trim().charAt(0).toUpperCase() : ""))
+                  .find(Boolean);
+                const avatarAlt = student.fullName ||
+                  [student.firstName, student.lastName]
+                    .filter((value) => typeof value === "string" && value.trim())
+                    .join(" ") ||
+                  student.username ||
+                  student.studentId ||
+                  "Student avatar";
+
+                return (
+                  <TableRow key={student._id || student.id || student.uid || student.studentId} hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {student.grade}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar
+                          src={avatarSrc || undefined}
+                          alt={avatarAlt}
+                          sx={{
+                            bgcolor: avatarSrc ? "transparent" : "primary.main",
+                            color: avatarSrc ? "inherit" : "primary.contrastText",
+                            width: 32,
+                            height: 32,
+                          }}
+                        >
+                          {fallbackInitial || <Person fontSize="small" />}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {student.fullName ||
+                              `${student.firstName || ""} ${student.middleName ? student.middleName + " " : ""}${student.lastName || ""}`}
                           </Typography>
-                        )}
+                          <Typography variant="caption" color="text.secondary">
+                            ID: {student.studentId}
+                          </Typography>
+                          {student.email && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                            >
+                              {student.email}
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
-                  </TableCell>
+                    </TableCell>
                   <TableCell>
                     <Typography variant="body2">
                       {student.section}
@@ -642,8 +663,9 @@ const StudentsList = () => {
                       </Menu>
                     </Box>
                   </TableCell>
-                </TableRow>
-              ))}
+                  </TableRow>
+                );
+              })}
             </TableBody>{" "}
           </Table>{" "}
           <TablePagination
