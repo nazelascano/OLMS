@@ -13318,5 +13318,143 @@
     "_id": "mhj2rmalt259q",
     "createdAt": "2025-11-03T11:46:55.005Z",
     "updatedAt": "2025-11-03T11:46:55.005Z"
+  },
+  {
+    "timestamp": "2025-11-09T02:31:03.470Z",
+    "action": "UPLOAD_AVATAR",
+    "entity": "user",
+    "entityId": "mgnhicbwhxfy9",
+    "resource": "user",
+    "resourceId": "mgnhicbwhxfy9",
+    "description": "Updated avatar for user admin",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/users/mgnhicbwhxfy9/avatar"
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 35,
+      "filename": "avatar-1762655463450-382397727.png",
+      "size": 5574,
+      "mimeType": "image/png"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users/mgnhicbwhxfy9/avatar",
+    "id": "mhr3jw33r10vk",
+    "_id": "mhr3jw33r10vk",
+    "createdAt": "2025-11-09T02:31:03.471Z",
+    "updatedAt": "2025-11-09T02:31:03.471Z"
+  },
+  {
+    "timestamp": "2025-11-09T02:31:12.574Z",
+    "action": "UPLOAD_AVATAR",
+    "entity": "user",
+    "entityId": "mgnhicbwhxfy9",
+    "resource": "user",
+    "resourceId": "mgnhicbwhxfy9",
+    "description": "Updated avatar for user admin",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/users/mgnhicbwhxfy9/avatar"
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 20,
+      "filename": "avatar-1762655472557-1723603.png",
+      "size": 5574,
+      "mimeType": "image/png"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/users/mgnhicbwhxfy9/avatar",
+    "id": "mhr3k33yvmcdz",
+    "_id": "mhr3k33yvmcdz",
+    "createdAt": "2025-11-09T02:31:12.574Z",
+    "updatedAt": "2025-11-09T02:31:12.574Z"
+  },
+  {
+    "timestamp": "2025-11-09T02:32:16.572Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-03T04:42:20.844Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhr3lghol30cy",
+    "_id": "mhr3lghol30cy",
+    "createdAt": "2025-11-09T02:32:16.572Z",
+    "updatedAt": "2025-11-09T02:32:16.572Z"
+  },
+  {
+    "timestamp": "2025-11-09T02:32:21.117Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-09T02:32:16.552Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mhr3ljzxc9xht",
+    "_id": "mhr3ljzxc9xht",
+    "createdAt": "2025-11-09T02:32:21.118Z",
+    "updatedAt": "2025-11-09T02:32:21.118Z"
   }
 ]

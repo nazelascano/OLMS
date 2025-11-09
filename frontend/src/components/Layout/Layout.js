@@ -40,7 +40,7 @@ import {
   InfoOutlined,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
-import { searchAPI, notificationsAPI } from "../../utils/api";
+import { api, searchAPI, notificationsAPI } from "../../utils/api";
 import Sidebar from "./Sidebar";
 
 const SEARCH_SECTION_LABELS = {
@@ -475,6 +475,29 @@ const Layout = () => {
     [user?.firstName, user?.lastName, user?.username, user?.email]
       .map(resolveInitial)
       .find((initial) => Boolean(initial)) || "U";
+  const resolveApiOrigin = () => {
+    const base = api.defaults.baseURL || "";
+    if (base) {
+      const sanitized = base.replace(/\/api$/i, "");
+      return sanitized || base;
+    }
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+    return "";
+  };
+  const avatarSrc = (() => {
+    const raw = user?.avatar?.url || user?.avatarUrl;
+    if (!raw) {
+      return "";
+    }
+    if (/^https?:\/\//i.test(raw) || raw.startsWith("data:")) {
+      return raw;
+    }
+    const origin = resolveApiOrigin();
+    const normalized = raw.startsWith("/") ? raw : `/${raw}`;
+    return `${origin}${normalized}`;
+  })();
   const userDisplayName = (() => {
     const composed = [user?.firstName, user?.lastName]
       .filter((value) => Boolean(value && value.trim()))
@@ -500,17 +523,18 @@ const Layout = () => {
       }}
     >
       <Avatar
+        src={avatarSrc || undefined}
         sx={{
           width: 30,
           height: 30,
-          backgroundColor: "#2563EB",
+          backgroundColor: avatarSrc ? "transparent" : "#2563EB",
           color: "#FFFFFF",
           fontSize: "0.85rem",
           fontWeight: 600,
           boxShadow: "0 2px 6px rgba(37, 99, 235, 0.35)",
         }}
       >
-        {userInitial}
+        {!avatarSrc && userInitial}
       </Avatar>
     </IconButton>
   ) : (
@@ -537,17 +561,18 @@ const Layout = () => {
       }}
     >
       <Avatar
+        src={avatarSrc || undefined}
         sx={{
           width: 32,
           height: 32,
-          backgroundColor: "#2563EB",
+          backgroundColor: avatarSrc ? "transparent" : "#2563EB",
           color: "#FFFFFF",
           fontSize: "0.85rem",
           fontWeight: 600,
           boxShadow: "0 2px 6px rgba(37, 99, 235, 0.35)",
         }}
       >
-        {userInitial}
+        {!avatarSrc && userInitial}
       </Avatar>
       <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         <Typography

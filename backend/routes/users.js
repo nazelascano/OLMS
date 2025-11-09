@@ -1,7 +1,89 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { verifyToken, requireRole, requireAdmin, requireLibrarian, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
 const router = express.Router();
+
+const AVATAR_STORAGE_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
+const ALLOWED_AVATAR_MIME_TYPES = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp'
+};
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+const ensureDirectory = async(dirPath) => {
+    try {
+        await fs.promises.mkdir(dirPath, { recursive: true });
+    } catch (error) {
+        if (error.code !== 'EEXIST') {
+            throw error;
+        }
+    }
+};
+
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        ensureDirectory(AVATAR_STORAGE_DIR)
+            .then(() => cb(null, AVATAR_STORAGE_DIR))
+            .catch((error) => cb(error));
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const randomSuffix = Math.round(Math.random() * 1e9);
+        const extensionFromMime = ALLOWED_AVATAR_MIME_TYPES[file.mimetype];
+        const extensionFromName = path.extname(file.originalname || '').toLowerCase();
+        const allowedExtensions = new Set(Object.values(ALLOWED_AVATAR_MIME_TYPES));
+        const resolvedExtension = extensionFromMime || (allowedExtensions.has(extensionFromName) ? extensionFromName : '.jpg');
+        cb(null, `avatar-${timestamp}-${randomSuffix}${resolvedExtension}`);
+    }
+});
+
+const avatarFileFilter = (req, file, cb) => {
+    if (ALLOWED_AVATAR_MIME_TYPES[file.mimetype]) {
+        return cb(null, true);
+    }
+    return cb(new Error('Unsupported file type. Please upload a JPG, PNG, GIF, or WEBP image.'));
+};
+
+const avatarUpload = multer({
+    storage: avatarStorage,
+    fileFilter: avatarFileFilter,
+    limits: {
+        fileSize: MAX_AVATAR_SIZE_BYTES
+    }
+});
+
+const removeFileQuietly = async(filePath) => {
+    if (!filePath) {
+        return;
+    }
+
+    try {
+        await fs.promises.unlink(filePath);
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            console.warn(`Failed to remove file ${filePath}:`, error.message);
+        }
+    }
+};
+
+const resolveAvatarFields = (user) => {
+    if (!user || typeof user !== 'object') {
+        return { avatar: null, avatarUrl: '' };
+    }
+
+    const avatarObject = user.avatar && typeof user.avatar === 'object' ? user.avatar : null;
+    const url = user.avatarUrl || (avatarObject && avatarObject.url) || '';
+
+    return {
+        avatar: avatarObject || (url ? { url } : null),
+        avatarUrl: url
+    };
+};
 
 // Utility: normalize string for comparison
 const normalizeString = (value) => {
@@ -53,6 +135,8 @@ const sanitizeUserSummary = (user) => {
         return null;
     }
 
+    const { avatar, avatarUrl } = resolveAvatarFields(user);
+
     return {
         id: String(primaryId),
         _id: user._id,
@@ -68,6 +152,8 @@ const sanitizeUserSummary = (user) => {
     curriculum: user.curriculum || '',
         gradeLevel: user.gradeLevel || user.grade || '',
         libraryCardNumber: user.library?.cardNumber || user.libraryCardNumber || '',
+        avatar,
+        avatarUrl,
     };
 };
 
@@ -231,9 +317,12 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
         // Remove password field from response
         const safeUsers = paginatedUsers.map(user => {
             const { password, ...safeUser } = user;
+            const { avatar, avatarUrl } = resolveAvatarFields(safeUser);
             // ensure normalized studentNumber exists for clients
             return {
                 ...safeUser,
+                avatar,
+                avatarUrl,
                 studentNumber: safeUser.studentNumber || safeUser.studentId || (safeUser.library && safeUser.library.cardNumber) || safeUser.libraryCardNumber || ''
             };
         });
@@ -306,8 +395,12 @@ router.get('/:id', verifyToken, requireStaff, async(req, res) => {
         const { password, ...safeUser } = user;
 
         // normalize studentNumber for client compatibility
+        const { avatar, avatarUrl } = resolveAvatarFields(safeUser);
+
         const normalized = {
             ...safeUser,
+            avatar,
+            avatarUrl,
             studentNumber: safeUser.studentNumber || safeUser.studentId || (safeUser.library && safeUser.library.cardNumber) || safeUser.libraryCardNumber || ''
         };
 
@@ -613,6 +706,116 @@ router.put('/:id/status', verifyToken, requireStaff, logAction('UPDATE_STATUS', 
         });
         res.status(500).json({ message: 'Failed to update user status' });
     }
+});
+
+router.post('/:id/avatar', verifyToken, logAction('UPLOAD_AVATAR', 'user'), async(req, res) => {
+    avatarUpload.single('avatar')(req, res, async(uploadError) => {
+        if (uploadError) {
+            const message = uploadError instanceof multer.MulterError
+                ? uploadError.code === 'LIMIT_FILE_SIZE'
+                    ? 'File too large. Maximum size is 5 MB.'
+                    : uploadError.message
+                : uploadError.message;
+
+            setAuditContext(req, {
+                success: false,
+                status: 'ValidationError',
+                description: 'Avatar upload failed',
+                metadata: {
+                    error: message
+                }
+            });
+            return res.status(400).json({ message: message || 'Failed to upload avatar' });
+        }
+
+        try {
+            if (!req.file) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'ValidationError',
+                    description: 'Avatar upload failed: no file provided'
+                });
+                return res.status(400).json({ message: 'Please provide an image file to upload.' });
+            }
+
+            const resolvedId = req.params.id === 'me' ? req.user.id : req.params.id;
+            if (!resolvedId) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'ValidationError',
+                    description: 'Avatar upload failed: missing user identifier'
+                });
+                return res.status(400).json({ message: 'Unable to resolve user identifier.' });
+            }
+
+            const canModify = resolvedId === req.user.id || ['admin', 'librarian', 'staff'].includes(req.user.role);
+            if (!canModify) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'PermissionDenied',
+                    description: 'Avatar upload failed: insufficient permissions'
+                });
+                return res.status(403).json({ message: 'You do not have permission to update this avatar.' });
+            }
+
+            const targetUser = await req.dbAdapter.findUserById(resolvedId);
+            if (!targetUser) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'UserNotFound',
+                    description: 'Avatar upload failed: user not found'
+                });
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+            const relativeUrl = path.posix.join('/uploads/avatars', req.file.filename);
+            const avatarPayload = {
+                url: relativeUrl,
+                filename: req.file.filename,
+                mimeType: req.file.mimetype,
+                size: req.file.size,
+                uploadedAt: new Date()
+            };
+
+            await req.dbAdapter.updateUser(resolvedId, {
+                avatar: avatarPayload,
+                avatarUrl: relativeUrl,
+                updatedAt: new Date()
+            });
+
+            if (targetUser?.avatar?.filename && targetUser.avatar.filename !== req.file.filename) {
+                const previousPath = path.join(AVATAR_STORAGE_DIR, targetUser.avatar.filename);
+                await removeFileQuietly(previousPath);
+            }
+
+            setAuditContext(req, {
+                success: true,
+                status: 'Updated',
+                entityId: resolvedId,
+                description: `Updated avatar for user ${targetUser.username || resolvedId}`,
+                metadata: {
+                    filename: req.file.filename,
+                    size: req.file.size,
+                    mimeType: req.file.mimetype
+                }
+            });
+
+            res.json({
+                message: 'Profile photo updated successfully.',
+                avatar: avatarPayload,
+                avatarUrl: relativeUrl
+            });
+        } catch (error) {
+            console.error('Avatar upload error:', error);
+            setAuditContext(req, {
+                success: false,
+                status: 'Failed',
+                description: 'Avatar upload failed due to server error',
+                details: { error: error.message }
+            });
+            res.status(500).json({ message: 'Failed to update avatar.' });
+        }
+    });
 });
 
 router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => {

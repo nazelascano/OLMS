@@ -127,6 +127,22 @@ export const usersAPI = {
   create: (data) => api.post("/users", data),
   update: (id, data) => api.put(`/users/${id}`, data),
   updateStatus: (id, isActive) => api.put(`/users/${id}/status`, { isActive }),
+  uploadAvatar: (id, file, onProgress) => {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    return api.post(`/users/${id}/avatar`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (event) => {
+        if (onProgress && event.total) {
+          const percent = Math.round((event.loaded * 100) / event.total);
+          onProgress(percent);
+        }
+      },
+    });
+  },
   delete: (id) => api.delete(`/users/${id}`),
   bulkImport: (students) => api.post("/users/bulk-import", { students }),
 };

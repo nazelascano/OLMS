@@ -26,9 +26,17 @@
       "totalReturned": 0
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-11-03T12:54:14.169Z",
-    "lastLoginAt": "2025-11-03T04:42:20.844Z",
-    "lastActivityAt": "2025-11-03T12:54:14.168Z"
+    "updatedAt": "2025-11-09T02:52:02.173Z",
+    "lastLoginAt": "2025-11-09T02:32:21.107Z",
+    "lastActivityAt": "2025-11-09T02:52:02.172Z",
+    "avatar": {
+      "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
+      "filename": "avatar-1762655472557-1723603.png",
+      "mimeType": "image/png",
+      "size": 5574,
+      "uploadedAt": "2025-11-09T02:31:12.563Z"
+    },
+    "avatarUrl": "/uploads/avatars/avatar-1762655472557-1723603.png"
   },
   {
     "libraryCardNumber": "LIB-25-0001",

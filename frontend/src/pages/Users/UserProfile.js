@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -28,6 +28,9 @@ import {
   TableRow,
   Divider,
   InputAdornment,
+  Tooltip,
+  LinearProgress,
+  Slider,
 } from "@mui/material";
 import {
   Person,
@@ -44,14 +47,69 @@ import {
   ArrowBack,
   Phone,
   Save,
+  PhotoCamera,
 } from "@mui/icons-material";
+import Cropper from "react-easy-crop";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/api";
+import { api, usersAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { useNavigate, useParams } from "react-router-dom";
 
+const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", (error) => reject(error));
+    image.setAttribute("crossOrigin", "anonymous");
+    image.src = url;
+  });
+
+const getCroppedImage = async (file, cropArea) => {
+  if (!cropArea) {
+    return { file, blob: file };
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const image = await createImage(imageUrl);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const pixelRatio = window.devicePixelRatio || 1;
+    const { width, height, x, y } = cropArea;
+
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
+
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = "high";
+
+    ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+
+    const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
+
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Failed to crop image"));
+            return;
+          }
+          const croppedFile = new File([blob], `avatar-${Date.now()}.${mimeType === "image/png" ? "png" : "jpg"}`, {
+            type: mimeType,
+          });
+          resolve({ blob, file: croppedFile });
+        },
+        mimeType,
+        0.95,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+};
+
 const UserProfile = () => {
-  const { user } = useAuth();
+  const { user, updateUserData } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState({});
@@ -79,6 +137,55 @@ const UserProfile = () => {
   });
   const [isSelfProfile, setIsSelfProfile] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!avatarPreviewUrl) {
+      return undefined;
+    }
+    return () => {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    };
+  }, [avatarPreviewUrl]);
+
+  const resolveApiOrigin = () => {
+    const base = api.defaults.baseURL || "";
+    if (!base) {
+      if (typeof window === "undefined") {
+        return "";
+      }
+      return window.location.origin.replace(/\/$/, "");
+    }
+    const sanitized = base.replace(/\/api$/i, "");
+    return sanitized || base;
+  };
+
+  const getAvatarUrl = (data) => {
+    if (!data || typeof data !== "object") {
+      return "";
+    }
+
+    const raw = data.avatar?.url || data.avatarUrl;
+    if (!raw) {
+      return "";
+    }
+
+    if (/^https?:\/\//i.test(raw) || raw.startsWith("data:")) {
+      return raw;
+    }
+
+    const origin = resolveApiOrigin();
+    const normalizedPath = raw.startsWith("/") ? raw : `/${raw}`;
+    return `${origin}${normalizedPath}`;
+  };
 
   const getUserIdentifier = (value) => value?._id || value?.id || value?.uid;
 
@@ -228,9 +335,8 @@ const UserProfile = () => {
       await api.put(`/users/${targetId}`, updatePayload);
       setSuccess("Profile updated successfully");
       setProfileData((prev) => ({ ...prev, ...updatePayload }));
-      if (isSelfProfile && user) {
-        const updatedUser = { ...user, ...updatePayload };
-        localStorage.setItem("userData", JSON.stringify(updatedUser));
+      if (isSelfProfile) {
+        updateUserData((prev) => ({ ...(prev || {}), ...updatePayload }));
       }
       setEditMode(false);
       setTimeout(() => setSuccess(""), 3000);
@@ -277,6 +383,141 @@ const UserProfile = () => {
     }
   };
 
+  const resetAvatarSelection = () => {
+    setAvatarPreviewUrl("");
+    setSelectedAvatarFile(null);
+    setCroppedAreaPixels(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAvatarFileSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (!file || avatarUploading) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      if (event.target) {
+        event.target.value = "";
+      }
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Please upload an image that is 5 MB or smaller.");
+      if (event.target) {
+        event.target.value = "";
+      }
+      return;
+    }
+
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setSelectedAvatarFile(file);
+    setAvatarPreviewUrl(previewUrl);
+    setAvatarProgress(0);
+    setAvatarDialogOpen(true);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAvatarDialogClose = () => {
+    if (avatarUploading) {
+      return;
+    }
+    setAvatarDialogOpen(false);
+    resetAvatarSelection();
+    setAvatarProgress(0);
+  };
+
+  const handleCropComplete = useCallback((_, areaPixels) => {
+    setCroppedAreaPixels(areaPixels);
+  }, []);
+
+  const uploadSelectedAvatar = async () => {
+    if (!selectedAvatarFile) {
+      return;
+    }
+
+    const targetId = getUserIdentifier(profileData) || getUserIdentifier(user);
+    if (!targetId) {
+      setError("Unable to determine the user identifier for this profile.");
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+      setAvatarUploading(true);
+      setAvatarProgress(0);
+
+      let fileToUpload = selectedAvatarFile;
+      if (croppedAreaPixels) {
+        try {
+          const { file: croppedFile } = await getCroppedImage(selectedAvatarFile, croppedAreaPixels);
+          fileToUpload = croppedFile;
+        } catch (cropError) {
+          console.error("Error cropping avatar:", cropError);
+          setError("Failed to crop image. Please try again or choose a different photo.");
+          setAvatarUploading(false);
+          return;
+        }
+      }
+
+      const response = await usersAPI.uploadAvatar(
+        targetId,
+        fileToUpload,
+        (value) => setAvatarProgress(value || 0),
+      );
+
+      const updatedAvatar = response.data?.avatar;
+      const updatedAvatarUrl = response.data?.avatarUrl || updatedAvatar?.url || "";
+
+      setProfileData((prev) => ({
+        ...prev,
+        avatar: updatedAvatar,
+        avatarUrl: updatedAvatarUrl,
+      }));
+
+      if (isSelfProfile) {
+        updateUserData((prev) => ({
+          ...(prev || {}),
+          avatar: updatedAvatar,
+          avatarUrl: updatedAvatarUrl,
+        }));
+      }
+
+      setSuccess("Profile photo updated successfully");
+      setTimeout(() => setSuccess(""), 3000);
+      setAvatarDialogOpen(false);
+      resetAvatarSelection();
+      setAvatarProgress(0);
+    } catch (err) {
+      const message = err?.response?.data?.message || "Failed to upload profile photo";
+      setError(message);
+      console.error("Error uploading avatar:", err);
+    } finally {
+      setAvatarUploading(false);
+      setAvatarProgress(0);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "active":
@@ -296,6 +537,8 @@ const UserProfile = () => {
       [field]: !prev[field],
     }));
   };
+
+  const avatarUrl = getAvatarUrl(profileData);
 
   return (
     <Box>
@@ -343,18 +586,76 @@ const UserProfile = () => {
                 alignItems="center"
                 mb={3}
               >
-                <Avatar
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    mb: 2,
-                    bgcolor: "primary.main",
-                    fontSize: "2.5rem",
-                    color: "primary.contrastText",
-                  }}
-                >
-                  {getAvatarInitial(profileData) || <Person />}{" "}
-                </Avatar>{" "}
+                <Box position="relative" display="inline-flex">
+                  <Avatar
+                    src={avatarUrl || undefined}
+                    alt={profileData?.firstName || profileData?.username || "Profile"}
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      mb: 2,
+                      bgcolor: avatarUrl ? "transparent" : "primary.main",
+                      fontSize: "2.5rem",
+                      color: "primary.contrastText",
+                    }}
+                  >
+                    {getAvatarInitial(profileData) || <Person />} {" "}
+                  </Avatar>
+                  {avatarUploading && (
+                    <Box
+                      position="absolute"
+                      top={0}
+                      left={0}
+                      width="100%"
+                      height="100%"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      borderRadius="50%"
+                      sx={{ bgcolor: "rgba(15, 23, 42, 0.45)" }}
+                    >
+                      <CircularProgress size={42} sx={{ color: "#ffffff" }} />
+                    </Box>
+                  )}
+                  {isSelfProfile && (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={handleAvatarFileSelect}
+                      />
+                      <Tooltip title="Change profile photo">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => fileInputRef.current?.click()}
+                          sx={{
+                            position: "absolute",
+                            bottom: -4,
+                            right: -4,
+                            bgcolor: "background.paper",
+                            boxShadow: 2,
+                            "&:hover": {
+                              bgcolor: "background.paper",
+                            },
+                          }}
+                        >
+                          <PhotoCamera fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  )}
+                </Box>
+                {avatarUploading && (
+                  <Box width="100%" mt={1}>
+                    <LinearProgress
+                      variant={avatarProgress > 0 ? "determinate" : "indeterminate"}
+                      value={avatarProgress}
+                    />
+                  </Box>
+                )}
                 <Typography variant="h6">
                   {" "}
                   {profileData.firstName} {profileData.lastName}{" "}
@@ -633,6 +934,89 @@ const UserProfile = () => {
       </Grid>
       {isSelfProfile && (
         <>
+          {/* Avatar Preview Dialog */}
+          <Dialog
+            open={avatarDialogOpen}
+            onClose={handleAvatarDialogClose}
+            maxWidth="xs"
+            fullWidth
+          >
+            <DialogTitle>Preview Profile Photo</DialogTitle>
+            <DialogContent>
+              {avatarPreviewUrl ? (
+                <>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Drag the image to reposition and use the slider to adjust zoom. The cropped area will be saved as your profile photo.
+                  </Typography>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      width: "100%",
+                      height: 280,
+                      bgcolor: "#0F172A0A",
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Cropper
+                      image={avatarPreviewUrl}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={handleCropComplete}
+                      objectFit="cover"
+                    />
+                  </Box>
+                  <Box mt={3}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Zoom
+                    </Typography>
+                    <Slider
+                      value={zoom}
+                      min={1}
+                      max={3}
+                      step={0.05}
+                      onChange={(_, value) => {
+                        if (typeof value === "number") {
+                          setZoom(value);
+                        }
+                      }}
+                      disabled={avatarUploading}
+                      aria-label="Zoom"
+                    />
+                  </Box>
+                </>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Select an image to preview it before uploading.
+                </Typography>
+              )}
+              {avatarUploading && (
+                <Box mt={2}>
+                  <LinearProgress
+                    variant={avatarProgress > 0 ? "determinate" : "indeterminate"}
+                    value={avatarProgress}
+                  />
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleAvatarDialogClose} disabled={avatarUploading}>
+                Cancel
+              </Button>
+              <Button
+                onClick={uploadSelectedAvatar}
+                variant="contained"
+                disabled={!selectedAvatarFile || avatarUploading}
+              >
+                {avatarUploading ? "Uploading..." : "Upload"}
+              </Button>
+            </DialogActions>
+          </Dialog>
           {/* Edit Profile Dialog */}
           <Dialog
             open={editMode}
