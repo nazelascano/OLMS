@@ -127,6 +127,8 @@ export const usersAPI = {
   create: (data) => api.post("/users", data),
   update: (id, data) => api.put(`/users/${id}`, data),
   updateStatus: (id, isActive) => api.put(`/users/${id}/status`, { isActive }),
+  resetPassword: (id, newPassword) =>
+    api.post(`/users/${id}/reset-password`, { newPassword }),
   uploadAvatar: (id, file, onProgress) => {
     const formData = new FormData();
     formData.append("avatar", file);

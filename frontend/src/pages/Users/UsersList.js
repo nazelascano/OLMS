@@ -41,16 +41,17 @@ import {
   CheckCircle,
   Block,
   Person,
+  LockReset,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/api";
+import { api, usersAPI } from "../../utils/api";
 import { resolveEntityAvatar } from "../../utils/media";
 import toast from "react-hot-toast";
 
 const UsersList = () => {
   const navigate = useNavigate();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,9 @@ const UsersList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const [menuAnchor, setMenuAnchor] = useState(null);
 
@@ -431,6 +435,20 @@ const UsersList = () => {
             {selectedUser?.isActive ? "Deactivate" : "Activate"}
           </MenuItem>
         )}
+        {(hasRole("admin") || hasPermission("users.resetPassword")) && (
+          <MenuItem
+            onClick={() => {
+              setNewPassword("");
+              setPasswordDialogOpen(true);
+              handleMenuClose(false);
+            }}
+          >
+            <ListItemIcon>
+              <LockReset fontSize="small" />
+            </ListItemIcon>
+            Reset Password
+          </MenuItem>
+        )}
         {hasPermission("users.delete") && (
           <MenuItem
             onClick={() => {
@@ -472,6 +490,61 @@ const UsersList = () => {
           <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleToggleStatus} color={selectedUser?.isActive ? "error" : "success"} variant="contained">
             {selectedUser?.isActive ? "Deactivate" : "Activate"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)}>
+        <DialogTitle>Reset Password</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enter a new password for {selectedUser?.firstName} {selectedUser?.lastName}. The user will be required to use this password on next login.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            type="password"
+            label="New Password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            helperText="Minimum of 6 characters."
+            disabled={passwordSaving}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordDialogOpen(false)} disabled={passwordSaving}>
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              const userId = getUserId(selectedUser);
+              if (!userId) {
+                setPasswordDialogOpen(false);
+                return;
+              }
+              const trimmed = newPassword.trim();
+              if (trimmed.length < 6) {
+                toast.error("Password must be at least 6 characters long.");
+                return;
+              }
+              try {
+                setPasswordSaving(true);
+                await usersAPI.resetPassword(userId, trimmed);
+                toast.success("Password reset successfully.");
+                setPasswordDialogOpen(false);
+                setSelectedUser(null);
+                setNewPassword("");
+              } catch (error) {
+                console.error("Failed to reset password:", error);
+                toast.error("Failed to reset password");
+              } finally {
+                setPasswordSaving(false);
+              }
+            }}
+            variant="contained"
+            disabled={passwordSaving}
+          >
+            {passwordSaving ? "Saving..." : "Reset Password"}
           </Button>
         </DialogActions>
       </Dialog>
