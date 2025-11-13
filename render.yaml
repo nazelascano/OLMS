@@ -12,7 +12,7 @@ services:
       - key: NPM_VERSION
         value: "10"
       - key: FRONTEND_URL
-        value: "https://your-frontend-domain.vercel.app"
+        value: "https://olms-blush.vercel.app"
       - key: MONGODB_URI
         sync: false
       - key: MONGO_DB_NAME

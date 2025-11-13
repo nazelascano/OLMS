@@ -108,6 +108,7 @@ export const AuthProvider = ({ children }) => {
         "users.create",
         "users.update",
         "users.delete",
+        "users.resetPassword",
         "students.view",
         "students.create",
         "students.update",

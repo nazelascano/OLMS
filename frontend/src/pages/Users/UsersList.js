@@ -66,6 +66,7 @@ const UsersList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordDialogUser, setPasswordDialogUser] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
 
@@ -438,8 +439,11 @@ const UsersList = () => {
         {(hasRole("admin") || hasPermission("users.resetPassword")) && (
           <MenuItem
             onClick={() => {
-              setNewPassword("");
-              setPasswordDialogOpen(true);
+              if (selectedUser) {
+                setPasswordDialogUser(selectedUser);
+                setNewPassword("");
+                setPasswordDialogOpen(true);
+              }
               handleMenuClose(false);
             }}
           >
@@ -494,11 +498,18 @@ const UsersList = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)}>
+      <Dialog
+        open={passwordDialogOpen}
+        onClose={() => {
+          setPasswordDialogOpen(false);
+          setPasswordDialogUser(null);
+          setNewPassword("");
+        }}
+      >
         <DialogTitle>Reset Password</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enter a new password for {selectedUser?.firstName} {selectedUser?.lastName}. The user will be required to use this password on next login.
+            Enter a new password for {passwordDialogUser?.firstName} {passwordDialogUser?.lastName}. The user will be required to use this password on next login.
           </Typography>
           <TextField
             autoFocus
@@ -512,14 +523,23 @@ const UsersList = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPasswordDialogOpen(false)} disabled={passwordSaving}>
+          <Button
+            onClick={() => {
+              setPasswordDialogOpen(false);
+              setPasswordDialogUser(null);
+              setNewPassword("");
+            }}
+            disabled={passwordSaving}
+          >
             Cancel
           </Button>
           <Button
             onClick={async () => {
-              const userId = getUserId(selectedUser);
+              const targetUser = passwordDialogUser || selectedUser;
+              const userId = getUserId(targetUser);
               if (!userId) {
                 setPasswordDialogOpen(false);
+                setPasswordDialogUser(null);
                 return;
               }
               const trimmed = newPassword.trim();
@@ -532,6 +552,7 @@ const UsersList = () => {
                 await usersAPI.resetPassword(userId, trimmed);
                 toast.success("Password reset successfully.");
                 setPasswordDialogOpen(false);
+                setPasswordDialogUser(null);
                 setSelectedUser(null);
                 setNewPassword("");
               } catch (error) {
