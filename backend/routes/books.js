@@ -1,4 +1,6 @@
 const express = require('express');
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
+const QRCode = require('qrcode');
 const { verifyToken, requireStaff, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
 const router = express.Router();
 
@@ -76,16 +78,276 @@ const buildBookSummary = (book) => {
     };
 };
 
+const sanitizeFileName = (value, fallback = 'labels') => {
+    if (!value || typeof value !== 'string') {
+        return fallback;
+    }
+    return value
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_\-]/g, '')
+        .slice(0, 80) || fallback;
+};
+
+const wrapTextLines = (text, maxCharsPerLine, maxLines) => {
+    if (!text) {
+        return [];
+    }
+
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let currentLine = '';
+
+    words.forEach((word) => {
+        if (!currentLine) {
+            currentLine = word;
+            return;
+        }
+
+        const next = `${currentLine} ${word}`;
+        if (next.length <= maxCharsPerLine) {
+            currentLine = next;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    });
+
+    if (currentLine) {
+        lines.push(currentLine);
+    }
+
+    return lines.slice(0, maxLines);
+};
+
+const buildBarcodePdf = async({
+    book,
+    copies,
+    requestedCopyIds,
+    generatedBy,
+}) => {
+    const pdfDoc = await PDFDocument.create();
+    const pageWidth = 612; // 8.5in * 72
+    const pageHeight = 792; // 11in * 72
+    const marginX = 36;
+    const marginY = 36;
+    const columns = 3;
+    const rows = 4;
+    const cardWidth = (pageWidth - marginX * 2) / columns;
+    const cardHeight = (pageHeight - marginY * 2) / rows;
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    let page = pdfDoc.addPage([pageWidth, pageHeight]);
+    let columnIndex = 0;
+    let rowIndex = 0;
+
+    const drawLabel = async(copy) => {
+        const qrDataUrl = await QRCode.toDataURL(copy.copyId, {
+            errorCorrectionLevel: 'M',
+            margin: 1,
+            width: 256,
+        });
+
+        const pngBase64 = qrDataUrl.split(',')[1];
+        const qrImage = await pdfDoc.embedPng(Buffer.from(pngBase64, 'base64'));
+
+        if (columnIndex >= columns) {
+            columnIndex = 0;
+            rowIndex += 1;
+        }
+
+        if (rowIndex >= rows) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            rowIndex = 0;
+            columnIndex = 0;
+        }
+
+        const originX = marginX + columnIndex * cardWidth;
+        const originY = pageHeight - marginY - (rowIndex + 1) * cardHeight;
+
+        page.drawRectangle({
+            x: originX,
+            y: originY,
+            width: cardWidth,
+            height: cardHeight,
+            borderColor: rgb(0.8, 0.8, 0.8),
+            borderWidth: 0.5,
+        });
+
+        const copyIdLines = wrapTextLines(copy.copyId || 'N/A', 28, 2);
+        const copyLineHeight = 11;
+        const bottomPadding = 10;
+        const locationBlockHeight = 12;
+        const generatedByHeight = generatedBy ? 10 : 0;
+        const bottomAreaHeight = bottomPadding + generatedByHeight + locationBlockHeight + copyIdLines.length * copyLineHeight;
+
+    // Layout tuning arrays let us balance title height, QR size, and bottom metadata per label.
+    const bottomGaps = [8, 6, 4];
+        const topMargins = [18, 16, 14, 12];
+        const titleOptions = [
+            { size: 12, maxChars: 26, lineHeight: 17 },
+            { size: 11, maxChars: 28, lineHeight: 16 },
+            { size: 10, maxChars: 32, lineHeight: 15 },
+        ];
+        const isbnGap = 6;
+        const isbnToQrGap = 12;
+        const desiredQrSize = Math.min(cardWidth - 48, 88);
+        const minPreferredQr = 48;
+        const minQrSize = 34;
+
+        let layout = null;
+        let lastLayout = null;
+        let layoutFound = false;
+
+        for (const gap of bottomGaps) {
+            const qrAreaBottom = originY + bottomAreaHeight + gap;
+            for (const margin of topMargins) {
+                const titleStartY = originY + cardHeight - margin;
+                for (const option of titleOptions) {
+                    const lines = wrapTextLines(book.title || 'Untitled', option.maxChars, 3);
+                    const titleHeight = lines.length * option.lineHeight;
+                    const isbnY = titleStartY - titleHeight - isbnGap;
+                    const qrTop = isbnY - isbnToQrGap;
+                    const availableHeight = qrTop - qrAreaBottom;
+
+                    lastLayout = {
+                        lines,
+                        fontSize: option.size,
+                        lineHeight: option.lineHeight,
+                        titleStartY,
+                        isbnY,
+                        qrTop,
+                        availableHeight,
+                        qrAreaBottom,
+                    };
+
+                    if (availableHeight >= minPreferredQr) {
+                        layout = lastLayout;
+                        layoutFound = true;
+                        break;
+                    }
+                }
+                if (layoutFound) break;
+            }
+            if (layoutFound) break;
+        }
+
+        if (!layout) {
+            layout = lastLayout;
+        }
+
+        const qrAvailableHeight = Math.max(layout?.availableHeight || minPreferredQr, minQrSize);
+        let qrSize = Math.min(desiredQrSize, qrAvailableHeight);
+        if (layout && layout.availableHeight < minPreferredQr) {
+            qrSize = Math.min(desiredQrSize, Math.max(layout.availableHeight, minQrSize));
+        }
+        if (layout && layout.availableHeight > 0) {
+            qrSize = Math.min(qrSize, layout.availableHeight);
+        }
+        const qrAreaBottom = layout ? layout.qrAreaBottom : originY + bottomAreaHeight + bottomGaps[0];
+        const qrY = qrAreaBottom + Math.max(((layout?.availableHeight || qrSize) - qrSize) / 2, 0);
+        const qrX = originX + (cardWidth - qrSize) / 2;
+
+        const titleLines = layout ? layout.lines : wrapTextLines(book.title || 'Untitled', 26, 3);
+        const titleFontSize = layout ? layout.fontSize : 12;
+        const titleLineHeight = layout ? layout.lineHeight : 17;
+        let titleCursorY = layout ? layout.titleStartY : originY + cardHeight - 18;
+
+        titleLines.forEach((line) => {
+            page.drawText(line, {
+                x: originX + 12,
+                y: titleCursorY,
+                size: titleFontSize,
+                font: fontBold,
+                color: rgb(0, 0, 0),
+                maxWidth: cardWidth - 24,
+            });
+            titleCursorY -= titleLineHeight;
+        });
+
+        const isbnY = layout ? layout.isbnY : titleCursorY - 10;
+        page.drawText(`ISBN: ${book.isbn || 'N/A'}`, {
+            x: originX + 12,
+            y: isbnY,
+            size: 9,
+            font: fontRegular,
+            color: rgb(0.2, 0.2, 0.2),
+            maxWidth: cardWidth - 24,
+        });
+
+        page.drawImage(qrImage, {
+            x: qrX,
+            y: qrY,
+            width: qrSize,
+            height: qrSize,
+        });
+
+        let bottomCursor = originY + bottomPadding;
+
+        if (generatedBy) {
+            page.drawText(`Printed by: ${generatedBy}`, {
+                x: originX + 12,
+                y: bottomCursor,
+                size: 7,
+                font: fontRegular,
+                color: rgb(0.45, 0.45, 0.45),
+                maxWidth: cardWidth - 24,
+            });
+            bottomCursor += generatedByHeight;
+        }
+
+        const locationText = `Location: ${copy.location || 'Main Library'}`;
+        page.drawText(locationText, {
+            x: originX + 12,
+            y: bottomCursor,
+            size: 9,
+            font: fontRegular,
+            color: rgb(0.2, 0.2, 0.2),
+            maxWidth: cardWidth - 24,
+        });
+        bottomCursor += locationBlockHeight;
+
+        copyIdLines.slice().reverse().forEach((line) => {
+            page.drawText(line, {
+                x: originX + 12,
+                y: bottomCursor,
+                size: 10,
+                font: fontRegular,
+                color: rgb(0, 0, 0),
+                maxWidth: cardWidth - 24,
+            });
+            bottomCursor += copyLineHeight;
+        });
+
+        columnIndex += 1;
+    };
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const copy of copies) {
+        // eslint-disable-next-line no-await-in-loop
+        await drawLabel(copy);
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const safeName = sanitizeFileName(`${book.title || 'book'}_${requestedCopyIds.length}_barcodes`);
+
+    return {
+        filename: `${safeName}.pdf`,
+        buffer: Buffer.from(pdfBytes),
+    };
+};
+
 router.get('/', verifyToken, async(req, res) => {
     try {
-    const { page = 1, limit = 20, search, category, status, sortBy = 'title', sortOrder = 'asc' } = req.query;
+        const { page = 1, limit = 20, search, category, status, sortBy = 'title', sortOrder = 'asc' } = req.query;
         let filters = {};
         if (category) filters.category = category;
         if (status) filters.status = status;
         let books = await req.dbAdapter.findInCollection('books', filters);
         if (search) {
             const searchLower = search.toLowerCase();
-            books = books.filter(book => book.title ?.toLowerCase().includes(searchLower) || book.author ?.toLowerCase().includes(searchLower) || book.isbn ?.toLowerCase().includes(searchLower) || book.publisher ?.toLowerCase().includes(searchLower));
+            books = books.filter(book => book.title?.toLowerCase().includes(searchLower) || book.author?.toLowerCase().includes(searchLower) || book.isbn?.toLowerCase().includes(searchLower) || book.publisher?.toLowerCase().includes(searchLower));
         }
         books.sort((a, b) => {
             const aVal = a[sortBy] || '';
@@ -101,7 +363,7 @@ router.get('/', verifyToken, async(req, res) => {
         const startIndex = wantsAll ? 0 : (normalizedPage - 1) * resolvedLimit;
         const endIndex = wantsAll ? totalBooks : startIndex + resolvedLimit;
         const paginatedBooks = wantsAll ? books : books.slice(startIndex, endIndex);
-        const booksWithCopies = paginatedBooks.map(book => ({...book, copiesCount: book.copies ?.length || 0, availableCopiesCount: book.copies ?.filter(c => c.status === 'available').length || 0 }));
+        const booksWithCopies = paginatedBooks.map(book => ({...book, copiesCount: book.copies?.length || 0, availableCopiesCount: book.copies?.filter(c => c.status === 'available').length || 0 }));
         const totalPages = wantsAll ? (totalBooks > 0 ? 1 : 0) : Math.ceil(totalBooks / resolvedLimit);
         res.json({
             books: booksWithCopies,
@@ -188,9 +450,9 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
 
         for (const bookData of books) {
             try {
-                const rawTitle = bookData.title ?.trim();
-                const rawAuthor = bookData.author ?.trim();
-                const isbn = bookData.isbn ?.trim();
+                const rawTitle = bookData.title?.trim();
+                const rawAuthor = bookData.author?.trim();
+                const isbn = bookData.isbn?.trim();
 
                 if (!isbn) {
                     throw new Error('ISBN is required');
@@ -213,6 +475,7 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                         createdBy: req.user.id
                     }));
 
+                    const newCopyIds = copies.map((copy) => copy.copyId);
                     const updatedCopies = [...(existingBook.copies || []), ...copies];
                     const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
                     const updatePayload = {
@@ -233,7 +496,10 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                     results.successful.push({
                         isbn,
                         title: rawTitle || existingBook.title || 'Untitled',
-                        message: `Added ${numberOfCopies} copies to existing book`
+                        message: `Added ${numberOfCopies} copies to existing book`,
+                        bookId: existingBook.id,
+                        copyIds: newCopyIds,
+                        duplicate: true
                     });
                     continue;
                 }
@@ -287,7 +553,14 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
 
                 await req.dbAdapter.insertIntoCollection('books', newBook);
                 existingBooksByIsbn.set(normalizedIsbn, newBook);
-                results.successful.push({ isbn, title, message: 'Imported successfully' });
+                results.successful.push({
+                    isbn,
+                    title,
+                    message: 'Imported successfully',
+                    bookId,
+                    copyIds: copies.map((copy) => copy.copyId),
+                    duplicate: false
+                });
             } catch (error) {
                 results.failed.push({
                     isbn: bookData.isbn,
@@ -315,7 +588,10 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                         isbn: book.isbn,
                         title: book.title,
                         status: 'success',
-                        message: book.message || 'Imported successfully'
+                        message: book.message || 'Imported successfully',
+                        bookId: book.bookId,
+                        copyIds: book.copyIds,
+                        duplicate: book.duplicate || false
                     })),
                     ...results.failed.map(book => ({
                         isbn: book.isbn,
@@ -362,8 +638,8 @@ router.get('/:id', verifyToken, async(req, res) => {
             });
             return res.status(404).json({ message: 'Book not found' });
         }
-        book.copiesCount = book.copies ?.length || 0;
-        book.availableCopiesCount = book.copies ?.filter(c => c.status === 'available').length || 0;
+    book.copiesCount = book.copies?.length || 0;
+    book.availableCopiesCount = book.copies?.filter(c => c.status === 'available').length || 0;
         res.json(book);
     } catch (error) {
         console.error('Get book error:', error);
@@ -585,6 +861,7 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
                 message: `Existing book updated with ${copiesToAdd.length} new ${copiesToAdd.length === 1 ? 'copy' : 'copies'}`,
                 bookId: existingBook.id,
                 addedCopyIds: copiesToAdd.map(copy => copy.copyId),
+                copyIds: copiesToAdd.map(copy => copy.copyId),
                 duplicate: true
             });
         }
@@ -732,7 +1009,7 @@ router.delete('/:id', verifyToken, requireLibrarian, logAction('DELETE', 'book')
             });
             return res.status(404).json({ message: 'Book not found' });
         }
-        const borrowedCopies = book.copies ?.filter(c => c.status === 'borrowed') || [];
+    const borrowedCopies = book.copies?.filter(c => c.status === 'borrowed') || [];
         if (borrowedCopies.length > 0) {
             setAuditContext(req, {
                 success: false,
@@ -751,7 +1028,7 @@ router.delete('/:id', verifyToken, requireLibrarian, logAction('DELETE', 'book')
             description: `Deleted book ${book.title || req.params.id}`,
             details: {
                 isbn: book.isbn,
-                totalCopies: book.copies ?.length || 0,
+                totalCopies: book.copies?.length || 0,
             },
             metadata: {
                 actorId: req.user.id
@@ -829,6 +1106,114 @@ router.post('/:id/copies', verifyToken, requireStaff, logAction('ADD_COPIES', 'b
             details: { error: error.message },
         });
         res.status(500).json({ message: 'Failed to add book copies' });
+    }
+});
+
+router.get('/:id/copies/barcodes', verifyToken, requireStaff, logAction('GENERATE_BARCODES', 'book'), async(req, res) => {
+    try {
+        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        if (!book) {
+            setAuditContext(req, {
+                success: false,
+                status: 'BookNotFound',
+                description: `Generate barcodes failed: book ${req.params.id} not found`,
+            });
+            return res.status(404).json({ message: 'Book not found' });
+        }
+
+        const copies = Array.isArray(book.copies) ? book.copies : [];
+        if (copies.length === 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'NoCopies',
+                description: `Generate barcodes failed: book ${req.params.id} has no copies`,
+            });
+            return res.status(404).json({ message: 'No copies available for this book' });
+        }
+
+        const copyIdsParam = req.query.copyIds;
+        let requestedCopyIds = copies.map((copy) => copy.copyId).filter(Boolean);
+
+        if (copyIdsParam) {
+            const asArray = Array.isArray(copyIdsParam) ? copyIdsParam : String(copyIdsParam).split(',');
+            const requestedSet = new Set(
+                asArray
+                    .map((value) => String(value).trim())
+                    .filter(Boolean)
+                    .map((value) => value.toUpperCase())
+            );
+
+            requestedCopyIds = copies
+                .map((copy) => copy.copyId)
+                .filter(Boolean)
+                .filter((copyId) => requestedSet.has(String(copyId).toUpperCase()));
+
+            if (requestedCopyIds.length === 0) {
+                setAuditContext(req, {
+                    success: false,
+                    status: 'CopiesNotFound',
+                    description: `Generate barcodes failed: requested copy IDs not found for book ${req.params.id}`,
+                    details: {
+                        requested: Array.from(requestedSet),
+                    },
+                });
+                return res.status(404).json({ message: 'Requested copy IDs not found for this book' });
+            }
+        }
+
+        const filteredCopies = copies
+            .filter((copy) => Boolean(copy.copyId))
+            .filter((copy) => requestedCopyIds.includes(copy.copyId));
+
+        if (filteredCopies.length === 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'CopiesNotFound',
+                description: `Generate barcodes failed: no matching copies with IDs for book ${req.params.id}`,
+                details: {
+                    requested: requestedCopyIds,
+                },
+            });
+            return res.status(404).json({ message: 'No matching copies found for barcode generation' });
+        }
+
+        const generatedBy = [req.user?.firstName, req.user?.lastName]
+            .filter(Boolean)
+            .join(' ') || req.user?.username || req.user?.email || null;
+
+        const pdfPayload = await buildBarcodePdf({
+            book,
+            copies: filteredCopies,
+            requestedCopyIds,
+            generatedBy,
+        });
+
+        setAuditContext(req, {
+            entityId: req.params.id,
+            description: `Generated ${requestedCopyIds.length} barcode labels for ${book.title || req.params.id}`,
+            success: true,
+            status: 'Generated',
+            details: {
+                copyIds: requestedCopyIds,
+            },
+            metadata: {
+                actorId: req.user?.id,
+                filename: pdfPayload.filename,
+            },
+        });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${pdfPayload.filename}"`);
+        return res.send(pdfPayload.buffer);
+    } catch (error) {
+        console.error('Generate barcode PDF error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: 'Failed to generate barcodes',
+            details: { error: error.message },
+        });
+        return res.status(500).json({ message: 'Failed to generate barcodes' });
     }
 });
 
@@ -942,7 +1327,7 @@ router.patch('/copies/:copyId', verifyToken, requireStaff, logAction('UPDATE_COP
         let targetBook = null;
         let targetCopyIndex = -1;
         for (const book of allBooks) {
-            const copyIndex = book.copies ?.findIndex(c => c.copyId === req.params.copyId);
+            const copyIndex = book.copies?.findIndex(c => c.copyId === req.params.copyId);
             if (copyIndex !== undefined && copyIndex >= 0) {
                 targetBook = book;
                 targetCopyIndex = copyIndex;
@@ -1003,17 +1388,17 @@ router.get('/search/advanced', verifyToken, async(req, res) => {
             let matches = false;
             switch (type) {
                 case 'title':
-                    matches = book.title ?.toLowerCase().includes(searchLower);
+                    matches = book.title?.toLowerCase().includes(searchLower);
                     break;
                 case 'author':
-                    matches = book.author ?.toLowerCase().includes(searchLower);
+                    matches = book.author?.toLowerCase().includes(searchLower);
                     break;
                 case 'isbn':
-                    matches = book.isbn ?.toLowerCase().includes(searchLower);
+                    matches = book.isbn?.toLowerCase().includes(searchLower);
                     break;
                 case 'all':
                 default:
-                    matches = book.title ?.toLowerCase().includes(searchLower) || book.author ?.toLowerCase().includes(searchLower) || book.isbn ?.toLowerCase().includes(searchLower) || book.publisher ?.toLowerCase().includes(searchLower) || book.category ?.toLowerCase().includes(searchLower);
+                    matches = book.title?.toLowerCase().includes(searchLower) || book.author?.toLowerCase().includes(searchLower) || book.isbn?.toLowerCase().includes(searchLower) || book.publisher?.toLowerCase().includes(searchLower) || book.category?.toLowerCase().includes(searchLower);
                     break;
             }
             if (matches) results.push(book);

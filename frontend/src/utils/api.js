@@ -166,6 +166,11 @@ export const booksAPI = {
   update: (id, data) => api.put(`/books/${id}`, data),
   delete: (id) => api.delete(`/books/${id}`),
   bulkImport: (books) => api.post("/books/bulk-import", { books }),
+  downloadBarcodes: (bookId, params) =>
+    api.get(`/books/${bookId}/copies/barcodes`, {
+      params,
+      responseType: "blob",
+    }),
   getCopies: (bookId, params) => api.get(`/books/${bookId}/copies`, { params }),
   createCopy: (bookId, data) => api.post(`/books/${bookId}/copies`, data),
   updateCopy: (bookId, copyId, data) =>

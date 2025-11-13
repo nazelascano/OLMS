@@ -28,8 +28,39 @@ import {
   WarningAmber,
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, booksAPI } from "../../utils/api";
+import { api, booksAPI, downloadFile } from "../../utils/api";
 import toast from "react-hot-toast";
+
+const sanitizeFilename = (value, fallback) => {
+  if (!value) {
+    return fallback;
+  }
+  const cleaned = value.trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return cleaned.length > 0 ? cleaned : fallback;
+};
+
+const extractFilename = (disposition, fallback) => {
+  if (!disposition) {
+    return fallback;
+  }
+
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match && utf8Match[1]) {
+    try {
+      const decoded = decodeURIComponent(utf8Match[1]);
+      return sanitizeFilename(decoded, fallback);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  const quotedMatch = disposition.match(/filename="?([^";]+)"?/i);
+  if (quotedMatch && quotedMatch[1]) {
+    return sanitizeFilename(quotedMatch[1], fallback);
+  }
+
+  return fallback;
+};
 
 const BookForm = () => {
   const navigate = useNavigate();
@@ -326,6 +357,8 @@ const BookForm = () => {
         requestPayload.description = duplicateBook.description;
       }
 
+      let barcodeDownloadContext = null;
+
       if (isEditing) {
         await api.put(`/books/${id}`, requestPayload);
         toast.success("Book updated successfully");
@@ -338,6 +371,47 @@ const BookForm = () => {
             ? "Existing book found. Added copies successfully."
             : "Book created successfully");
         toast.success(successMessage);
+
+        const responseCopyIds = Array.isArray(response.data?.copyIds)
+          ? response.data.copyIds
+          : Array.isArray(response.data?.addedCopyIds)
+            ? response.data.addedCopyIds
+            : [];
+
+        if (response.data?.bookId && responseCopyIds.length > 0) {
+          barcodeDownloadContext = {
+            bookId: response.data.bookId,
+            copyIds: responseCopyIds,
+            title:
+              requestPayload.title ||
+              duplicateBook?.title ||
+              formData.title ||
+              "book",
+          };
+        }
+      }
+
+      if (barcodeDownloadContext) {
+        try {
+          const barcodeResponse = await booksAPI.downloadBarcodes(
+            barcodeDownloadContext.bookId,
+            { copyIds: barcodeDownloadContext.copyIds },
+          );
+
+          const fallbackName = sanitizeFilename(
+            `${barcodeDownloadContext.title}_${barcodeDownloadContext.copyIds.length}_barcodes.pdf`,
+            "book_barcodes.pdf",
+          );
+          const filename = extractFilename(
+            barcodeResponse.headers?.["content-disposition"],
+            fallbackName,
+          );
+          downloadFile(barcodeResponse.data, filename);
+          toast.success("Barcode labels downloaded");
+        } catch (downloadError) {
+          console.error("Barcode download failed:", downloadError);
+          toast.error("Book saved, but barcode download failed");
+        }
       }
 
       navigate("/books");

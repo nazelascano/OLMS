@@ -25,7 +25,38 @@ import {
   WarningAmber,
 } from "@mui/icons-material";
 import toast from "react-hot-toast";
-import { booksAPI } from "../../utils/api";
+import { booksAPI, downloadFile } from "../../utils/api";
+
+const sanitizeFilename = (value, fallback) => {
+  if (!value) {
+    return fallback;
+  }
+  const cleaned = value.trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return cleaned.length > 0 ? cleaned : fallback;
+};
+
+const extractFilename = (disposition, fallback) => {
+  if (!disposition) {
+    return fallback;
+  }
+
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match && utf8Match[1]) {
+    try {
+      const decoded = decodeURIComponent(utf8Match[1]);
+      return sanitizeFilename(decoded, fallback);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  const quotedMatch = disposition.match(/filename="?([^";]+)"?/i);
+  if (quotedMatch && quotedMatch[1]) {
+    return sanitizeFilename(quotedMatch[1], fallback);
+  }
+
+  return fallback;
+};
 
 const normalizeHeader = (header) =>
   header.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -156,6 +187,8 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
   const [importSuccessful, setImportSuccessful] = useState(false);
+  const [downloadingBookId, setDownloadingBookId] = useState(null);
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false);
 
   const resetState = () => {
     setFile(null);
@@ -165,6 +198,8 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
     setImporting(false);
     setImportResults(null);
     setImportSuccessful(false);
+    setDownloadingBookId(null);
+    setIsBatchDownloading(false);
   };
 
   const downloadTemplate = () => {
@@ -290,13 +325,17 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
       }
 
       const response = await booksAPI.bulkImport(validBooks);
+      const importDetails = response.data.results?.details || [];
+
       setImportResults({
         success: response.data.results?.success || 0,
         errors: response.data.results?.errors || 0,
-        details: response.data.results?.details || [],
+        details: importDetails,
         invalidBooks,
         warnings: warningBooks,
       });
+
+      autoDownloadBarcodes(importDetails);
 
       if ((response.data.results?.success || 0) > 0) {
         toast.success(
@@ -324,6 +363,91 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
     onClose();
     if (shouldRefresh && onImportComplete) {
       onImportComplete();
+    }
+  };
+
+  const handleDownloadBarcodes = async (detail, options = {}) => {
+    const { silent = false, skipBusyCheck = false } = options;
+
+    if (!detail?.bookId || !Array.isArray(detail?.copyIds) || detail.copyIds.length === 0) {
+      if (!silent) {
+        toast.error("No barcode data available");
+      }
+      return false;
+    }
+
+    if (!skipBusyCheck && (isBatchDownloading || downloadingBookId)) {
+      if (!silent) {
+        toast.error("Another barcode download is in progress");
+      }
+      return false;
+    }
+
+    try {
+      setDownloadingBookId(detail.bookId);
+      const response = await booksAPI.downloadBarcodes(detail.bookId, {
+        copyIds: detail.copyIds,
+      });
+
+      const fallbackName = sanitizeFilename(
+        `${detail.title || detail.bookId}_${detail.copyIds.length}_barcodes.pdf`,
+        "book_barcodes.pdf",
+      );
+      const filename = extractFilename(
+        response.headers?.["content-disposition"],
+        fallbackName,
+      );
+      downloadFile(response.data, filename);
+      if (!silent) {
+        toast.success(`Barcodes downloaded for ${detail.title || detail.bookId}`);
+      }
+      return true;
+    } catch (error) {
+      console.error("Failed to download barcodes:", error);
+      if (!silent) {
+        toast.error("Failed to download barcode labels");
+      }
+      return false;
+    } finally {
+      setDownloadingBookId(null);
+    }
+  };
+
+  const autoDownloadBarcodes = async (details) => {
+    const printable = (details || []).filter(
+      (detail) => detail.status === "success" && Array.isArray(detail.copyIds) && detail.copyIds.length > 0,
+    );
+
+    if (printable.length === 0) {
+      return;
+    }
+
+    setIsBatchDownloading(true);
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (const detail of printable) {
+      // eslint-disable-next-line no-await-in-loop
+      const ok = await handleDownloadBarcodes(detail, { silent: true, skipBusyCheck: true });
+      if (ok) {
+        successCount += 1;
+      } else {
+        failureCount += 1;
+      }
+    }
+
+    setIsBatchDownloading(false);
+    setDownloadingBookId(null);
+
+    if (successCount > 0) {
+      const message = successCount === 1
+        ? "Barcode labels downloaded automatically"
+        : `${successCount} barcode label sets downloaded automatically`;
+      toast.success(message);
+    }
+
+    if (failureCount > 0) {
+      toast.error("Some barcode downloads failed. You can retry from the table below.");
     }
   };
 
@@ -466,6 +590,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
             <TableCell>Title</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Message</TableCell>
+            <TableCell align="right">Barcodes</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -480,7 +605,46 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
                   size="small"
                 />
               </TableCell>
-              <TableCell>{detail.message}</TableCell>
+              <TableCell>
+                <Box display="flex" flexDirection="column" gap={0.5}>
+                  <Typography variant="body2">{detail.message}</Typography>
+                  {detail.status === "success" && detail.copyIds?.length > 0 && (
+                    <Box display="flex" flexWrap="wrap" gap={0.5}>
+                      {detail.copyIds.slice(0, 3).map((copyId) => (
+                        <Chip key={copyId} label={copyId} size="small" variant="outlined" />
+                      ))}
+                      {detail.copyIds.length > 3 && (
+                        <Chip
+                          label={`+${detail.copyIds.length - 3} more`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              </TableCell>
+              <TableCell align="right">
+                {detail.status === "success" && detail.copyIds?.length > 0 ? (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<GetApp fontSize="small" />}
+                    onClick={() => handleDownloadBarcodes(detail)}
+                    disabled={Boolean(downloadingBookId) || isBatchDownloading}
+                  >
+                    {downloadingBookId === detail.bookId
+                      ? "Preparing..."
+                      : isBatchDownloading
+                        ? "Queued"
+                        : "Barcodes"}
+                  </Button>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    -
+                  </Typography>
+                )}
+              </TableCell>
             </TableRow>
           ))}
           {(importResults?.invalidBooks || []).map((book, index) => (
@@ -491,6 +655,11 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
                 <Chip label="Invalid" color="error" size="small" />
               </TableCell>
               <TableCell>{book.errors?.join(", ")}</TableCell>
+              <TableCell align="right">
+                <Typography variant="caption" color="text.secondary">
+                  -
+                </Typography>
+              </TableCell>
             </TableRow>
           ))}
           {(importResults?.warnings || []).map((book, index) => (
@@ -501,12 +670,21 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
                 <Chip label="Updated" color="warning" size="small" />
               </TableCell>
               <TableCell>{book.warnings?.join(", ")}</TableCell>
+              <TableCell align="right">
+                <Typography variant="caption" color="text.secondary">
+                  -
+                </Typography>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
       <Box mt={3}>
-        <Button variant="contained" onClick={handleDialogClose}>
+        <Button
+          variant="contained"
+          onClick={handleDialogClose}
+          disabled={isBatchDownloading || Boolean(downloadingBookId)}
+        >
           Done
         </Button>
       </Box>

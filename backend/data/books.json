@@ -515,8 +515,8 @@
     "description": "Classic developer book",
     "coverImage": "",
     "status": "active",
-    "totalCopies": 9,
-    "availableCopies": 9,
+    "totalCopies": 21,
+    "availableCopies": 21,
     "copies": [
       {
         "copyId": "978-0201616224-MGSOUS0A-HFOK",
@@ -599,10 +599,118 @@
         "createdAt": "2025-10-28T14:40:06.844Z",
         "updatedAt": "2025-10-28T14:40:06.844Z",
         "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVG5NUQ-M4A0",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:34:59.330Z",
+        "updatedAt": "2025-11-12T03:34:59.330Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVG5NUQ-J1FP",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:34:59.330Z",
+        "updatedAt": "2025-11-12T03:34:59.330Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVG5NUQ-YM4J",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:34:59.330Z",
+        "updatedAt": "2025-11-12T03:34:59.330Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVGICLL-8VAT",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:44:51.273Z",
+        "updatedAt": "2025-11-12T03:44:51.273Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVGICLL-0KRQ",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:44:51.273Z",
+        "updatedAt": "2025-11-12T03:44:51.273Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVGICLL-MV7H",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:44:51.273Z",
+        "updatedAt": "2025-11-12T03:44:51.273Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVGL9HN-7Z50",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:47:07.211Z",
+        "updatedAt": "2025-11-12T03:47:07.211Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVGL9HN-P86C",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:47:07.211Z",
+        "updatedAt": "2025-11-12T03:47:07.211Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVGL9HN-U0G7",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T03:47:07.212Z",
+        "updatedAt": "2025-11-12T03:47:07.212Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVJK8KM-RN92",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T05:10:18.214Z",
+        "updatedAt": "2025-11-12T05:10:18.214Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVJK8KM-NL7X",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T05:10:18.214Z",
+        "updatedAt": "2025-11-12T05:10:18.214Z",
+        "createdBy": "mgnhicbwhxfy9"
+      },
+      {
+        "copyId": "978-0201616224-MHVJK8KM-8O74",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-11-12T05:10:18.214Z",
+        "updatedAt": "2025-11-12T05:10:18.214Z",
+        "createdBy": "mgnhicbwhxfy9"
       }
     ],
     "createdAt": "2025-10-16T00:35:27.178Z",
-    "updatedAt": "2025-10-28T14:40:06.854Z",
+    "updatedAt": "2025-11-12T05:10:18.216Z",
     "createdBy": "mgnhicbwhxfy9",
     "_id": "mgsous0bcn99t",
     "updatedBy": "mgnhicbwhxfy9"

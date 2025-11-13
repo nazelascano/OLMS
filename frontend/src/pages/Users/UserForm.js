@@ -39,6 +39,8 @@ const ROLE_OPTIONS = [
   { value: "admin", label: "Administrator" },
 ];
 
+const PHONE_FIELD_NAMES = new Set(["phoneNumber"]);
+
 const DEFAULT_FORM_DATA = {
   username: "",
   email: "",
@@ -180,10 +182,15 @@ const UserForm = () => {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
+    const isCheckbox = type === "checkbox";
+    const sanitizedValue =
+      !isCheckbox && PHONE_FIELD_NAMES.has(name)
+        ? value.replace(/\D/g, "")
+        : value;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: isCheckbox ? checked : sanitizedValue,
     }));
 
     if (validationErrors[name]) {
@@ -442,6 +449,7 @@ const UserForm = () => {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

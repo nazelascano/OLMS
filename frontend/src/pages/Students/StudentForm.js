@@ -32,6 +32,8 @@ import { ensureUserAttributes } from "../../utils/userAttributes";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 
+const PHONE_FIELD_NAMES = new Set(["phoneNumber", "parentPhone"]);
+
 const StudentForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -208,9 +210,14 @@ const StudentForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const isCheckbox = type === "checkbox";
+    const sanitizedValue =
+      !isCheckbox && PHONE_FIELD_NAMES.has(name)
+        ? value.replace(/\D/g, "")
+        : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: isCheckbox ? checked : sanitizedValue,
     }));
 
     // Clear validation error when user starts typing
@@ -606,6 +613,7 @@ const StudentForm = () => {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
@@ -674,6 +682,7 @@ const StudentForm = () => {
                       name="parentPhone"
                       value={formData.parentPhone}
                       onChange={handleChange}
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

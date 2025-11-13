@@ -20,6 +20,7 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
+  InputAdornment,
   Table,
   TableBody,
   TableCell,
@@ -36,6 +37,7 @@ import {
   Book,
   Search,
   Warning,
+  QrCodeScanner,
 } from "@mui/icons-material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -43,6 +45,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
+import QRScanner from "../../components/QRScanner";
 
 const toNumber = (value, fallback) => {
   const parsed = Number(value);
@@ -66,6 +69,7 @@ const ReturnForm = () => {
   });
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [totalFine, setTotalFine] = useState(0);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const scannerBufferRef = useRef("");
   const lastKeyTimeRef = useRef(0);
@@ -416,7 +420,22 @@ const ReturnForm = () => {
                 onChange={(event) => setSearchInput(event.target.value)}
                 onKeyPress={(event) => event.key === "Enter" && searchBorrowedBooks()}
                 InputProps={{
-                  startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: "text.secondary" }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="scan barcode or QR code"
+                        onClick={() => setScannerOpen(true)}
+                        edge="end"
+                      >
+                        <QrCodeScanner />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
                 }}
               />
             </Grid>
@@ -433,6 +452,22 @@ const ReturnForm = () => {
             </Grid>
           </Grid>
         </Paper>
+        <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Scan Copy Code</DialogTitle>
+          <DialogContent>
+            <QRScanner
+              elementId="return-qr-scanner"
+              onDetected={(value) => {
+                setScannerOpen(false);
+                handleBarcodeScan(value);
+              }}
+              onClose={() => setScannerOpen(false)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
         {/* Borrowed Books Table */}
         {borrowedBooks.length > 0 && (
           <Paper sx={{ mb: 3 }}>

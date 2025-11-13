@@ -172,6 +172,38 @@ const BookCopies = () => {
     setSelectedCopy(null);
   };
 
+  const handlePrintSelectedCopy = async () => {
+    if (!selectedCopy?.copyId) {
+      handleMenuClose();
+      return;
+    }
+
+    try {
+      setError("");
+      const response = await api.get(`/books/${bookId}/copies/barcodes`, {
+        params: { copyIds: selectedCopy.copyId },
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${selectedCopy.copyId}_barcode.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setSuccess(`Barcode downloaded for ${selectedCopy.copyId}`);
+      setTimeout(() => setSuccess(""), 3000);
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    } catch (error) {
+      setError("Failed to generate barcode for this copy");
+      console.error("Error generating barcode:", error);
+    } finally {
+      handleMenuClose();
+    }
+  };
+
   const handleEditCopy = () => {
     setEditingCopy(selectedCopy);
     setCopyForm({
@@ -474,6 +506,12 @@ const BookCopies = () => {
             <Edit />
           </ListItemIcon>{" "}
           <ListItemText> Edit Copy </ListItemText>{" "}
+        </MenuItem>{" "}
+        <MenuItem onClick={handlePrintSelectedCopy}>
+          <ListItemIcon>
+            <Print />
+          </ListItemIcon>{" "}
+          <ListItemText> Print Barcode </ListItemText>{" "}
         </MenuItem>{" "}
         <MenuItem
           onClick={() => {

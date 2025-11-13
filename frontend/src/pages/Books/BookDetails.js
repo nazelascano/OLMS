@@ -34,6 +34,7 @@ import {
   LocalLibrary,
   History,
   CheckCircle,
+  Print,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
@@ -111,6 +112,33 @@ const BookDetails = () => {
         setError("Failed to delete book copy");
         console.error("Error deleting copy:", error);
       }
+    }
+  };
+
+  const handlePrintCopy = async (copyId) => {
+    if (!copyId) {
+      return;
+    }
+
+    try {
+      setError("");
+      const response = await api.get(`/books/${id}/copies/barcodes`, {
+        params: { copyIds: copyId },
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${copyId}_barcode.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    } catch (error) {
+      setError("Failed to generate barcode for this copy");
+      console.error("Error generating barcode:", error);
     }
   };
 
@@ -330,9 +358,14 @@ const BookDetails = () => {
                   key={copy.copyId}
                   secondaryAction={
                     canManageCopies && (
-                      <IconButton edge="end" onClick={() => handleDeleteCopy(copy.copyId)} color="error">
-                        <Delete />
-                      </IconButton>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <IconButton edge="end" onClick={() => handlePrintCopy(copy.copyId)} aria-label="Print barcode">
+                          <Print fontSize="small" />
+                        </IconButton>
+                        <IconButton edge="end" onClick={() => handleDeleteCopy(copy.copyId)} color="error" aria-label="Delete copy">
+                          <Delete />
+                        </IconButton>
+                      </Box>
                     )
                   }
                 >

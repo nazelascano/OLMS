@@ -32,13 +32,45 @@ import {
   Visibility,
   FilterList,
   CloudUpload,
+  QrCode2,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { api, booksAPI } from "../../utils/api";
+import { api, booksAPI, downloadFile } from "../../utils/api";
 import toast from "react-hot-toast";
 import BookImportDialog from "./BookImportDialog";
 import { PageLoading } from "../../components/Loading";
+
+const sanitizeFilename = (value, fallback) => {
+  if (!value) {
+    return fallback;
+  }
+  const cleaned = value.trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return cleaned.length > 0 ? cleaned : fallback;
+};
+
+const extractFilename = (disposition, fallback) => {
+  if (!disposition) {
+    return fallback;
+  }
+
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match && utf8Match[1]) {
+    try {
+      const decoded = decodeURIComponent(utf8Match[1]);
+      return sanitizeFilename(decoded, fallback);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  const quotedMatch = disposition.match(/filename="?([^";]+)"?/i);
+  if (quotedMatch && quotedMatch[1]) {
+    return sanitizeFilename(quotedMatch[1], fallback);
+  }
+
+  return fallback;
+};
 
 const BooksList = () => {
   const navigate = useNavigate();
@@ -55,6 +87,7 @@ const BooksList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [downloadingBookId, setDownloadingBookId] = useState(null);
 
   // Compact filter menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
@@ -145,6 +178,44 @@ const BooksList = () => {
   const handleMenuClose = () => {
     setMenuAnchor(null);
     setSelectedBook(null);
+  };
+
+  const downloadBarcodesForBook = async (book) => {
+    if (!book) {
+      return;
+    }
+
+    try {
+      setDownloadingBookId(book.id);
+      const response = await booksAPI.downloadBarcodes(book.id);
+
+      const fallbackName = sanitizeFilename(
+        `${book.title || "book"}_${book.isbn || book.id}_barcodes.pdf`,
+        "book_barcodes.pdf",
+      );
+      const filename = extractFilename(
+        response.headers?.["content-disposition"],
+        fallbackName,
+      );
+
+      downloadFile(response.data, filename);
+      toast.success(`Barcode labels downloaded for ${book.title || book.isbn || "book"}`);
+    } catch (error) {
+      console.error("Failed to download barcodes:", error);
+      const message = error.response?.data?.message || "Failed to download barcode labels";
+      toast.error(message);
+    } finally {
+      setDownloadingBookId(null);
+    }
+  };
+
+  const handleBarcodesMenuClick = async () => {
+    const bookToDownload = selectedBook;
+    handleMenuClose();
+    if (!bookToDownload) {
+      return;
+    }
+    await downloadBarcodesForBook(bookToDownload);
   };
 
   useEffect(() => {
@@ -321,6 +392,12 @@ const BooksList = () => {
                 <Edit sx={{ mr: 1 }} /> Edit Book
               </MenuItem>
             )}
+            <MenuItem
+              onClick={handleBarcodesMenuClick}
+              disabled={Boolean(downloadingBookId)}
+            >
+              <QrCode2 sx={{ mr: 1 }} /> Print Barcodes
+            </MenuItem>
             {hasPermission("books.delete") && (
               <MenuItem
                 onClick={() => {
