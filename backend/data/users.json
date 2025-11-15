@@ -20,15 +20,15 @@
       "fineBalance": 0
     },
     "borrowingStats": {
-      "totalBorrowed": 3,
-      "currentlyBorrowed": 3,
+      "totalBorrowed": 6,
+      "currentlyBorrowed": 6,
       "totalFines": 0,
       "totalReturned": 0
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-11-13T05:36:40.644Z",
-    "lastLoginAt": "2025-11-13T05:18:22.847Z",
-    "lastActivityAt": "2025-11-13T05:36:40.622Z",
+    "updatedAt": "2025-11-15T13:32:16.298Z",
+    "lastLoginAt": "2025-11-15T12:40:25.508Z",
+    "lastActivityAt": "2025-11-15T13:32:16.297Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -241,9 +241,11 @@
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-11-03T05:12:50.403Z",
+    "updatedAt": "2025-11-14T05:49:08.944Z",
     "schoolYear": "2025-2026",
-    "academicYear": "2025-2026"
+    "academicYear": "2025-2026",
+    "lastLoginAt": "2025-11-14T05:47:38.933Z",
+    "lastActivityAt": "2025-11-14T05:49:08.943Z"
   },
   {
     "firstName": "Mary2",

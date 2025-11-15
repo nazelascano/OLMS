@@ -68,6 +68,22 @@ const collectUserIdentifiers = (user) => {
   return identifiers;
 };
 
+const findUserByIdentifier = (userMap, term) => {
+  if (!term) return null;
+  const normalizedTerm = term.toLowerCase();
+
+  for (const [key, user] of userMap.entries()) {
+    if (typeof key !== 'string') {
+      continue;
+    }
+    if (key.toLowerCase() === normalizedTerm) {
+      return user;
+    }
+  }
+
+  return null;
+};
+
 const resolveTransactionBook = (transaction, bookMap) => {
   const collections = [];
   if (Array.isArray(transaction.items)) collections.push(transaction.items);
@@ -180,6 +196,43 @@ const transactionBelongsToUser = (transaction, identifiers) => {
     .some((candidate) => identifiers.has(candidate));
 };
 
+const collectTransactionIdentifiers = (transaction) => {
+  const identifiers = new Set();
+  const register = (value) => {
+    if (value !== undefined && value !== null) {
+      const normalized = String(value).trim();
+      if (normalized) {
+        identifiers.add(normalized);
+      }
+    }
+  };
+
+  [
+    transaction.id,
+    transaction._id,
+    transaction.transactionId,
+    transaction.transactionCode,
+    transaction.referenceNumber,
+    transaction.documentId,
+    transaction.copyId,
+    transaction.barcode,
+  ].forEach(register);
+
+  const collections = [];
+  if (Array.isArray(transaction.items)) collections.push(transaction.items);
+  if (Array.isArray(transaction.books)) collections.push(transaction.books);
+
+  collections.forEach((list) => {
+    list.forEach((item) => {
+      register(item?.copyId);
+      register(item?.barcode);
+      register(item?.isbn);
+    });
+  });
+
+  return identifiers;
+};
+
 router.get('/', verifyToken, async (req, res) => {
   try {
     const query = String(req.query.q || '').trim();
@@ -239,6 +292,7 @@ router.get('/', verifyToken, async (req, res) => {
           book.tags,
           book.subjects,
           book.location,
+          book.copies,
         ],
         term,
       ),
@@ -312,6 +366,7 @@ router.get('/', verifyToken, async (req, res) => {
             .filter(Boolean)
             .join(' ');
           const secondary = [
+            student.library?.cardNumber || student.libraryCardNumber,
             student.studentId || student.studentNumber,
             student.gradeLevel || student.grade,
             student.section,
@@ -336,8 +391,56 @@ router.get('/', verifyToken, async (req, res) => {
       canViewStaffData ? true : transactionBelongsToUser(transaction, identifiers),
     );
 
+    if (canViewStaffData) {
+      const directUser = findUserByIdentifier(userMap, term);
+      if (directUser) {
+        const targetKey = directUser.role === 'student' ? 'students' : 'users';
+        const container = results[targetKey] || [];
+
+        const exists = container.some((item) => item.id === String(directUser._id || directUser.id));
+        if (!exists) {
+          const id = String(directUser._id || directUser.id);
+          const fullName = [directUser.firstName, directUser.lastName].filter(Boolean).join(' ');
+          const secondary = [
+            directUser.library?.cardNumber || directUser.libraryCardNumber,
+            directUser.studentId || directUser.studentNumber,
+            directUser.gradeLevel || directUser.grade,
+            directUser.section,
+            directUser.email || directUser.username,
+          ]
+            .filter(Boolean)
+            .join(' • ');
+
+          const entry = {
+            id,
+            primary: fullName || directUser.username || directUser.email || 'User',
+            secondary,
+            chip: directUser.role ? directUser.role.toUpperCase() : '',
+            link:
+              directUser.role === 'student'
+                ? `/students/${id}`
+                : `/users/${id}`,
+            category: targetKey,
+          };
+
+          results[targetKey] = container.length
+            ? [entry, ...container.slice(0, limit - 1)]
+            : [entry];
+        }
+      }
+    }
+
     const transactionMatches = relevantTransactions.filter((transaction) => {
       const summary = buildTransactionSummary(transaction, { bookMap, userMap });
+      const identifiers = collectTransactionIdentifiers(transaction);
+      const identifierHit = Array.from(identifiers).some((identifier) =>
+        includesTerm(identifier, term),
+      );
+
+      if (identifierHit) {
+        return true;
+      }
+
       return (
         includesTerm(summary.title, term) ||
         includesTerm(summary.borrower, term) ||
@@ -351,11 +454,19 @@ router.get('/', verifyToken, async (req, res) => {
         const summary = buildTransactionSummary(transaction, { bookMap, userMap });
         const id = String(transaction.id || transaction._id);
         const chip = summary.status ? summary.status.toUpperCase() : '';
+        const identifiers = Array.from(collectTransactionIdentifiers(transaction));
+        const matchedIdentifier = identifiers.find((identifier) =>
+          includesTerm(identifier, term),
+        );
 
         return {
           id,
           primary: summary.title || `Transaction ${id}`,
-          secondary: [summary.borrower, summary.dueLabel, transaction.referenceNumber]
+          secondary: [
+            summary.borrower,
+            summary.dueLabel,
+            matchedIdentifier || transaction.referenceNumber,
+          ]
             .filter(Boolean)
             .join(' • '),
           chip,

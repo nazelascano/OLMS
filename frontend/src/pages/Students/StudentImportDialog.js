@@ -203,14 +203,13 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
   const handleImport = async () => {
     setImporting(true);
 
+    const csvLRNs = new Set();
+    const csvStudentIds = new Set();
+    const validStudents = [];
+    const invalidStudents = [];
+
     try {
       // Track LRNs and Student IDs within the CSV to detect duplicates
-      const csvLRNs = new Set();
-      const csvStudentIds = new Set();
-
-      // Validate data
-      const validStudents = [];
-      const invalidStudents = [];
 
       csvData.forEach((student) => {
         const errors = validateStudentData(student, existingStudents);
@@ -257,6 +256,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
               "",
             parentPhone: student.parentphone || student.parentPhone || "",
             username: student.lrn,
+            rowIndex: student.rowIndex,
           });
         } else {
           invalidStudents.push({
@@ -300,19 +300,60 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
       console.error("Import error:", error);
       const responseMessage = error?.response?.data?.message;
       const responseErrors = error?.response?.data?.errors;
+      const missingRows = error?.response?.data?.missing;
+      const responseDetails = error?.response?.data?.results?.details;
+
+      if (Array.isArray(responseDetails) && responseDetails.length > 0) {
+        setImportResults({
+          success: responseDetails.filter((detail) => detail.status === 'success').length,
+          errors: responseDetails.filter((detail) => detail.status !== 'success').length,
+          details: responseDetails,
+          invalidStudents,
+        });
+        setStep(3);
+        toast.error(responseMessage || 'Bulk import failed. Review the details for row-specific errors.', { duration: 6000 });
+        return;
+      }
 
       if (responseErrors && Array.isArray(responseErrors) && responseErrors.length > 0) {
         console.warn("Import validation errors:", responseErrors);
         const summarized = responseErrors
           .slice(0, 5)
           .map((entry) => {
-            const rowNumber = typeof entry.idx === "number" ? entry.idx + 2 : "?"; // +2 accounts for header row
+            const rowNumber = entry.rowIndex
+              ? entry.rowIndex
+              : typeof entry.idx === "number"
+                ? entry.idx + 2
+                : "?";
             const issues = Array.isArray(entry.issues)
               ? entry.issues
               : Array.isArray(entry.errors)
                 ? entry.errors
                 : [entry.error || "Unknown validation issue"];
             return `Row ${rowNumber}: ${issues.join(", ")}`;
+          })
+          .join("\n");
+
+        toast.error(
+          responseMessage
+            ? `${responseMessage}\n${summarized}`
+            : `Bulk import failed:\n${summarized}`,
+          { duration: 8000 }
+        );
+        return;
+      }
+
+      if (Array.isArray(missingRows) && missingRows.length > 0) {
+        const summarized = missingRows
+          .slice(0, 5)
+          .map((entry) => {
+            const rowNumber = entry.rowIndex
+              ? entry.rowIndex
+              : typeof entry.idx === "number"
+                ? entry.idx + 2
+                : "?";
+            const studentRef = entry.studentId ? ` (Student ID ${entry.studentId})` : "";
+            return `Row ${rowNumber}${studentRef}: Missing LRN`;
           })
           .join("\n");
 
@@ -571,19 +612,21 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
           Import completed! {importResults.success} students imported successfully, {importResults.errors} failed.
         </Typography>
       </Alert>
-      {importResults.details && importResults.details.length > 0 && (
+      {(importResults.details?.length > 0 || (importResults.invalidStudents?.length || 0) > 0) && (
         <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell> Row </TableCell>{" "}
                 <TableCell> Student ID </TableCell>{" "}
                 <TableCell> Status </TableCell>{" "}
                 <TableCell> Message </TableCell>{" "}
               </TableRow>{" "}
             </TableHead>{" "}
             <TableBody>
-              {importResults.details.map((detail, index) => (
+              {(importResults.details || []).map((detail, index) => (
                 <TableRow key={index}>
+                  <TableCell>{detail.rowIndex ? `Row ${detail.rowIndex}` : '-'}</TableCell>
                   <TableCell>{detail.studentId}</TableCell>
                   <TableCell>
                     <Chip
@@ -593,13 +636,23 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
                     />
                   </TableCell>
                   <TableCell>
-                    {(() => {
-                      const issues = Array.isArray(detail.issues) && detail.issues.length > 0
-                        ? detail.issues.join(', ')
-                        : null;
-                      return detail.message || detail.error || issues || 'Imported successfully';
-                    })()}
+                      {(() => {
+                        const issues = Array.isArray(detail.issues) && detail.issues.length > 0
+                          ? detail.issues.join(', ')
+                          : null;
+                        return detail.message || issues || (detail.status === 'success' ? 'Imported successfully' : 'No details provided');
+                      })()}
                   </TableCell>
+                </TableRow>
+              ))}
+              {(importResults.invalidStudents || []).map((student, index) => (
+                <TableRow key={`invalid-${student.studentid || student.studentId || index}`}>
+                  <TableCell>{student.rowIndex ? `Row ${student.rowIndex}` : '-'}</TableCell>
+                  <TableCell>{student.studentid || student.studentId || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Chip label="Invalid" color="error" size="small" />
+                  </TableCell>
+                  <TableCell>{Array.isArray(student.errors) ? student.errors.join(', ') : 'Invalid data'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>{" "}

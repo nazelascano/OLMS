@@ -95,16 +95,18 @@ const verifyToken = async (req, res, next) => {
 
 // Middleware to check user roles
 const requireRole = (roles) => {
+  const normalizedRoles = Array.isArray(roles)
+    ? roles.map(role => String(role).toLowerCase())
+    : [String(roles).toLowerCase()];
+
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (!Array.isArray(roles)) {
-      roles = [roles];
-    }
+    const userRole = req.user.role ? String(req.user.role).toLowerCase() : '';
 
-    if (!roles.includes(req.user.role)) {
+    if (!normalizedRoles.includes(userRole)) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 

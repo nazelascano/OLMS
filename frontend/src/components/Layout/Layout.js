@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   AppBar,
@@ -42,6 +42,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { api, searchAPI, notificationsAPI } from "../../utils/api";
 import Sidebar from "./Sidebar";
+import { SCAN_EVENT, dispatchScanEvent } from "../../utils/scanEvents";
 
 const SEARCH_SECTION_LABELS = {
   books: "Books",
@@ -59,6 +60,190 @@ const NOTIFICATION_SEVERITY_COLORS = {
 
 const getSeverityColor = (severity) =>
   NOTIFICATION_SEVERITY_COLORS[severity] || NOTIFICATION_SEVERITY_COLORS.info;
+
+const INPUT_SELECTOR =
+  'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), [contenteditable="true"]';
+
+const isHtmlInputElement = (element) =>
+  element instanceof HTMLInputElement && element.type !== "hidden" && !element.disabled;
+
+const isHtmlTextAreaElement = (element) =>
+  element instanceof HTMLTextAreaElement && !element.disabled;
+
+const isHtmlSelectElement = (element) =>
+  element instanceof HTMLSelectElement && !element.disabled;
+
+const isContentEditableElement = (element) =>
+  element instanceof HTMLElement && element.isContentEditable;
+
+const isEligibleInputElement = (element) => {
+  if (!element) return false;
+  if (
+    !(isHtmlInputElement(element) ||
+      isHtmlTextAreaElement(element) ||
+      isHtmlSelectElement(element) ||
+      isContentEditableElement(element))
+  ) {
+    return false;
+  }
+
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  const style = window.getComputedStyle(element);
+  if (!style || style.visibility === "hidden" || style.display === "none") {
+    return false;
+  }
+
+  const rect = element.getBoundingClientRect();
+  if ((rect.width || rect.height) === 0) {
+    return false;
+  }
+
+  return true;
+};
+
+const collectInputCandidates = () => {
+  if (typeof document === "undefined") return [];
+  const nodes = Array.from(document.querySelectorAll(INPUT_SELECTOR));
+  return nodes.filter((node) => isEligibleInputElement(node));
+};
+
+const findInputAtCoordinates = (x, y) => {
+  if (typeof document === "undefined" || typeof document.elementsFromPoint !== "function") {
+    return null;
+  }
+  const stack = document.elementsFromPoint(x, y);
+  return stack.find((element) => isEligibleInputElement(element)) || null;
+};
+
+const findClosestInputCandidate = (x, y, candidates) => {
+  let closest = null;
+  let minDistance = Number.POSITIVE_INFINITY;
+
+  candidates.forEach((element) => {
+    const rect = element.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = cx - x;
+    const dy = cy - y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closest = element;
+    }
+  });
+
+  return closest;
+};
+
+const findNearestInputElement = ({ root, pointer } = {}) => {
+  const candidates = collectInputCandidates();
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  const resolvePoint = (point) => {
+    if (!point) return null;
+    const { x, y } = point;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return null;
+    }
+
+    const atPoint = findInputAtCoordinates(x, y);
+    if (atPoint && candidates.includes(atPoint)) {
+      return atPoint;
+    }
+
+    return findClosestInputCandidate(x, y, candidates);
+  };
+
+  const prioritized = resolvePoint(pointer);
+  if (prioritized) {
+    return prioritized;
+  }
+
+  if (root instanceof HTMLElement) {
+    const rect = root.getBoundingClientRect();
+    const center = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    const byRoot = resolvePoint(center);
+    if (byRoot) {
+      return byRoot;
+    }
+  }
+
+  return candidates[0] || null;
+};
+
+const focusInputElement = (element) => {
+  if (!element || typeof element.focus !== "function") {
+    return;
+  }
+
+  try {
+    element.focus({ preventScroll: true });
+  } catch (error) {
+    try {
+      element.focus();
+    } catch (err) {
+      // ignore focus errors
+    }
+  }
+};
+
+const applyValueToInput = (element, value) => {
+  if (!element) return;
+
+  if (element instanceof HTMLInputElement) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (setter) {
+      setter.call(element, value);
+    } else {
+      element.value = value;
+    }
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    try {
+      element.setSelectionRange(value.length, value.length);
+    } catch (error) {
+      // ignore selection errors
+    }
+    return;
+  }
+
+  if (element instanceof HTMLTextAreaElement) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    if (setter) {
+      setter.call(element, value);
+    } else {
+      element.value = value;
+    }
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    try {
+      element.setSelectionRange(value.length, value.length);
+    } catch (error) {
+      // ignore selection errors
+    }
+    return;
+  }
+
+  if (element instanceof HTMLSelectElement) {
+    element.value = value;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+
+  if (element instanceof HTMLElement && element.isContentEditable) {
+    element.textContent = value;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+};
 
 const formatRelativeTime = (value) => {
   if (!value) return "";
@@ -149,11 +334,50 @@ const baseNotificationButtonSx = {
   },
 };
 
+const IGNORED_CONTROL_KEYS = new Set([
+  "Shift",
+  "Control",
+  "Alt",
+  "Meta",
+  "CapsLock",
+  "Tab",
+  "NumLock",
+  "ScrollLock",
+  "Pause",
+  "Insert",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Escape",
+  "Unidentified",
+  "OSLeft",
+  "OSRight",
+  "ContextMenu",
+  "F1",
+  "F2",
+  "F3",
+  "F4",
+  "F5",
+  "F6",
+  "F7",
+  "F8",
+  "F9",
+  "F10",
+  "F11",
+  "F12",
+]);
+
 const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -164,6 +388,15 @@ const Layout = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const searchInputRef = useRef(null);
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  const lastFocusedInputRef = useRef(null);
+  const scanBufferRef = useRef("");
+  const lastKeyTimeRef = useRef(0);
+  const scanStartTimeRef = useRef(0);
+  const lastHandledScanRef = useRef({ value: "", ts: 0 });
+  const isTopLevelDashboard = /^\/(admin|librarian|staff|student)\/dashboard\/?$/.test(
+    location.pathname,
+  );
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
@@ -184,6 +417,201 @@ const Layout = () => {
   useEffect(() => {
     setFocusedIndex(-1);
   }, [searchResults]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      lastPointerRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+      };
+
+      if (isEligibleInputElement(event.target)) {
+        lastFocusedInputRef.current = event.target;
+      }
+    };
+
+    const handleFocusIn = (event) => {
+      if (isEligibleInputElement(event.target)) {
+        lastFocusedInputRef.current = event.target;
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("focusin", handleFocusIn, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("focusin", handleFocusIn, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const SCAN_RESET_MS = 80;
+  const MAX_SCAN_DURATION_MS = 1500;
+    const MIN_SCAN_LENGTH = 4;
+
+    const handleKeyDown = (event) => {
+      const now = Date.now();
+
+      if (now - lastKeyTimeRef.current > SCAN_RESET_MS) {
+        scanBufferRef.current = "";
+        scanStartTimeRef.current = now;
+      }
+
+      if (event.key === "Enter") {
+        const bufferedValue = scanBufferRef.current;
+        scanBufferRef.current = "";
+        lastKeyTimeRef.current = now;
+
+        if (
+          bufferedValue.length >= MIN_SCAN_LENGTH &&
+          now - scanStartTimeRef.current <= MAX_SCAN_DURATION_MS
+        ) {
+          event.preventDefault();
+          dispatchScanEvent(bufferedValue, {
+            source: "keyboard",
+            pointer: { ...lastPointerRef.current },
+          });
+        }
+        return;
+      }
+
+      if (
+        event.key.length === 1 &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey
+      ) {
+        if (!scanBufferRef.current) {
+          scanStartTimeRef.current = now;
+        }
+        scanBufferRef.current += event.key;
+        lastKeyTimeRef.current = now;
+      } else if (!IGNORED_CONTROL_KEYS.has(event.key)) {
+        scanBufferRef.current = "";
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const handleScan = (event) => {
+      const detail = event.detail || {};
+      const rawValue = detail.value;
+      if (rawValue == null) {
+        return;
+      }
+
+      const normalizedValue =
+        typeof rawValue === "string" ? rawValue : String(rawValue);
+      const sanitizedValue = normalizedValue.replace(/[\r\n]+/g, "");
+      if (!sanitizedValue.trim()) {
+        return;
+      }
+
+      const now = Date.now();
+      if (
+        lastHandledScanRef.current.value === sanitizedValue &&
+        now - lastHandledScanRef.current.ts < 250
+      ) {
+        return;
+      }
+      lastHandledScanRef.current = { value: sanitizedValue, ts: now };
+
+      const meta = detail.meta || {};
+      const pointer = meta.pointer || lastPointerRef.current;
+
+      let target = null;
+
+      if (isTopLevelDashboard && searchInputRef.current) {
+        target = searchInputRef.current;
+      }
+
+      if (!target && meta.targetSelector && typeof document !== "undefined") {
+        const candidate = document.querySelector(meta.targetSelector);
+        if (isEligibleInputElement(candidate)) {
+          target = candidate;
+        }
+      }
+
+      if (!target && meta.elementId && typeof document !== "undefined") {
+        const root = document.getElementById(meta.elementId);
+        target = findNearestInputElement({ root, pointer });
+      }
+
+      if (!target && meta.rect) {
+        const rect = meta.rect;
+        if (
+          Number.isFinite(rect.left) &&
+          Number.isFinite(rect.top) &&
+          Number.isFinite(rect.width) &&
+          Number.isFinite(rect.height)
+        ) {
+          const centerPointer = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          };
+          target = findNearestInputElement({ pointer: centerPointer });
+        }
+      }
+
+      if (!target && pointer) {
+        target = findNearestInputElement({ pointer });
+      }
+
+      if (!target && isEligibleInputElement(document.activeElement)) {
+        target = document.activeElement;
+      }
+
+      if (!target && isEligibleInputElement(lastFocusedInputRef.current)) {
+        target = lastFocusedInputRef.current;
+      }
+
+      if (!target) {
+        target = findNearestInputElement({ pointer: lastPointerRef.current });
+      }
+
+      if (!target) {
+        return;
+      }
+
+      focusInputElement(target);
+  applyValueToInput(target, sanitizedValue);
+
+      if (target instanceof HTMLElement) {
+        const rect = target.getBoundingClientRect();
+        lastPointerRef.current = {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+      }
+      lastFocusedInputRef.current = target;
+
+      if (target === searchInputRef.current) {
+        setSearchValue(sanitizedValue);
+        setFocusedIndex(-1);
+        setSearchError("");
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener(SCAN_EVENT, handleScan);
+    return () => window.removeEventListener(SCAN_EVENT, handleScan);
+  }, [isTopLevelDashboard, setFocusedIndex, setSearchError, setSearchOpen, searchInputRef]);
 
   // Announce notifications to screen readers
   useEffect(() => {
@@ -408,9 +836,11 @@ const Layout = () => {
   useEffect(() => {
     const trimmed = searchValue.trim();
     if (!trimmed) {
+      setSearchOpen(false);
       setSearchResults([]);
-      setSearchError("");
-      setSearchLoading(false);
+      if (!isTopLevelDashboard) {
+        setSearchValue("");
+      }
       return;
     }
 
@@ -451,7 +881,7 @@ const Layout = () => {
       isActive = false;
       clearTimeout(handler);
     };
-  }, [searchValue]);
+  }, [searchValue, isTopLevelDashboard]);
 
   const unreadCount = notifications.reduce(
     (acc, item) => acc + (item.read ? 0 : 1),

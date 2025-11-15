@@ -477,9 +477,27 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             return res.status(400).json({ message: 'Students array is required' });
         }
 
+        const resolveRowIndex = (value, idx) => {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return value;
+            }
+            if (typeof value === 'string' && value.trim() !== '') {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+            return idx + 1;
+        };
+
         // Validate that every row includes an LRN (we require LRN as username)
         const missingLrnRows = students
-            .map((s, idx) => ({ idx, studentId: s.studentId || null, lrn: s.lrn }))
+            .map((s, idx) => ({
+                idx,
+                studentId: s?.studentId || null,
+                lrn: s?.lrn,
+                rowIndex: resolveRowIndex(s?.rowIndex, idx)
+            }))
             .filter(r => !r.lrn || String(r.lrn).trim() === '');
 
         if (missingLrnRows.length > 0) {
@@ -507,6 +525,7 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
         // Trim and normalize usernames (LRN) and studentIds
         const normalized = students.map((s, idx) => ({
             idx,
+            rowIndex: resolveRowIndex(s?.rowIndex, idx),
             firstName: (s.firstName || '').toString().trim(),
             lastName: (s.lastName || '').toString().trim(),
             studentId: (s.studentId || '').toString().trim(),
@@ -524,7 +543,7 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             if (!row.lrn) rowErrors.push('Missing lrn'); // redundant if earlier, but keep for specificity
             if (row.email && !emailRegex.test(row.email)) rowErrors.push('Invalid email');
             if (rowErrors.length > 0) {
-                errors.push({ idx: row.idx, studentId: row.studentId || null, issues: rowErrors });
+                errors.push({ idx: row.idx, rowIndex: row.rowIndex, studentId: row.studentId || null, issues: rowErrors });
             }
         });
 
@@ -533,13 +552,21 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
         const duplicateLrns = findDuplicates(lrns);
         duplicateLrns.forEach((dup) => {
             // find all indices with this dup
-            normalized.forEach(r => { if (r.lrn === dup) errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['Duplicate lrn in payload'] }); });
+            normalized.forEach(r => {
+                if (r.lrn === dup) {
+                    errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['Duplicate lrn in payload'] });
+                }
+            });
         });
 
         const studentIds = normalized.map(r => r.studentId).filter(Boolean);
         const duplicateStudentIds = findDuplicates(studentIds);
         duplicateStudentIds.forEach((dup) => {
-            normalized.forEach(r => { if (r.studentId === dup) errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['Duplicate studentId in payload'] }); });
+            normalized.forEach(r => {
+                if (r.studentId === dup) {
+                    errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['Duplicate studentId in payload'] });
+                }
+            });
         });
 
         // Check duplicates against DB for usernames (lrn) and studentId using batched queries
@@ -551,13 +578,13 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     const existingLrnSet = new Set(existingUsersByLrn.map(u => String(u.username)));
                     normalized.forEach(r => {
                         if (existingLrnSet.has(r.lrn)) {
-                            errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['Username (LRN) already exists in system'] });
+                            errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['Username (LRN) already exists in system'] });
                         }
                     });
                 }
             } catch (dbErr) {
                 console.error('Error checking existing usernames during bulk import validation:', dbErr);
-                errors.push({ idx: null, studentId: null, issues: ['Failed to validate existing usernames'] });
+                errors.push({ idx: null, rowIndex: null, studentId: null, issues: ['Failed to validate existing usernames'] });
             }
         }
 
@@ -569,24 +596,34 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     const existingSidSet = new Set(existingUsersByStudentId.map(u => String(u.studentId)));
                     normalized.forEach(r => {
                         if (existingSidSet.has(r.studentId)) {
-                            errors.push({ idx: r.idx, studentId: r.studentId || null, issues: ['studentId already exists in system'] });
+                            errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['studentId already exists in system'] });
                         }
                     });
                 }
             } catch (dbErr) {
                 console.error('Error checking existing studentIds during bulk import validation:', dbErr);
-                errors.push({ idx: null, studentId: null, issues: ['Failed to validate existing studentIds'] });
+                errors.push({ idx: null, rowIndex: null, studentId: null, issues: ['Failed to validate existing studentIds'] });
             }
         }
 
         // If any validation errors, abort and return consolidated list
         const validationErrorsByIndex = new Map();
         errors.forEach((entry) => {
-            if (!validationErrorsByIndex.has(entry.idx)) {
-                validationErrorsByIndex.set(entry.idx, []);
+            const idx = entry.idx;
+            if (idx === undefined || idx === null) {
+                return;
             }
-            const issues = Array.isArray(entry.issues) ? entry.issues : (entry.errors || []);
-            validationErrorsByIndex.get(entry.idx).push(...issues);
+            const issues = Array.isArray(entry.issues)
+                ? entry.issues
+                : Array.isArray(entry.errors)
+                    ? entry.errors
+                    : [entry.error || 'Validation failed'];
+            const current = validationErrorsByIndex.get(idx) || { issues: [], rowIndex: entry.rowIndex };
+            if (entry.rowIndex && !current.rowIndex) {
+                current.rowIndex = entry.rowIndex;
+            }
+            current.issues.push(...issues);
+            validationErrorsByIndex.set(idx, current);
         });
 
         setAuditContext(req, {
@@ -604,12 +641,17 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
 
         for (const [idx, studentData] of students.entries()) {
             try {
+                const resolvedRowIndex = resolveRowIndex(studentData?.rowIndex, idx);
                 if (validationErrorsByIndex.has(idx)) {
-                    const issues = validationErrorsByIndex.get(idx) || ['Validation failed'];
+                    const validationEntry = validationErrorsByIndex.get(idx);
+                    const issues = validationEntry?.issues && validationEntry.issues.length > 0
+                        ? validationEntry.issues
+                        : ['Validation failed'];
                     results.failed.push({
                         studentData,
                         error: issues.join('; '),
-                        issues
+                        issues,
+                        rowIndex: validationEntry?.rowIndex ?? resolvedRowIndex
                     });
                     continue;
                 }
@@ -656,11 +698,16 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                 };
 
                 const student = await req.dbAdapter.createUser(newStudent);
-                results.successful.push(student);
+                results.successful.push({
+                    studentId: student.studentId,
+                    rowIndex: resolvedRowIndex
+                });
             } catch (error) {
                 results.failed.push({
                     studentData,
-                    error: error.message
+                    error: error.message,
+                    issues: error.message ? [error.message] : [],
+                    rowIndex: resolveRowIndex(studentData?.rowIndex, idx)
                 });
             }
         }
@@ -691,13 +738,15 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     ...results.successful.map(s => ({
                         studentId: s.studentId,
                         status: 'success',
-                        message: 'Imported successfully'
+                        message: 'Imported successfully',
+                        rowIndex: s.rowIndex ?? null
                     })),
                     ...results.failed.map(f => ({
-                        studentId: f.studentData.studentId,
+                        studentId: f.studentData?.studentId || null,
                         status: 'error',
                         message: f.error,
-                        issues: f.issues || []
+                        issues: Array.isArray(f.issues) && f.issues.length > 0 ? f.issues : undefined,
+                        rowIndex: f.rowIndex ?? (Number.isFinite(f.studentData?.rowIndex) ? f.studentData.rowIndex : null)
                     }))
                 ]
             }

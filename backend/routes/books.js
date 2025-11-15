@@ -36,22 +36,45 @@ const getBorrowerName = (user) => {
 
 const normalizeString = (value) => {
     if (!value) return '';
-    return String(value).toLowerCase();
+    return String(value).toLowerCase().trim();
 };
 
 const matchesBookSearch = (book, term) => {
     if (!term) return true;
+    if (typeof term === 'string' && term.trim() === '') return true;
     const searchTerm = normalizeString(term);
+    if (!searchTerm) return true;
     const fields = [
         book.title,
         book.author,
         book.isbn,
         book.publisher,
         book.category,
-        book.description
+        book.description,
+        book.id,
+        book._id
     ];
 
-    return fields.some((field) => normalizeString(field).includes(searchTerm));
+    if (fields.some((field) => normalizeString(field).includes(searchTerm))) {
+        return true;
+    }
+
+    if (Array.isArray(book.copies)) {
+        for (const copy of book.copies) {
+            const copyFields = [
+                copy.copyId,
+                copy.location,
+                copy.status,
+                copy.condition,
+                copy.barcode
+            ];
+            if (copyFields.some((value) => normalizeString(value).includes(searchTerm))) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 };
 
 const buildBookSummary = (book) => {
@@ -346,8 +369,7 @@ router.get('/', verifyToken, async(req, res) => {
         if (status) filters.status = status;
         let books = await req.dbAdapter.findInCollection('books', filters);
         if (search) {
-            const searchLower = search.toLowerCase();
-            books = books.filter(book => book.title?.toLowerCase().includes(searchLower) || book.author?.toLowerCase().includes(searchLower) || book.isbn?.toLowerCase().includes(searchLower) || book.publisher?.toLowerCase().includes(searchLower));
+            books = books.filter(book => matchesBookSearch(book, search));
         }
         books.sort((a, b) => {
             const aVal = a[sortBy] || '';
@@ -446,24 +468,84 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
             allExistingBooks.map(book => [(book.isbn || '').toLowerCase(), book])
         );
 
+        const normalizeRowIndex = (value, fallback = null) => {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return value;
+            }
+            if (typeof value === 'string' && value.trim() !== '') {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed)) {
+                    return parsed;
+                }
+            }
+            return fallback;
+        };
+
         const results = { successful: [], failed: [] };
 
-        for (const bookData of books) {
-            try {
-                const rawTitle = bookData.title?.trim();
-                const rawAuthor = bookData.author?.trim();
-                const isbn = bookData.isbn?.trim();
+        for (const [index, bookData] of books.entries()) {
+            const rowIndex = normalizeRowIndex(bookData?.rowIndex, index + 1);
+            const rawIsbn = typeof bookData?.isbn === 'string' ? bookData.isbn.trim() : bookData?.isbn;
+            const baseRecord = {
+                isbn: rawIsbn || null,
+                title: typeof bookData?.title === 'string' ? bookData.title.trim() : bookData?.title || '',
+                rowIndex
+            };
+            const validationIssues = [];
 
-                if (!isbn) {
-                    throw new Error('ISBN is required');
+            if (!rawIsbn) {
+                validationIssues.push('ISBN is required');
+            }
+
+            const normalizedIsbn = rawIsbn ? rawIsbn.toLowerCase() : '';
+            const existingBook = normalizedIsbn ? existingBooksByIsbn.get(normalizedIsbn) : null;
+
+            const rawTitle = typeof bookData?.title === 'string' ? bookData.title.trim() : bookData?.title;
+            const rawAuthor = typeof bookData?.author === 'string' ? bookData.author.trim() : bookData?.author;
+
+            if (!existingBook) {
+                if (!rawTitle) {
+                    validationIssues.push('Title is required for new books');
                 }
+                if (!rawAuthor) {
+                    validationIssues.push('Author is required for new books');
+                }
+            }
 
-                const normalizedIsbn = isbn.toLowerCase();
+            let numberOfCopies = 1;
+            if (bookData?.numberOfCopies !== undefined && bookData.numberOfCopies !== null && String(bookData.numberOfCopies).trim() !== '') {
+                const parsedCopies = parseInt(bookData.numberOfCopies, 10);
+                if (Number.isNaN(parsedCopies) || parsedCopies < 1) {
+                    validationIssues.push('Invalid number of copies');
+                } else {
+                    numberOfCopies = parsedCopies;
+                }
+            }
 
-                const numberOfCopies = Math.max(parseInt(bookData.numberOfCopies, 10) || 1, 1);
-                const location = bookData.location || 'main-library';
+            let parsedPublishedYear = null;
+            if (bookData?.publishedYear !== undefined && bookData.publishedYear !== null && String(bookData.publishedYear).trim() !== '') {
+                const candidateYear = parseInt(bookData.publishedYear, 10);
+                if (Number.isNaN(candidateYear) || `${candidateYear}`.length !== 4) {
+                    validationIssues.push('Invalid published year');
+                } else {
+                    parsedPublishedYear = candidateYear;
+                }
+            }
 
-                const existingBook = existingBooksByIsbn.get(normalizedIsbn);
+            if (validationIssues.length > 0) {
+                results.failed.push({
+                    ...baseRecord,
+                    status: 'error',
+                    message: validationIssues.join('; '),
+                    issues: validationIssues
+                });
+                continue;
+            }
+
+            const isbn = rawIsbn;
+            const location = bookData?.location || existingBook?.location || 'main-library';
+
+            try {
                 if (existingBook) {
                     const copies = Array.from({ length: numberOfCopies }, () => ({
                         copyId: generateCopyId(isbn),
@@ -494,7 +576,7 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                     });
 
                     results.successful.push({
-                        isbn,
+                        ...baseRecord,
                         title: rawTitle || existingBook.title || 'Untitled',
                         message: `Added ${numberOfCopies} copies to existing book`,
                         bookId: existingBook.id,
@@ -506,11 +588,6 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
 
                 const title = rawTitle;
                 const author = rawAuthor;
-
-                if (!title || !author) {
-                    throw new Error('Title and author are required for new books');
-                }
-
                 const bookId = `book_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
                 const copies = [];
@@ -527,21 +604,16 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                     });
                 }
 
-                const publishedYear = bookData.publishedYear ? parseInt(bookData.publishedYear, 10) : null;
-                if (bookData.publishedYear && (Number.isNaN(publishedYear) || `${publishedYear}`.length !== 4)) {
-                    throw new Error(`Invalid published year for ISBN ${isbn}`);
-                }
-
                 const newBook = {
                     id: bookId,
                     title,
                     author,
                     isbn,
-                    publisher: bookData.publisher || '',
-                    publishedYear,
-                    category: bookData.category || 'General',
-                    description: bookData.description || '',
-                    coverImage: bookData.coverImage || '',
+                    publisher: bookData?.publisher || '',
+                    publishedYear: parsedPublishedYear,
+                    category: bookData?.category || 'General',
+                    description: bookData?.description || '',
+                    coverImage: bookData?.coverImage || '',
                     status: 'active',
                     totalCopies: numberOfCopies,
                     availableCopies: numberOfCopies,
@@ -554,7 +626,7 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                 await req.dbAdapter.insertIntoCollection('books', newBook);
                 existingBooksByIsbn.set(normalizedIsbn, newBook);
                 results.successful.push({
-                    isbn,
+                    ...baseRecord,
                     title,
                     message: 'Imported successfully',
                     bookId,
@@ -562,10 +634,12 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                     duplicate: false
                 });
             } catch (error) {
+                const issues = error?.details?.issues;
                 results.failed.push({
-                    isbn: bookData.isbn,
-                    title: bookData.title,
-                    message: error.message
+                    ...baseRecord,
+                    status: 'error',
+                    message: error.message || 'Failed to import book',
+                    ...(Array.isArray(issues) && issues.length > 0 ? { issues } : { issues: error.message ? [error.message] : [] })
                 });
             }
         }
@@ -591,13 +665,16 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                         message: book.message || 'Imported successfully',
                         bookId: book.bookId,
                         copyIds: book.copyIds,
-                        duplicate: book.duplicate || false
+                        duplicate: book.duplicate || false,
+                        rowIndex: book.rowIndex ?? null
                     })),
                     ...results.failed.map(book => ({
                         isbn: book.isbn,
                         title: book.title,
                         status: 'error',
-                        message: book.message
+                        message: book.message,
+                        issues: Array.isArray(book.issues) && book.issues.length > 0 ? book.issues : undefined,
+                        rowIndex: book.rowIndex ?? null
                     }))
                 ]
             }

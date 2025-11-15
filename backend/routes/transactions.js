@@ -400,7 +400,16 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
         if (search) {
             const searchValue = String(search).toLowerCase();
             detailedTransactions = detailedTransactions.filter(transaction => {
+                const idMatches = [
+                    transaction.transactionId,
+                    transaction.documentId,
+                    transaction.id,
+                    transaction._id
+                ]
+                    .map(value => (value ? String(value).toLowerCase() : ''))
+                    .some(value => value.includes(searchValue));
                 return (
+                    idMatches ||
                     transaction.bookTitle?.toLowerCase().includes(searchValue) ||
                     transaction.author?.toLowerCase().includes(searchValue) ||
                     transaction.borrowerName?.toLowerCase().includes(searchValue) ||
@@ -1142,7 +1151,12 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
         }
 
         const items = Array.isArray(transaction.items)
-            ? transaction.items.map(item => ({ ...item }))
+            ? transaction.items.map(item => ({
+                ...item,
+                copyId: normalizeIdValue(item.copyId),
+                bookId: normalizeIdValue(item.bookId),
+                requestItemId: normalizeIdValue(item.requestItemId)
+            }))
             : [];
         if (items.length === 0) {
             return res.status(400).json({ message: 'Requested transaction has no items' });
@@ -1163,18 +1177,6 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             }))
             .filter(entry => Boolean(entry.copyId));
 
-        const itemsMissingCopy = items.filter(item => !item.copyId);
-
-        if (itemsMissingCopy.length > 0 && normalizedAssignments.length === 0) {
-            setAuditContext(req, {
-                success: false,
-                status: 'ValidationFailed',
-                description: 'Copy assignments are required to approve this request',
-                details: { itemsMissingCopy }
-            });
-            return res.status(400).json({ message: 'Copy assignments are required to approve this request' });
-        }
-
         if (normalizedAssignments.length > 0) {
             const { mergedItems, missingAssignments } = mergeRequestAssignments(items, normalizedAssignments);
             if (missingAssignments.length > 0) {
@@ -1187,25 +1189,59 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                 return res.status(400).json({ message: 'Missing copy assignments for requested items', details: missingAssignments });
             }
             items.length = 0;
-            mergedItems.forEach(entry => items.push(entry));
+            mergedItems.forEach(entry => items.push({
+                ...entry,
+                copyId: normalizeIdValue(entry.copyId),
+                bookId: normalizeIdValue(entry.bookId),
+                requestItemId: normalizeIdValue(entry.requestItemId)
+            }));
         }
+
+        const allBooks = await req.dbAdapter.findInCollection('books', {});
+
+        const copyLookup = new Map();
+        allBooks.forEach(book => {
+            (book.copies || []).forEach(copy => {
+                const trackedCopyId = normalizeIdValue(copy.copyId);
+                if (trackedCopyId) {
+                    copyLookup.set(trackedCopyId, { book, copy });
+                }
+            });
+        });
+
+        const normalizeLower = (value) => {
+            const normalized = normalizeIdValue(value);
+            return normalized ? normalized.toLowerCase() : '';
+        };
 
         const duplicateCopyAssignments = [];
         const missingCopyAssignments = [];
         const copyTracker = new Set();
+
         items.forEach((item, idx) => {
-            const copyId = normalizeIdValue(item.copyId);
-            if (!copyId) {
-                missingCopyAssignments.push({ index: idx, reason: 'missing-copyId', requestItemId: normalizeIdValue(item.requestItemId) || null });
+            const normalizedCopyId = normalizeIdValue(item.copyId);
+            if (!normalizedCopyId) {
+                missingCopyAssignments.push({
+                    index: idx,
+                    reason: 'missing-copyId',
+                    requestItemId: item.requestItemId || null,
+                    bookId: normalizeIdValue(item.bookId) || null
+                });
                 return;
             }
-            const key = copyId.toLowerCase();
-            if (copyTracker.has(key)) {
-                duplicateCopyAssignments.push({ index: idx, copyId });
-            } else {
-                copyTracker.add(key);
+
+            const copyKey = normalizedCopyId.toLowerCase();
+            if (copyTracker.has(copyKey)) {
+                duplicateCopyAssignments.push({
+                    index: idx,
+                    copyId: normalizedCopyId,
+                    requestItemId: item.requestItemId || null
+                });
+                return;
             }
-            item.copyId = copyId;
+
+            copyTracker.add(copyKey);
+            item.copyId = normalizedCopyId;
             item.bookId = normalizeIdValue(item.bookId);
         });
 
@@ -1230,7 +1266,6 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
         }
 
         // First: validate all requested items exist and are available. Do not modify DB during validation.
-        const allBooks = await req.dbAdapter.findInCollection('books', {});
         const validationFailures = [];
         const readyToUpdate = []; // { targetBook, targetCopy, copyId }
 
@@ -1243,12 +1278,19 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
 
             let targetBook = null;
             let targetCopy = null;
-            for (const book of allBooks) {
-                const copy = (book.copies || []).find(c => String(c.copyId) === String(copyId));
-                if (copy) {
-                    targetBook = book;
-                    targetCopy = copy;
-                    break;
+
+            const lookupEntry = copyLookup.get(normalizeIdValue(copyId));
+            if (lookupEntry) {
+                targetBook = lookupEntry.book;
+                targetCopy = lookupEntry.copy;
+            } else {
+                for (const book of allBooks) {
+                    const copy = (book.copies || []).find(c => String(c.copyId) === String(copyId));
+                    if (copy) {
+                        targetBook = book;
+                        targetCopy = copy;
+                        break;
+                    }
                 }
             }
 
@@ -1257,13 +1299,17 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                 continue;
             }
 
-            if (targetCopy.status !== 'available') {
-                validationFailures.push({ item, reason: 'copy-unavailable', copyStatus: targetCopy.status });
+            const canonicalBookId = normalizeIdValue(targetBook.id || targetBook._id || targetBook.bookId || targetBook.isbn);
+            if (!item.bookId) {
+                item.bookId = canonicalBookId;
+            } else if (canonicalBookId && canonicalBookId !== normalizeIdValue(item.bookId)) {
+                validationFailures.push({ item, reason: 'book-mismatch', expectedBookId: canonicalBookId });
                 continue;
             }
 
-            if (!item.bookId) {
-                item.bookId = normalizeIdValue(targetBook.id || targetBook._id);
+            if (String(targetCopy.status).toLowerCase() !== 'available') {
+                validationFailures.push({ item, reason: 'copy-unavailable', copyStatus: targetCopy.status });
+                continue;
             }
 
             readyToUpdate.push({ targetBook, targetCopy, copyId });

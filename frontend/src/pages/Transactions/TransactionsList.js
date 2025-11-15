@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  LinearProgress,
 } from "@mui/material";
 import {
   MoreVert,
@@ -451,20 +452,6 @@ const TransactionsList = () => {
     user?.role === "admin" || user?.role === "librarian";
 
   const displayedTransactions = transactions;
-
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="200px"
-      >
-        <Typography>Loading transactions...</Typography>
-      </Box>
-    );
-  }
-
   return (
     <Box>
       <Box
@@ -671,6 +658,7 @@ const TransactionsList = () => {
       </Box>
       {/* Transactions Table */}
       <Paper>
+        {loading && <LinearProgress />}
         <TableContainer sx={{ overflowX: "auto" }}>
           <Table size="small" stickyHeader>
             <TableHead>
@@ -688,7 +676,15 @@ const TransactionsList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {displayedTransactions.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={10} align="center">
+                    <Typography variant="body2" color="text.secondary">
+                      Loading transactions...
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : displayedTransactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} align="center">
                     <Typography variant="body2" color="text.secondary">

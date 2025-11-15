@@ -294,6 +294,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
           description: book.description || existingBook?.description || "",
           numberOfCopies: Number.isNaN(copies) ? 1 : Math.max(copies, 1),
           location: book.location || existingBook?.location || "main-library",
+          rowIndex: book.rowIndex,
         };
 
         if (payload.publishedYear) {
@@ -307,6 +308,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
             isbn: payload.isbn,
             title: payload.title,
             warnings,
+            rowIndex: book.rowIndex,
           });
         }
       });
@@ -351,7 +353,12 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
       setStep(3);
     } catch (error) {
       console.error("Failed to import books:", error);
-      toast.error("Failed to import books");
+      const apiMessage = error?.response?.data?.message;
+      if (apiMessage) {
+        toast.error(apiMessage);
+      } else {
+        toast.error("Failed to import books");
+      }
     } finally {
       setImporting(false);
     }
@@ -586,6 +593,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
       <Table size="small">
         <TableHead>
           <TableRow>
+            <TableCell>Row</TableCell>
             <TableCell>ISBN</TableCell>
             <TableCell>Title</TableCell>
             <TableCell>Status</TableCell>
@@ -596,6 +604,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
         <TableBody>
           {(importResults?.details || []).map((detail, index) => (
             <TableRow key={`${detail.isbn || index}-${index}`}>
+              <TableCell>{detail.rowIndex ? `Row ${detail.rowIndex}` : '-'}</TableCell>
               <TableCell>{detail.isbn || "N/A"}</TableCell>
               <TableCell>{detail.title || ""}</TableCell>
               <TableCell>
@@ -607,7 +616,14 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
               </TableCell>
               <TableCell>
                 <Box display="flex" flexDirection="column" gap={0.5}>
-                  <Typography variant="body2">{detail.message}</Typography>
+                  <Typography variant="body2">
+                    {detail.message
+                      || (Array.isArray(detail.issues) && detail.issues.length > 0
+                        ? detail.issues.join(", ")
+                        : detail.status === "success"
+                          ? "Imported successfully"
+                          : "No details provided")}
+                  </Typography>
                   {detail.status === "success" && detail.copyIds?.length > 0 && (
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {detail.copyIds.slice(0, 3).map((copyId) => (
@@ -649,6 +665,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
           ))}
           {(importResults?.invalidBooks || []).map((book, index) => (
             <TableRow key={`invalid-${book.isbn || index}`}>
+              <TableCell>{book.rowIndex ? `Row ${book.rowIndex}` : '-'}</TableCell>
               <TableCell>{book.isbn || "N/A"}</TableCell>
               <TableCell>{book.title || ""}</TableCell>
               <TableCell>
@@ -664,6 +681,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
           ))}
           {(importResults?.warnings || []).map((book, index) => (
             <TableRow key={`warning-${book.isbn || index}`}>
+              <TableCell>{book.rowIndex ? `Row ${book.rowIndex}` : '-'}</TableCell>
               <TableCell>{book.isbn || "N/A"}</TableCell>
               <TableCell>{book.title || ""}</TableCell>
               <TableCell>

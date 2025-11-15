@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { dispatchScanEvent } from '../utils/scanEvents';
 
 // Simple wrapper around html5-qrcode's Html5QrcodeScanner
 // Props:
@@ -19,6 +20,26 @@ const QRScanner = ({ elementId = 'qr-scanner', onDetected, onClose, qrbox = 250,
         // call parent and stop scanner
         try {
           if (mountedRef.current) {
+            const root = document.getElementById(elementId);
+            const rect = root ? root.getBoundingClientRect() : null;
+            const pointer = rect
+              ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+              : undefined;
+
+            dispatchScanEvent(decodedText, {
+              source: 'qr-scanner',
+              elementId,
+              rect: rect
+                ? {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                  }
+                : undefined,
+              pointer,
+            });
+
             onDetected && onDetected(decodedText);
           }
         } finally {
