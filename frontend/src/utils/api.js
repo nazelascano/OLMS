@@ -263,6 +263,8 @@ export const searchAPI = {
 
 export const notificationsAPI = {
   getAll: (params) => api.get("/notifications", { params }),
+  markRead: (id, read = true) => api.put(`/notifications/${id}/read`, { read }),
+  delete: (id) => api.delete(`/notifications/${id}`),
 };
 
 // File upload helper

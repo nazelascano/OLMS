@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -15,6 +16,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
   Stack,
   TextField,
@@ -27,8 +29,9 @@ import Autocomplete from "@mui/material/Autocomplete";
 import {
   Add as AddIcon,
   AddCircleOutline as AddCircleOutlineIcon,
+  ArrowBack as ArrowBackIcon,
   DeleteOutline as DeleteOutlineIcon,
-  Refresh as RefreshIcon,
+  Search as SearchIcon,
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
@@ -53,11 +56,70 @@ const emptySetForm = {
   books: [],
 };
 
+const buildFilterOptionsFromSets = (sets = []) => {
+  const academicYears = new Set();
+  const gradeLevels = new Set();
+  const sections = new Set();
+  const curricula = new Set();
+
+  sets.forEach((set) => {
+    if (!set) {
+      return;
+    }
+    const addValue = (collection, value) => {
+      if (value === null || value === undefined) {
+        return;
+      }
+      const trimmed = String(value).trim();
+      if (trimmed) {
+        collection.add(trimmed);
+      }
+    };
+
+    addValue(academicYears, set.academicYear);
+    addValue(gradeLevels, set.gradeLevel);
+    addValue(sections, set.section);
+    addValue(curricula, set.curriculum);
+  });
+
+  const toSortedArray = (collection) =>
+    Array.from(collection).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+
+  return {
+    academicYears: toSortedArray(academicYears),
+    gradeLevels: toSortedArray(gradeLevels),
+    sections: toSortedArray(sections),
+    curricula: toSortedArray(curricula),
+  };
+};
+
+const sanitizeQuery = (query = {}) => {
+  return Object.entries(query).reduce((accumulator, [key, value]) => {
+    if (value === null || value === undefined) {
+      return accumulator;
+    }
+    if (typeof value === "string" && value.trim() === "") {
+      return accumulator;
+    }
+    accumulator[key] = value;
+    return accumulator;
+  }, {});
+};
+
 const AnnualBorrowing = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [sets, setSets] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
+  const [filterOptions, setFilterOptions] = useState({
+    academicYears: [],
+    gradeLevels: [],
+    sections: [],
+    curricula: [],
+  });
+  const [searchInput, setSearchInput] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [bookOptions, setBookOptions] = useState([]);
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [createForm, setCreateForm] = useState(emptySetForm);
@@ -79,18 +141,55 @@ const AnnualBorrowing = () => {
   const searchDebounceRef = useRef(null);
   const issueContextRef = useRef(null);
 
+  const loadFilterOptions = useCallback(async () => {
+    try {
+      const { data } = await annualSetsAPI.getAll();
+      const setsList = Array.isArray(data) ? data : [];
+      setFilterOptions(buildFilterOptionsFromSets(setsList));
+    } catch (error) {
+      console.error("Failed to load annual set filters", error);
+    }
+  }, []);
+
+  const fetchSets = useCallback(async (query = {}) => {
+    setLoading(true);
+    try {
+      const sanitizedQuery = sanitizeQuery(query);
+      const { data } = await annualSetsAPI.getAll(sanitizedQuery);
+      setSets(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch annual sets", error);
+      toast.error("Failed to fetch annual borrowing sets");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadBooks = async () => {
+    try {
+      const { data } = await booksAPI.getAll();
+      setBookOptions(Array.isArray(data) ? data : data?.books || []);
+    } catch (error) {
+      console.error("Failed to load books", error);
+      toast.error("Failed to load books catalogue");
+    }
+  };
+
   useEffect(() => {
     loadBooks();
   }, []);
 
   useEffect(() => {
-    fetchSets(appliedFilters);
-  }, [appliedFilters]);
+    loadFilterOptions();
+  }, [loadFilterOptions]);
 
-  // compact filter menu state
+  useEffect(() => {
+    fetchSets({ ...appliedFilters, search: appliedSearch });
+  }, [fetchSets, appliedFilters, appliedSearch]);
+
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
   const filterMenuOpen = Boolean(filterAnchorEl);
-  const openFilterMenu = (e) => setFilterAnchorEl(e.currentTarget);
+  const openFilterMenu = (event) => setFilterAnchorEl(event.currentTarget);
   const closeFilterMenu = () => setFilterAnchorEl(null);
 
   useEffect(() => {
@@ -128,40 +227,29 @@ const AnnualBorrowing = () => {
     loadIssueContextData(issueTargetSet.id, issueStudentQuery, { preserveSelections });
   }, [issueDialogOpen, issueTargetSet, issueStudentQuery]);
 
-  const loadBooks = async () => {
-    try {
-      const { data } = await booksAPI.getAll();
-      setBookOptions(Array.isArray(data) ? data : data?.books || []);
-    } catch (error) {
-      console.error("Failed to load books", error);
-      toast.error("Failed to load books catalogue");
-    }
-  };
-
-  const fetchSets = async (query = {}) => {
-    setLoading(true);
-    try {
-      const { data } = await annualSetsAPI.getAll(query);
-      setSets(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to fetch annual sets", error);
-      toast.error("Failed to fetch annual borrowing sets");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleApplyFilters = () => {
-    setAppliedFilters(filters);
+  const handleResetFilters = () => {
+    setFilters({ ...defaultFilters });
+    setAppliedFilters({ ...defaultFilters });
   };
 
-  const handleResetFilters = () => {
-    setFilters(defaultFilters);
-    setAppliedFilters(defaultFilters);
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...filters });
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const trimmed = searchInput.trim();
+    if (trimmed !== searchInput) {
+      setSearchInput(trimmed);
+    }
+    if (trimmed === appliedSearch) {
+      return;
+    }
+    setAppliedSearch(trimmed);
   };
 
   const openCreateDialog = () => {
@@ -236,10 +324,14 @@ const AnnualBorrowing = () => {
         })),
       };
 
-      const { data } = await annualSetsAPI.create(payload);
+      await annualSetsAPI.create(payload);
       toast.success("Annual borrowing set created");
-      setSets((prev) => [data, ...prev]);
       setCreateDialogOpen(false);
+      setCreateForm({ ...emptySetForm });
+      await Promise.all([
+        loadFilterOptions(),
+        fetchSets({ ...appliedFilters, search: appliedSearch }),
+      ]);
     } catch (error) {
       console.error("Failed to create annual set", error);
       toast.error(error?.response?.data?.message || "Failed to create set");
@@ -583,7 +675,7 @@ const AnnualBorrowing = () => {
       });
       setIssueStudent(null);
       setIssueNotes("");
-      fetchSets(appliedFilters);
+      await fetchSets({ ...appliedFilters, search: appliedSearch });
     } catch (error) {
       console.error("Failed to issue annual set", error);
       toast.error(error?.response?.data?.message || "Failed to issue annual set");
@@ -591,20 +683,6 @@ const AnnualBorrowing = () => {
       setIssueSubmitting(false);
     }
   };
-
-  const handleRefresh = () => {
-    fetchSets(appliedFilters);
-  };
-
-  const availableAcademicYears = useMemo(() => {
-    const years = new Set();
-    sets.forEach((set) => {
-      if (set.academicYear) {
-        years.add(set.academicYear);
-      }
-    });
-    return Array.from(years).sort();
-  }, [sets]);
 
   const bookOptionsMap = useMemo(() => {
     const map = new Map();
@@ -618,127 +696,176 @@ const AnnualBorrowing = () => {
   }, [bookOptions]);
 
   return (
-    <Box p={3}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            Annual Borrowing Plan
-          </Typography>
-          <Typography color="text.secondary">
-            Define and manage annual book allocations by grade and section.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
+  <Box>
+      <Stack spacing={0.5} mb={2}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <IconButton
+              aria-label="Go back"
+              onClick={() => navigate(-1)}
+              sx={{ color: "#0F172A" }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="h4" color="white">
+              Annual Borrowing Plan
+            </Typography>
+          </Stack>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={openCreateDialog}
+            sx={{ backgroundColor: "#22C55E", "&:hover": { backgroundColor: "#16A34A" } }}
           >
             New Annual Set
           </Button>
         </Stack>
+        
+        <Typography color="white">
+          Define and manage annual book allocations by grade and section.
+        </Typography>
       </Stack>
-
-      <Card variant="outlined" sx={{ mb: 3 }}>
-        <CardHeader
-          title="Filters"
-          subheader="Search by year, grade, section, or curriculum"
-        />
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              aria-label="Open filters"
-              onClick={openFilterMenu}
-              sx={{ border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}
-            >
-              <FilterList />
-            </IconButton>
-
-            <Menu
-              anchorEl={filterAnchorEl}
-              open={filterMenuOpen}
-              onClose={closeFilterMenu}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{ sx: { p: 2, minWidth: 300 } }}
-            >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <TextField
-                  label="Academic Year"
-                  value={filters.academicYear}
-                  onChange={(event) =>
-                    handleFilterChange('academicYear', event.target.value)
-                  }
-                  select
-                  fullWidth
-                  helperText="Select or type a year"
-                >
-                  <MenuItem value="">
-                    <em>All</em>
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+        sx={{ flexWrap: "wrap", justifyContent: "space-between", gap: 1, mb: 3 }}
+      >
+        <Box
+          component="form"
+          onSubmit={handleSearchSubmit}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 2,
+            width: "100%",
+            flexGrow: 1,
+          }}
+        >
+          <TextField
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search annual sets by name, grade, or year..."
+            sx={{ flex: 1, minWidth: 300 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <IconButton
+            aria-label="Open filters"
+            onClick={openFilterMenu}
+            size="small"
+            sx={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}
+          >
+            <FilterList />
+          </IconButton>
+          <Menu
+            anchorEl={filterAnchorEl}
+            open={filterMenuOpen}
+            onClose={closeFilterMenu}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+            PaperProps={{ sx: { p: 2, minWidth: 300 } }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <TextField
+                label="Academic Year"
+                value={filters.academicYear}
+                onChange={(event) =>
+                  handleFilterChange("academicYear", event.target.value)
+                }
+                select
+                fullWidth
+                helperText="Select an academic year"
+              >
+                <MenuItem value="">
+                  <em>All</em>
+                </MenuItem>
+                {filterOptions.academicYears.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
                   </MenuItem>
-                  {availableAcademicYears.map((year) => (
-                    <MenuItem key={year} value={year}>
-                      {year}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                ))}
+              </TextField>
 
-                <TextField
-                  label="Grade Level"
-                  value={filters.gradeLevel}
-                  onChange={(event) =>
-                    handleFilterChange('gradeLevel', event.target.value)
-                  }
-                  placeholder="e.g. Grade 7"
-                  fullWidth
-                />
+              <TextField
+                label="Grade Level"
+                value={filters.gradeLevel}
+                onChange={(event) =>
+                  handleFilterChange("gradeLevel", event.target.value)
+                }
+                select
+                fullWidth
+                helperText="Select a grade level"
+              >
+                <MenuItem value="">
+                  <em>All</em>
+                </MenuItem>
+                {filterOptions.gradeLevels.map((grade) => (
+                  <MenuItem key={grade} value={grade}>
+                    {grade}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-                <TextField
-                  label="Section"
-                  value={filters.section}
-                  onChange={(event) =>
-                    handleFilterChange('section', event.target.value)
-                  }
-                  placeholder="e.g. A"
-                  fullWidth
-                />
+              <TextField
+                label="Section"
+                value={filters.section}
+                onChange={(event) =>
+                  handleFilterChange("section", event.target.value)
+                }
+                select
+                fullWidth
+                helperText="Select a section"
+              >
+                <MenuItem value="">
+                  <em>All</em>
+                </MenuItem>
+                {filterOptions.sections.map((section) => (
+                  <MenuItem key={section} value={section}>
+                    {section}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-                <TextField
-                  label="Curriculum"
-                  value={filters.curriculum}
-                  onChange={(event) =>
-                    handleFilterChange('curriculum', event.target.value)
-                  }
-                  placeholder="e.g. Junior High"
-                  fullWidth
-                />
+              <TextField
+                label="Curriculum"
+                value={filters.curriculum}
+                onChange={(event) =>
+                  handleFilterChange("curriculum", event.target.value)
+                }
+                select
+                fullWidth
+                helperText="Select a curriculum"
+              >
+                <MenuItem value="">
+                  <em>All</em>
+                </MenuItem>
+                {filterOptions.curricula.map((curriculum) => (
+                  <MenuItem key={curriculum} value={curriculum}>
+                    {curriculum}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-                <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
-                  <Button size="small" onClick={() => { handleResetFilters(); closeFilterMenu(); }}>
-                    Clear
-                  </Button>
-                  <Button size="small" variant="contained" onClick={() => { handleApplyFilters(); closeFilterMenu(); }}>
-                    Apply
-                  </Button>
-                </Box>
+              <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+                <Button size="small" onClick={() => { handleResetFilters(); closeFilterMenu(); }}>
+                  Clear
+                </Button>
+                <Button size="small" variant="contained" onClick={() => { handleApplyFilters(); closeFilterMenu(); }}>
+                  Apply
+                </Button>
               </Box>
-            </Menu>
-          </Box>
-        </CardContent>
-      </Card>
+            </Box>
+          </Menu>
+          <Box component="input" type="submit" sx={{ display: "none" }} />
+        </Box>
+      </Stack>
 
       {loading ? (
         <Stack

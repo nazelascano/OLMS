@@ -43,6 +43,17 @@ const getBorrowerName = (user) => {
     return user.username || user.email || 'Unknown Borrower';
 };
 
+const buildRecipientList = (...values) => {
+    return Array.from(
+        new Set(
+            values
+                .flat()
+                .filter(value => value !== undefined && value !== null && String(value).trim() !== '')
+                .map(value => String(value))
+        )
+    );
+};
+
 const findTransactionByIdentifier = async(dbAdapter, identifier) => {
     if (!identifier) return null;
     const idValue = String(identifier);
@@ -841,6 +852,29 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
         const userBorrowingStats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0 };
         await req.dbAdapter.updateInCollection('users', { id: userId }, { borrowingStats: { totalBorrowed: (userBorrowingStats.totalBorrowed || 0) + items.length, currentlyBorrowed: (userBorrowingStats.currentlyBorrowed || 0) + items.length, totalFines: userBorrowingStats.totalFines || 0 }, updatedAt: new Date() });
 
+        const borrowerRecipients = buildRecipientList(user.id, user._id, user.userId, user.libraryCardNumber, user.email, user.username);
+        if (borrowerRecipients.length > 0) {
+            try {
+                await req.dbAdapter.insertIntoCollection('notifications', {
+                    title: 'Borrow transaction created',
+                    message: `Your borrow transaction ${transactionId} has been recorded. Please return items on time.`,
+                    type: 'borrow-created',
+                    transactionId,
+                    recipients: borrowerRecipients,
+                    meta: {
+                        transactionId,
+                        itemCount: transactionItems.length,
+                        status: 'borrowed'
+                    },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    readBy: []
+                });
+            } catch (notifyError) {
+                console.error('Failed to notify borrower about request submission:', notifyError);
+            }
+        }
+
         setAuditContext(req, {
             success: true,
             status: 'Completed',
@@ -978,6 +1012,37 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         };
 
         await req.dbAdapter.insertIntoCollection('transactions', transactionData);
+
+        const borrowerRecipients = buildRecipientList(
+            user.id,
+            user._id,
+            user.userId,
+            user.libraryCardNumber,
+            user.email,
+            user.username
+        );
+
+        if (borrowerRecipients.length > 0) {
+            try {
+                await req.dbAdapter.insertIntoCollection('notifications', {
+                    title: 'Borrow request submitted',
+                    message: `We received your borrow request ${transactionId}. A librarian will review it shortly.`,
+                    type: 'request-submitted',
+                    transactionId,
+                    recipients: borrowerRecipients,
+                    meta: {
+                        transactionId,
+                        itemCount: transactionItems.length,
+                        status: 'requested'
+                    },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    readBy: []
+                });
+            } catch (notifyError) {
+                console.error('Failed to notify borrower about request submission:', notifyError);
+            }
+        }
 
         // Create a persistent notification for staff about this request
         try {
@@ -1369,6 +1434,33 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             };
             const userQuery = user.id ? { id: user.id } : { _id: user._id };
             await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: new Date() });
+
+            const borrowerRecipients = buildRecipientList(user.id, user._id, user.userId, user.libraryCardNumber, user.email, user.username);
+            if (borrowerRecipients.length > 0) {
+                try {
+                    const dueDateValue = dueDate instanceof Date ? dueDate : new Date(dueDate);
+                    const dueDateIso = Number.isNaN(dueDateValue.getTime()) ? null : dueDateValue.toISOString();
+                    const friendlyDueDate = dueDateIso ? dueDateIso.split('T')[0] : 'the scheduled due date';
+                    await req.dbAdapter.insertIntoCollection('notifications', {
+                        title: 'Borrow request approved',
+                        message: `Your borrow request ${transaction.id || transaction._id} has been approved. Items are due on ${friendlyDueDate}.`,
+                        type: 'request-approved',
+                        transactionId: transaction.id || transaction._id,
+                        recipients: borrowerRecipients,
+                        meta: {
+                            transactionId: transaction.id || transaction._id,
+                            dueDate: dueDateIso,
+                            itemCount: items.length,
+                            status: 'borrowed'
+                        },
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        readBy: []
+                    });
+                } catch (notifyError) {
+                    console.error('Failed to notify borrower about request approval:', notifyError);
+                }
+            }
         }
 
         setAuditContext(req, {

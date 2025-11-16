@@ -158,6 +158,11 @@ const BooksList = () => {
   }, []);
 
   const handleDeleteBook = async () => {
+    if (!selectedBook?.id) {
+      toast.error("No book selected for deletion");
+      return;
+    }
+
     try {
       await api.delete(`/books/${selectedBook.id}`);
       fetchBooks();
@@ -166,7 +171,8 @@ const BooksList = () => {
       setSelectedBook(null);
     } catch (error) {
       console.error("Failed to delete book:", error);
-      toast.error("Failed to delete book");
+      const message = error.response?.data?.message || "Failed to delete book";
+      toast.error(message);
     }
   };
 
@@ -175,9 +181,11 @@ const BooksList = () => {
     setSelectedBook(book);
   };
 
-  const handleMenuClose = () => {
+  const handleMenuClose = ({ clearSelection = true } = {}) => {
     setMenuAnchor(null);
-    setSelectedBook(null);
+    if (clearSelection) {
+      setSelectedBook(null);
+    }
   };
 
   const downloadBarcodesForBook = async (book) => {
@@ -323,36 +331,47 @@ const BooksList = () => {
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {books.map((book) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={book.id}>
-              <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                    <Typography variant="h6" component="h2" noWrap>{book.title}</Typography>
-                    {canManageBooks ? (
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleMenuClick(e, book)}
-                        aria-label={`Actions for ${book.title}`}
-                      >
-                        <MoreVert />
-                      </IconButton>
-                    ) : null}
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>by {book.author}</Typography>
-                  <Typography variant="body2" gutterBottom>ISBN: {book.isbn}</Typography>
-                  <Typography variant="body2" gutterBottom>Category: {book.category}</Typography>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                    <Chip label={book.status || "available"} size="small" color={getStatusColor(book.status)} />
-                    <Typography variant="caption" color="text.secondary">{book.totalCopies || 0} copies</Typography>
-                  </Box>
-                </CardContent>
-                <CardActions>
-                  <Button size="small" startIcon={<Visibility />} onClick={() => navigate(`/books/${book.id}`)}>View Details</Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
+          {books.map((book, index) => {
+            const fallbackKey = `book-${index}`;
+            const itemKey = book.id || book._id || book.isbn || fallbackKey;
+            return (
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                lg={3}
+                key={`${itemKey}-${index}`}
+              >
+                <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                      <Typography variant="h6" component="h2" noWrap>{book.title}</Typography>
+                      {canManageBooks ? (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleMenuClick(e, book)}
+                          aria-label={`Actions for ${book.title}`}
+                        >
+                          <MoreVert />
+                        </IconButton>
+                      ) : null}
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>by {book.author}</Typography>
+                    <Typography variant="body2" gutterBottom>ISBN: {book.isbn}</Typography>
+                    <Typography variant="body2" gutterBottom>Category: {book.category}</Typography>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+                      <Chip label={book.status || "available"} size="small" color={getStatusColor(book.status)} />
+                      <Typography variant="caption" color="text.secondary">{book.totalCopies || 0} copies</Typography>
+                    </Box>
+                  </CardContent>
+                  <CardActions>
+                    <Button size="small" startIcon={<Visibility />} onClick={() => navigate(`/books/${book.id}`)}>View Details</Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
 
@@ -396,13 +415,13 @@ const BooksList = () => {
               onClick={handleBarcodesMenuClick}
               disabled={Boolean(downloadingBookId)}
             >
-              <QrCode2 sx={{ mr: 1 }} /> Print Barcodes
+              <QrCode2 sx={{ mr: 1 }} /> Print Tag
             </MenuItem>
             {hasPermission("books.delete") && (
               <MenuItem
                 onClick={() => {
                   setDeleteDialogOpen(true);
-                  handleMenuClose();
+                  handleMenuClose({ clearSelection: false });
                 }}
               >
                 <Delete sx={{ mr: 1 }} /> Delete Book
@@ -411,7 +430,13 @@ const BooksList = () => {
           </Menu>
 
           {/* Delete Confirmation Dialog */}
-          <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+          <Dialog
+            open={deleteDialogOpen}
+            onClose={() => {
+              setDeleteDialogOpen(false);
+              setSelectedBook(null);
+            }}
+          >
             <DialogTitle>Delete Book</DialogTitle>
             <DialogContent>
               <Typography>
@@ -419,7 +444,14 @@ const BooksList = () => {
               </Typography>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setDeleteDialogOpen(false);
+                  setSelectedBook(null);
+                }}
+              >
+                Cancel
+              </Button>
               <Button onClick={handleDeleteBook} color="error" variant="contained">
                 Delete
               </Button>

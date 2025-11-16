@@ -31,6 +31,24 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api, booksAPI, downloadFile } from "../../utils/api";
 import toast from "react-hot-toast";
 
+const BASE_CATEGORIES = [
+  "Fiction",
+  "Non-Fiction",
+  "Science",
+  "Mathematics",
+  "History",
+  "Literature",
+  "Technology",
+  "Arts",
+  "Religion",
+  "Philosophy",
+  "Biography",
+  "Self-Help",
+  "Children",
+  "Reference",
+  "Textbook",
+];
+
 const sanitizeFilename = (value, fallback) => {
   if (!value) {
     return fallback;
@@ -87,23 +105,7 @@ const BookForm = () => {
   const [checkingIsbn, setCheckingIsbn] = useState(false);
   const [prefilledIsbn, setPrefilledIsbn] = useState(null);
 
-  const categories = [
-    "Fiction",
-    "Non-Fiction",
-    "Science",
-    "Mathematics",
-    "History",
-    "Literature",
-    "Technology",
-    "Arts",
-    "Religion",
-    "Philosophy",
-    "Biography",
-    "Self-Help",
-    "Children",
-    "Reference",
-    "Textbook",
-  ];
+  const [categories, setCategories] = useState(BASE_CATEGORIES);
 
   const copyStatuses = [
     "available",
@@ -117,7 +119,10 @@ const BookForm = () => {
     try {
       setLoading(true);
       const response = await api.get(`/books/${id}`);
-      const book = response.data.book;
+      const book = response.data?.book || response.data;
+      if (!book) {
+        throw new Error("Book payload missing in response");
+      }
       setFormData({
         ...book,
         publicationDate: book.publicationDate
@@ -128,6 +133,11 @@ const BookForm = () => {
             ? book.copies
             : [{ copyId: "", status: "available", location: "" }],
       });
+      if (book.category) {
+        setCategories((prev) =>
+          prev.includes(book.category) ? prev : [...prev, book.category],
+        );
+      }
     } catch (error) {
       console.error("Failed to fetch book:", error);
       toast.error("Failed to load book details");
@@ -197,6 +207,14 @@ const BookForm = () => {
 
     if (isEditing || prefilledIsbn === duplicateBook.isbn) {
       return;
+    }
+
+    if (duplicateBook.category) {
+      setCategories((prev) =>
+        prev.includes(duplicateBook.category)
+          ? prev
+          : [...prev, duplicateBook.category],
+      );
     }
 
     setFormData((prev) => ({

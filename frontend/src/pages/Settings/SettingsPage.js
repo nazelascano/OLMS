@@ -69,6 +69,9 @@ const normalizeBoolean = (value, fallback) => {
   return fallback;
 };
 
+const sanitizePhoneInput = (value = "") =>
+  String(value ?? "").replace(/\D/g, "").slice(0, 11);
+
 const createDefaultOperatingHours = () => ({
   monday: { open: "08:00", close: "18:00", closed: false },
   tuesday: { open: "08:00", close: "18:00", closed: false },
@@ -105,7 +108,7 @@ const createDefaultLibrarySettings = () => ({
 const mergeLibrarySettings = (data = {}) => ({
   libraryName: data.libraryName || "",
   libraryAddress: data.libraryAddress || "",
-  libraryPhone: data.libraryPhone || "",
+  libraryPhone: sanitizePhoneInput(data.libraryPhone),
   libraryEmail: data.libraryEmail || "",
   website: data.website || "",
   description: data.description || "",
@@ -619,9 +622,10 @@ const SettingsPage = () => {
                       onChange={(e) =>
                         setLibrarySettings({
                           ...librarySettings,
-                          libraryPhone: e.target.value,
+                          libraryPhone: sanitizePhoneInput(e.target.value),
                         })
                       }
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 11 }}
                     />
                     <TextField
                       fullWidth

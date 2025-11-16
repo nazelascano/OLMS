@@ -34,6 +34,9 @@ import toast from "react-hot-toast";
 
 const PHONE_FIELD_NAMES = new Set(["phoneNumber", "parentPhone"]);
 
+const sanitizePhoneInput = (value = "") =>
+  String(value ?? "").replace(/\D/g, "").slice(0, 11);
+
 const StudentForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -182,7 +185,7 @@ const StudentForm = () => {
         lastName: studentData.lastName || "",
         middleName: studentData.middleName || "",
         email: studentData.email || "",
-        phoneNumber: studentData.phoneNumber || "",
+  phoneNumber: sanitizePhoneInput(studentData.phoneNumber),
         studentId: studentData.studentId || "",
         lrn: studentData.lrn || "",
   grade: studentData.grade || "",
@@ -195,7 +198,7 @@ const StudentForm = () => {
         parentGuardianName: studentData.parentGuardianName || "",
         parentOccupation: studentData.parentOccupation || "",
         parentAddress: studentData.parentAddress || "",
-        parentPhone: studentData.parentPhone || "",
+  parentPhone: sanitizePhoneInput(studentData.parentPhone),
         parentEmail: studentData.parentEmail || "",
         isActive:
           studentData.isActive !== undefined ? studentData.isActive : true,
@@ -213,7 +216,7 @@ const StudentForm = () => {
     const isCheckbox = type === "checkbox";
     const sanitizedValue =
       !isCheckbox && PHONE_FIELD_NAMES.has(name)
-        ? value.replace(/\D/g, "")
+        ? sanitizePhoneInput(value)
         : value;
     setFormData((prev) => ({
       ...prev,
@@ -271,6 +274,9 @@ const StudentForm = () => {
         role: "student",
         username: (formData.firstName.charAt(0) + formData.lastName).toLowerCase(), // First letter of first name + surname
       };
+
+      studentData.phoneNumber = sanitizePhoneInput(studentData.phoneNumber);
+      studentData.parentPhone = sanitizePhoneInput(studentData.parentPhone);
 
       if (isEditing) {
         await studentsAPI.update(id, studentData);
@@ -334,7 +340,7 @@ const StudentForm = () => {
         <Typography
           variant="h4"
           component="h1"
-          sx={{ fontWeight: 600, color: "#1E293B" }}
+          sx={{ fontWeight: 600, color: "white" }}
         >
           {" "}
           {isEditing ? "Edit Student" : "Add New Student"}{" "}
@@ -613,7 +619,7 @@ const StudentForm = () => {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 11 }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
@@ -682,7 +688,7 @@ const StudentForm = () => {
                       name="parentPhone"
                       value={formData.parentPhone}
                       onChange={handleChange}
-                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 11 }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

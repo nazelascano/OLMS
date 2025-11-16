@@ -216,7 +216,7 @@ const BookDetails = () => {
           <Button
             variant="outlined"
             startIcon={<Edit />}
-            onClick={() => navigate(`/books/edit/${id}`)}
+            onClick={() => navigate(`/books/${id}/edit`)}
             sx={{ mr: 2 }}
           >
             Edit Book

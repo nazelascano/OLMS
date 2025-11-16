@@ -198,13 +198,49 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
   doc.text('TRANSACTION RECEIPT', centerText, textLine2, { align: 'center' });
 
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Receipt #: ${transactionData.id || 'N/A'}`, centerText, 30);
-  doc.text(`Date: ${new Date(transactionData.createdAt || Date.now()).toLocaleDateString()}`, centerText, 34);
-  doc.text(`Type: ${transactionData.type || 'Borrow'}`, centerText, 38);
+  const drawLabelValue = (label, value, x, y, align = 'left') => {
+    const printableValue = String(value ?? '').trim() || 'N/A';
+
+    const labelString = `${label} `;
+    doc.setFont('helvetica', 'normal');
+    const labelWidth = doc.getTextWidth(labelString);
+
+    doc.setFont('helvetica', 'bold');
+    const valueWidth = doc.getTextWidth(printableValue);
+
+    if (align === 'center') {
+      const gap = 1.5;
+      doc.setFont('helvetica', 'normal');
+      doc.text(labelString, x, y, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(printableValue, x + labelWidth / 2 + gap, y);
+      return;
+    }
+
+    let startX = x;
+    if (align === 'right') {
+      startX = x - (labelWidth + valueWidth);
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(labelString, startX, y);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(printableValue, startX + labelWidth, y);
+  };
+
+  drawLabelValue('Receipt #:', transactionData.id || 'N/A', centerText + 3, 30, 'center');
+  drawLabelValue(
+    'Date:',
+    new Date(transactionData.createdAt || Date.now()).toLocaleDateString(),
+    centerText,
+    34,
+    'center'
+  );
+  drawLabelValue('Type:', transactionData.type || 'Borrow', centerText, 38, 'center');
   // Include transaction status in the header if present
   if (transactionData.status) {
-    doc.text(`Status: ${transactionData.status}`, margin, 42);
+    drawLabelValue('Status:', transactionData.status, margin, 42);
   }
   const qrSizeMm = 25;
   try {
@@ -214,9 +250,17 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
   } catch (err) {
     console.warn('QR generation failed', err);
   }
-  doc.text('Borrower:', 5, 30);
-  doc.text(`${studentData?.firstName || ''} ${studentData?.lastName || ''}`.trim() || 'N/A', 5, 34);
-  doc.text(`ID: ${studentData?.libraryCardNumber || studentData?.studentId || 'N/A'}`, 5, 38);
+  const borrowerName = `${studentData?.firstName || ''} ${studentData?.lastName || ''}`.trim()
+    || studentData?.fullName
+    || 'N/A';
+  const borrowerId = studentData?.libraryCardNumber || studentData?.studentId || 'N/A';
+
+  drawLabelValue('Borrower:', borrowerName, 5, 30);
+  drawLabelValue('ID:', borrowerId, 5, 34);
+
+  doc.setFont('helvetica', 'normal');
+
+  doc.setFont('helvetica', 'normal');
 
   doc.text('Books:', 5, 50);
   doc.text('ISBN', margin + pageWidth - ((pageWidth/3)*2), 50);
@@ -228,7 +272,6 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
       doc.addPage();
       y = 10;
     }
-    console.log(book);
     doc.text(`${index + 1}. ${book.title || 'Unknown'}`, 5, y);
     doc.text(` ${book.isbn || 'Unknown'}`, margin + pageWidth - ((pageWidth/3)*2), y);
     doc.text(` ${book.copyId || 'Unknown'}`, margin + pageWidth - ((pageWidth/3)), y);

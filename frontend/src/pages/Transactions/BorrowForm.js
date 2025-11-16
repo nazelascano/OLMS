@@ -602,7 +602,7 @@ const BorrowForm = () => {
         >
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
+        <Typography variant="h4" sx={{ flexGrow: 1, color:"white" }}>
           Borrow Books
         </Typography>
       </Box>

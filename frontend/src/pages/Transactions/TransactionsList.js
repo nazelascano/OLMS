@@ -286,48 +286,144 @@ const TransactionsList = () => {
 
   // Print receipt for a specific transaction (works for any transaction status)
   const handlePrintReceiptFor = async (transaction) => {
+    const toastId = toast.loading("Generating receipt...");
     try {
-      toast.loading("Generating Receipt...");
       const transactionId = getTransactionIdentifier(transaction);
       if (!transactionId) {
         setError("Transaction identifier is missing");
-        toast.dismiss();
+        toast.error("Missing transaction identifier", { id: toastId });
         return;
       }
-      try {
-        const response = await api.get(`/transactions/${transactionId.trim()}`);
-        const transactionData = response.data || [];
-        const responseStudent = await api.get(`/students/${transactionData.userId}`);
-        const studentData = responseStudent.data || [];
-        const booksData = [];
-        for (let x = 0; transactionData.items.length > x; x++) {
-          let book = transactionData.items[x];
-          const responseBook = await api.get(`/books/${book.bookId}`);
-          const bookData = responseBook.data || [];
-          let newBookData = {
-            title: bookData.title,
-            isbn: book.isbn,
-            copyId: book.copyId,
-          };
-          booksData.push(newBookData);
-        }
-        const transactionPDF = await generateTransactionReceipt(
-          transactionData,
-          studentData.student,
-          booksData
-        );
 
-        downloadPDF(transactionPDF, `receipt_${transactionData.id}.pdf`);
-        toast.dismiss();
-        toast.success("Receipt generated successfully!");
-      } catch (fallbackError) {
-        console.error("Failed to fetch transaction data from transactions:", fallbackError);
-        toast.error("Failed to load transaction");
+      const { data: transactionData } = await api.get(
+        `/transactions/${transactionId.trim()}`
+      );
+
+      const normalizeBorrower = (profile, fallbackName = "") => {
+        if (!profile) {
+          return null;
+        }
+
+        const extractedName = (() => {
+          const full = profile.fullName || fallbackName || profile.name || "";
+          if (profile.firstName || profile.lastName) {
+            return {
+              firstName: profile.firstName || "",
+              lastName: profile.lastName || "",
+              fullName: `${profile.firstName || ""} ${profile.lastName || ""}`.trim() || full,
+            };
+          }
+          if (!full) {
+            return { firstName: "", lastName: "", fullName: "" };
+          }
+
+          const parts = full.split(" ").filter(Boolean);
+          if (parts.length === 1) {
+            return { firstName: parts[0], lastName: "", fullName: full };
+          }
+          const lastName = parts.pop();
+          return { firstName: parts.join(" "), lastName, fullName: full };
+        })();
+
+        return {
+          firstName: extractedName.firstName,
+          lastName: extractedName.lastName,
+          fullName: extractedName.fullName,
+          studentId:
+            profile.studentId ||
+            profile.studentNumber ||
+            profile.id ||
+            profile.uid ||
+            profile.userId ||
+            transactionData?.userId ||
+            "",
+          libraryCardNumber:
+            profile.libraryCardNumber ||
+            profile.libraryCard ||
+            profile.library?.cardNumber ||
+            transaction.borrowerLibraryCardNumber ||
+            "",
+        };
+      };
+
+      let borrowerProfile = normalizeBorrower(
+        transactionData?.user || transactionData?.student,
+        transactionData?.borrowerName
+      );
+
+      if (!borrowerProfile && transactionData?.userId) {
+        try {
+          const { data: studentResponse } = await api.get(
+            `/students/${transactionData.userId}`
+          );
+          borrowerProfile = normalizeBorrower(
+            studentResponse?.student || studentResponse,
+            transactionData?.borrowerName
+          );
+        } catch (studentError) {
+          console.debug("Failed to load student profile", studentError);
+        }
       }
+
+      if (!borrowerProfile) {
+        borrowerProfile = normalizeBorrower(
+          {
+            firstName: transaction.borrowerFirstName,
+            lastName: transaction.borrowerLastName,
+            fullName:
+              transaction.borrowerName ||
+              transactionData?.borrowerName ||
+              transactionData?.userId ||
+              "",
+            studentId: transaction.borrowerStudentId,
+            libraryCardNumber: transaction.borrowerLibraryCardNumber,
+          },
+          transaction.borrowerName || transactionData?.borrowerName || ""
+        );
+      }
+
+      if (!borrowerProfile) {
+        borrowerProfile = {
+          firstName: transactionData?.userId || "",
+          lastName: "",
+          fullName: transactionData?.userId || "",
+          studentId: transactionData?.userId || "",
+          libraryCardNumber: "",
+        };
+      }
+
+      const items = Array.isArray(transactionData?.items)
+        ? transactionData.items
+        : [];
+
+      const booksData = items.length > 0
+        ? items.map((item) => ({
+            title: item?.book?.title || item?.title || transaction.bookTitle || "Unknown",
+            isbn: item?.isbn || item?.book?.isbn || item?.bookId || "N/A",
+            copyId: item?.copyId || "N/A",
+          }))
+        : [
+            {
+              title: transaction.bookTitle || "Unknown",
+              isbn: transaction.isbn || "N/A",
+              copyId: transaction.copyId || "N/A",
+            },
+          ];
+
+      const transactionPDF = await generateTransactionReceipt(
+        transactionData,
+        borrowerProfile,
+        booksData
+      );
+
+      const filenameId = transactionData?.id || transactionData?._id || transactionId;
+      downloadPDF(transactionPDF, `receipt_${filenameId}.pdf`);
+      setError("");
+      toast.success("Receipt generated successfully!", { id: toastId });
     } catch (error) {
-      toast.dismiss();
-      toast.error("Failed to generate receipt");
       console.error("Error generating receipt:", error);
+      setError("Failed to generate receipt");
+      toast.error("Failed to generate receipt", { id: toastId });
     }
   };
 

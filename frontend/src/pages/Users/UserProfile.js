@@ -108,6 +108,25 @@ const getCroppedImage = async (file, cropArea) => {
   }
 };
 
+const sanitizePhoneInput = (value = "") =>
+  String(value ?? "").replace(/\D/g, "").slice(0, 11);
+
+const withSanitizedPhone = (data = {}) => {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+
+  const normalizedPhone =
+    data.phoneNumber != null
+      ? sanitizePhoneInput(data.phoneNumber)
+      : sanitizePhoneInput(data.profile?.phone);
+
+  return {
+    ...data,
+    phoneNumber: normalizedPhone,
+  };
+};
+
 const UserProfile = () => {
   const { user, updateUserData } = useAuth();
   const { id } = useParams();
@@ -245,7 +264,7 @@ const UserProfile = () => {
       }
 
       if (viewingSelf) {
-        setProfileData(user);
+        setProfileData(withSanitizedPhone(user));
         const history = await fetchBorrowingHistory(currentUserId, true);
         await fetchUserStats(currentUserId, true, history);
       } else {
@@ -260,8 +279,8 @@ const UserProfile = () => {
   const loadProfileById = async (targetUserId) => {
     try {
       setProfileLoading(true);
-      const response = await api.get(`/users/${targetUserId}`);
-      setProfileData(response.data);
+  const response = await api.get(`/users/${targetUserId}`);
+  setProfileData(withSanitizedPhone(response.data));
       await fetchBorrowingHistory(targetUserId, false);
     } catch (err) {
       console.error("Error loading user profile:", err);
@@ -328,7 +347,7 @@ const UserProfile = () => {
       const updatePayload = {
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        phoneNumber: profileData.phoneNumber,
+        phoneNumber: sanitizePhoneInput(profileData.phoneNumber),
         address: profileData.address,
       };
 
@@ -1063,10 +1082,11 @@ const UserProfile = () => {
                     onChange={(e) =>
                       setProfileData({
                         ...profileData,
-                        phoneNumber: e.target.value,
+                        phoneNumber: sanitizePhoneInput(e.target.value),
                       })
                     }
                     margin="normal"
+                    inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 11 }}
                   />
                 </Grid>
                 <Grid item xs={12}>

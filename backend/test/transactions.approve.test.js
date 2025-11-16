@@ -32,10 +32,12 @@ describe('Transactions approve API', () => {
 
     // Create a request via API (no userId so test auth user will be used)
   const payload = { items: [{ copyId: 'APPROVE-COPY-1' }], type: 'regular', notes: 'Approve flow test' };
-    const createResp = await request(app).post('/api/transactions/request').send(payload);
-    expect(createResp.statusCode).toBe(201);
-    const txnId = createResp.body.transactionId;
-    expect(txnId).toBeDefined();
+  const createResp = await request(app).post('/api/transactions/request').send(payload);
+  expect(createResp.statusCode).toBe(201);
+  expect(createResp.body).toHaveProperty('transaction');
+  const txnId = createResp.body.transactionId;
+  expect(txnId).toBeDefined();
+  const requesterId = createResp.body.transaction.userId;
 
     // Approve the request
     const approveResp = await request(app).post(`/api/transactions/approve/${txnId}`).send({});
@@ -59,6 +61,12 @@ describe('Transactions approve API', () => {
       const copy = (updatedBook.copies || []).find(c => c.copyId === 'APPROVE-COPY-1');
       expect(copy).toBeDefined();
       expect(copy.status).toBe('borrowed');
+
+      const notifications = await adapter.findInCollection('notifications', { transactionId: txnId });
+      const borrowerNote = notifications.find(note => note.type === 'request-approved');
+      expect(borrowerNote).toBeDefined();
+      expect(borrowerNote.recipients).toEqual(expect.arrayContaining([String(requesterId)]));
+      expect(borrowerNote.message.toLowerCase()).toContain('approved');
     }
   });
 

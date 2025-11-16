@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -60,6 +60,37 @@ const NOTIFICATION_SEVERITY_COLORS = {
 
 const getSeverityColor = (severity) =>
   NOTIFICATION_SEVERITY_COLORS[severity] || NOTIFICATION_SEVERITY_COLORS.info;
+
+const NOTIFICATION_READ_STORAGE_PREFIX = "olms.notification.read.v1";
+
+const getNotificationFingerprint = (item) => {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  const candidates = [
+    item.id,
+    item._id,
+    item.transactionId,
+    item?.meta?.transactionId,
+    item?.link ? `${item.type || "notification"}:${item.link}` : null,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate !== undefined && candidate !== null) {
+      const normalized = String(candidate).trim();
+      if (normalized) {
+        return normalized;
+      }
+    }
+  }
+
+  if (item.title || item.message) {
+    return `${item.type || "notification"}:${item.title || ""}:${item.message || ""}`;
+  }
+
+  return null;
+};
 
 const INPUT_SELECTOR =
   'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), [contenteditable="true"]';
@@ -404,6 +435,128 @@ const Layout = () => {
   const [notificationsFetchedAt, setNotificationsFetchedAt] = useState(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [liveRegionMessage, setLiveRegionMessage] = useState("");
+  const [readNotificationIds, setReadNotificationIds] = useState([]);
+  const readNotificationIdSet = useMemo(
+    () => new Set(readNotificationIds),
+    [readNotificationIds]
+  );
+  const userNotificationId = useMemo(
+    () => user?.id || user?._id || user?.userId || null,
+    [user]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!userNotificationId) {
+      setReadNotificationIds([]);
+      return;
+    }
+
+    const storageKey = `${NOTIFICATION_READ_STORAGE_PREFIX}:${userNotificationId}`;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) {
+        setReadNotificationIds([]);
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const maxEntries = 200;
+        const trimmed =
+          parsed.length > maxEntries
+            ? parsed.slice(parsed.length - maxEntries)
+            : parsed;
+        setReadNotificationIds(trimmed);
+      } else {
+        setReadNotificationIds([]);
+      }
+    } catch (error) {
+      console.error("Failed to load notification read cache:", error);
+      setReadNotificationIds([]);
+    }
+  }, [userNotificationId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!userNotificationId) {
+      return;
+    }
+
+    const storageKey = `${NOTIFICATION_READ_STORAGE_PREFIX}:${userNotificationId}`;
+    try {
+      const maxEntries = 200;
+      const trimmed =
+        readNotificationIds.length > maxEntries
+          ? readNotificationIds.slice(readNotificationIds.length - maxEntries)
+          : readNotificationIds;
+      window.localStorage.setItem(storageKey, JSON.stringify(trimmed));
+    } catch (error) {
+      console.error("Failed to persist notification read cache:", error);
+    }
+  }, [userNotificationId, readNotificationIds]);
+
+  const markNotificationsRead = useCallback((items) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return;
+    }
+
+    const ids = Array.from(
+      new Set(
+        items
+          .map((item) => item?._id)
+          .filter((value) => value !== undefined && value !== null)
+          .map((value) => String(value).trim())
+          .filter(Boolean)
+      )
+    );
+
+    if (ids.length === 0) {
+      return;
+    }
+
+    ids.forEach((id) => {
+      notificationsAPI
+        .markRead(id, true)
+        .catch((error) => console.error("Failed to mark notification read:", error));
+    });
+  }, []);
+
+  const registerReadNotifications = (items) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return;
+    }
+
+    const aggregate = new Set(readNotificationIdSet);
+    let changed = false;
+    const markable = [];
+
+    items.forEach((item) => {
+      const fingerprint = item?.fingerprint || getNotificationFingerprint(item);
+      if (fingerprint && !aggregate.has(fingerprint)) {
+        aggregate.add(fingerprint);
+        changed = true;
+      }
+      if (!item?.read) {
+        markable.push(item);
+      }
+    });
+
+    if (changed) {
+      const idsArray = Array.from(aggregate);
+      const maxEntries = 200;
+      const trimmed =
+        idsArray.length > maxEntries
+          ? idsArray.slice(idsArray.length - maxEntries)
+          : idsArray;
+      setReadNotificationIds(trimmed);
+    }
+
+    markNotificationsRead(markable);
+  };
 
   const handleSearchResultsWheel = (event) => {
     event.stopPropagation();
@@ -772,12 +925,16 @@ const Layout = () => {
     }
   };
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       setNotificationsLoading(true);
       const { data } = await notificationsAPI.getAll({ limit: 10 });
       const items = Array.isArray(data?.notifications)
-        ? data.notifications.map((item) => ({ ...item, read: false }))
+        ? data.notifications.map((item) => {
+            const fingerprint = getNotificationFingerprint(item);
+            const isRead = fingerprint ? readNotificationIdSet.has(fingerprint) : false;
+            return { ...item, read: isRead, fingerprint };
+          })
         : [];
       setNotifications(items);
       setNotificationsError("");
@@ -790,11 +947,11 @@ const Layout = () => {
     } finally {
       setNotificationsLoading(false);
     }
-  };
+  }, [readNotificationIdSet]);
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+  }, [loadNotifications]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -823,10 +980,19 @@ const Layout = () => {
 
   const handleNotificationsClose = () => {
     setNotificationsAnchorEl(null);
-    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+    setNotifications((prev) => {
+      if (!prev || prev.length === 0) {
+        return [];
+      }
+      registerReadNotifications(prev);
+      return prev.map((item) => ({ ...item, read: true }));
+    });
   };
 
   const handleNotificationNavigate = (item) => {
+    if (item) {
+      registerReadNotifications([item]);
+    }
     handleNotificationsClose();
     if (item?.link) {
       navigate(item.link);
@@ -1418,7 +1584,14 @@ const Layout = () => {
                   <List sx={{ maxHeight: 360, overflowY: "auto", py: 0 }}>
                     {notifications.map((item) => (
                       <ListItemButton
-                        key={item.id}
+                        key={
+                          item.id ||
+                          item._id ||
+                          item.fingerprint ||
+                          item.transactionId ||
+                          item.timestamp ||
+                          item.title
+                        }
                         onClick={() => handleNotificationNavigate(item)}
                         alignItems="flex-start"
                         sx={{ gap: 1.5, py: 1, px: 2 }}

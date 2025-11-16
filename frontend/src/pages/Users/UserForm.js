@@ -41,6 +41,9 @@ const ROLE_OPTIONS = [
 
 const PHONE_FIELD_NAMES = new Set(["phoneNumber"]);
 
+const sanitizePhoneInput = (value = "") =>
+  String(value ?? "").replace(/\D/g, "").slice(0, 11);
+
 const DEFAULT_FORM_DATA = {
   username: "",
   email: "",
@@ -120,7 +123,9 @@ const UserForm = () => {
           password: "",
           confirmPassword: "",
           curriculum: userData.curriculum || "",
-          phoneNumber: userData.phoneNumber || userData.profile?.phone || "",
+          phoneNumber: sanitizePhoneInput(
+            userData.phoneNumber || userData.profile?.phone,
+          ),
           address: userData.address || userData.profile?.address || "",
           isActive:
             typeof userData.isActive === "boolean" ? userData.isActive : true,
@@ -185,7 +190,7 @@ const UserForm = () => {
     const isCheckbox = type === "checkbox";
     const sanitizedValue =
       !isCheckbox && PHONE_FIELD_NAMES.has(name)
-        ? value.replace(/\D/g, "")
+        ? sanitizePhoneInput(value)
         : value;
 
     setFormData((prev) => ({
@@ -252,6 +257,7 @@ const UserForm = () => {
       setSuccess("");
 
       const payload = { ...formData };
+      payload.phoneNumber = sanitizePhoneInput(payload.phoneNumber);
       delete payload.confirmPassword;
 
       payload.email = (payload.email || "").trim();
@@ -300,7 +306,7 @@ const UserForm = () => {
         <IconButton onClick={() => navigate("/users")} sx={{ mr: 2 }}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 }}>
+        <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0, color: "white" }}>
           {isEditing ? "Edit User" : "Add New User"}
         </Typography>
       </Box>
@@ -449,7 +455,7 @@ const UserForm = () => {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 11 }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

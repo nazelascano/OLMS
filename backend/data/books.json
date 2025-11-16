@@ -133,7 +133,7 @@
     "isbn": "978-0451524935",
     "publisher": "Signet Classic",
     "publishedYear": null,
-    "category": "Science Fiction",
+    "category": "Self-Help",
     "description": "A dystopian novel",
     "coverImage": "",
     "status": "active",
@@ -151,9 +151,10 @@
       }
     ],
     "createdAt": "2025-10-10T05:33:43.678Z",
-    "updatedAt": "2025-10-10T05:44:09.483Z",
+    "updatedAt": "2025-11-15T14:08:38.183Z",
     "createdBy": "mgex1wgwp3019",
-    "_id": "mgkev91a2j3oq"
+    "_id": "mgkev91a2j3oq",
+    "updatedBy": "mgnhicbwhxfy9"
   },
   {
     "id": "book_1760074423807_s5m6stux8",
@@ -387,35 +388,6 @@
     "updatedAt": "2025-10-10T05:33:44.791Z",
     "createdBy": "mgex1wgwp3019",
     "_id": "mgkev9w7vteyf"
-  },
-  {
-    "id": "book_1760074424911_fn353vxfy",
-    "title": "Educated",
-    "author": "Tara Westover",
-    "isbn": "978-0399590504",
-    "publisher": "Random House",
-    "publishedYear": null,
-    "category": "Biography",
-    "description": "A memoir about education",
-    "coverImage": "",
-    "status": "active",
-    "totalCopies": 1,
-    "availableCopies": 1,
-    "copies": [
-      {
-        "copyId": "978-0399590504-MGKEV9ZJ-J10U",
-        "status": "available",
-        "condition": "good",
-        "location": "main-library",
-        "createdAt": "2025-10-10T05:33:44.911Z",
-        "updatedAt": "2025-10-10T05:33:44.911Z",
-        "createdBy": "mgex1wgwp3019"
-      }
-    ],
-    "createdAt": "2025-10-10T05:33:44.911Z",
-    "updatedAt": "2025-10-10T05:33:44.912Z",
-    "createdBy": "mgex1wgwp3019",
-    "_id": "mgkev9zkp5qt8"
   },
   {
     "id": "book_1760074425043_b41ngcrzw",
@@ -723,10 +695,11 @@
     "copies": [
       {
         "copyId": "APPROVE-COPY-1",
-        "status": "borrowed",
+        "status": "available",
         "location": "Main",
-        "updatedAt": "2025-11-15T13:29:53.007Z",
-        "updatedBy": "mgnhicbwhxfy9"
+        "updatedAt": "2025-11-16T01:57:36.064Z",
+        "updatedBy": "mgnhicbwhxfy9",
+        "condition": "good"
       },
       {
         "copyId": "APPROVE-COPY-2",
@@ -734,10 +707,10 @@
         "location": "Main"
       }
     ],
-    "availableCopies": 1,
+    "availableCopies": 2,
     "_id": "mhfko497eon81",
     "createdAt": "2025-11-01T00:57:00.043Z",
-    "updatedAt": "2025-11-15T13:29:53.008Z",
+    "updatedAt": "2025-11-16T01:57:36.066Z",
     "totalCopies": 4,
     "updatedBy": "mgnhicbwhxfy9",
     "status": "active"
@@ -1204,5 +1177,122 @@
     "_id": "mi0bq9ib5bovn",
     "createdAt": "2025-11-15T13:29:53.315Z",
     "updatedAt": "2025-11-15T13:29:53.315Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mi0iwo8pqgub1",
+    "createdAt": "2025-11-15T16:50:49.657Z",
+    "updatedAt": "2025-11-15T16:50:49.657Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mi0iwou8y62kz",
+    "createdAt": "2025-11-15T16:50:50.432Z",
+    "updatedAt": "2025-11-15T16:50:50.432Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mi0iyatgot5mj",
+    "createdAt": "2025-11-15T16:52:05.572Z",
+    "updatedAt": "2025-11-15T16:52:05.572Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mi0iyb4q1bao8",
+    "createdAt": "2025-11-15T16:52:05.978Z",
+    "updatedAt": "2025-11-15T16:52:05.978Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mi0jkttjngyho",
+    "createdAt": "2025-11-15T17:09:36.631Z",
+    "updatedAt": "2025-11-15T17:09:36.631Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mi0jku47thlsv",
+    "createdAt": "2025-11-15T17:09:37.015Z",
+    "updatedAt": "2025-11-15T17:09:37.015Z"
   }
 ]
