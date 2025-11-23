@@ -666,8 +666,8 @@ const StudentsList = () => {
                   </TableRow>
                 );
               })}
-            </TableBody>{" "}
-          </Table>{" "}
+            </TableBody>
+          </Table>
           <TablePagination
             component="div"
             count={totalStudents}

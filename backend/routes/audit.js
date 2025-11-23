@@ -2,6 +2,161 @@ const express = require('express');
 const { verifyToken, requireStaff } = require('../middleware/customAuth');
 const router = express.Router();
 
+const toPlainObject = (value) =>
+    value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+
+const collectUserSearchCandidates = (log = {}) => {
+    const details = toPlainObject(log.details);
+    const metadata = toPlainObject(log.metadata);
+    const nestedUser = toPlainObject(log.user);
+    const detailStudent = toPlainObject(details.student);
+    const metadataStudent = toPlainObject(metadata.student);
+    const detailUser = toPlainObject(details.user);
+    const metadataUser = toPlainObject(metadata.user);
+    const detailLibrary = toPlainObject(details.library);
+    const metadataLibrary = toPlainObject(metadata.library);
+    const nestedLibrary = toPlainObject(nestedUser.library);
+    const detailUserLibrary = toPlainObject(detailUser.library);
+    const metadataUserLibrary = toPlainObject(metadataUser.library);
+    const detailProfile = toPlainObject(details.profile);
+    const metadataProfile = toPlainObject(metadata.profile);
+    const profileLibrary = toPlainObject(detailProfile.library);
+    const metadataProfileLibrary = toPlainObject(metadataProfile.library);
+    const request = toPlainObject(metadata.createRequest || metadata.request);
+    const requestStudent = toPlainObject(request.student);
+    const requestLibrary = toPlainObject(request.library);
+
+    const buildName = (source) => {
+        if (!source) return '';
+        return [source.firstName, source.middleName, source.lastName]
+            .filter(Boolean)
+            .join(' ');
+    };
+
+    return [
+        log.userId,
+        details.userId,
+        metadata.userId,
+        detailUser.userId,
+        metadataUser.userId,
+        detailUser.id,
+        metadataUser.id,
+        nestedUser.id,
+        nestedUser.userId,
+        nestedUser.studentId,
+        nestedUser.studentNumber,
+        detailUser.studentId,
+        metadataUser.studentId,
+        log.studentId,
+        details.studentId,
+        metadata.studentId,
+        detailStudent.studentId,
+        metadataStudent.studentId,
+        detailProfile.studentId,
+        metadataProfile.studentId,
+        request.studentId,
+        requestStudent.studentId,
+        log.studentName,
+        details.studentName,
+        metadata.studentName,
+        detailStudent.name,
+        metadataStudent.name,
+        detailUser.name,
+        metadataUser.name,
+        detailProfile.name,
+        metadataProfile.name,
+        request.studentName,
+        request.name,
+        buildName(detailProfile),
+        buildName(metadataProfile),
+        buildName(request),
+        buildName(requestStudent),
+        buildName(detailStudent),
+        buildName(metadataStudent),
+        buildName(detailUser),
+        buildName(metadataUser),
+        buildName(nestedUser),
+        log.username,
+        details.username,
+        metadata.username,
+        detailUser.username,
+        metadataUser.username,
+        nestedUser.username,
+        log.userName,
+        log.userEmail,
+        nestedUser.email,
+        detailUser.email,
+        metadataUser.email,
+        log.libraryId,
+        log.libraryCardNumber,
+        details.libraryId,
+        details.libraryCardNumber,
+        detailLibrary.cardNumber,
+        detailStudent.libraryCardNumber,
+        metadataStudent.libraryCardNumber,
+        detailProfile.libraryCardNumber,
+        metadataProfile.libraryCardNumber,
+        profileLibrary.cardNumber,
+        metadataProfileLibrary.cardNumber,
+        request.libraryId,
+        request.libraryCardNumber,
+        requestStudent.libraryCardNumber,
+        requestLibrary.cardNumber,
+        metadata.libraryId,
+        metadata.libraryCardNumber,
+        metadataLibrary.cardNumber,
+        detailUserLibrary.cardNumber,
+        metadataUserLibrary.cardNumber,
+        nestedUser.libraryCardNumber,
+        nestedLibrary.cardNumber,
+    ].filter(Boolean);
+};
+
+const collectUserRecordCandidates = (user = {}) => {
+    const library = toPlainObject(user.library);
+    return [
+        user._id,
+        user.id,
+        user.userId,
+        user.studentId,
+        user.studentNumber,
+        user.username,
+        user.email,
+        user.firstName,
+        user.middleName,
+        user.lastName,
+        [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
+        library.cardNumber,
+        library.cardId,
+        user.libraryCardNumber,
+    ].filter(Boolean);
+};
+
+const matchesUserRecord = (user, term) => {
+    if (!term) return false;
+    const normalized = term.trim().toLowerCase();
+    if (!normalized) return false;
+    return collectUserRecordCandidates(user).some((candidate) =>
+        String(candidate).toLowerCase().includes(normalized)
+    );
+};
+
+const collectLogIdentifierSet = (log) => {
+    const candidates = collectUserSearchCandidates(log);
+    return new Set(
+        candidates.map((candidate) => String(candidate).toLowerCase())
+    );
+};
+
+const matchesUserQuery = (log, term) => {
+    if (!term) return true;
+    const normalized = term.trim().toLowerCase();
+    if (!normalized) return true;
+    return collectUserSearchCandidates(log).some((candidate) =>
+        String(candidate).toLowerCase().includes(normalized)
+    );
+};
+
 // Get audit logs with pagination and filters
 router.get('/', verifyToken, requireStaff, async(req, res) => {
     try {
@@ -11,15 +166,19 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
                 action,
                 entity,
                 userId,
+                role,
+                userQuery,
                 startDate,
                 endDate
         } = req.query;
+        const normalizedUserQuery = typeof userQuery === 'string' ? userQuery.trim() : '';
 
         // Build query filters
         let filters = {};
         if (action) filters.action = action;
         if (entity) filters.entity = entity;
         if (userId) filters.userId = userId;
+        if (role) filters.userRole = role;
 
         // Get all matching audit logs
         let auditLogs = await req.dbAdapter.findInCollection('audit', filters);
@@ -31,6 +190,38 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
                 if (startDate && logDate < new Date(startDate)) return false;
                 if (endDate && logDate > new Date(endDate)) return false;
                 return true;
+            });
+        }
+
+        // Apply user search filter across identifiers
+        let matchedUserIdentifiers = null;
+
+        if (normalizedUserQuery) {
+            const users = await req.dbAdapter.findInCollection('users', {});
+            matchedUserIdentifiers = new Set();
+
+            users.forEach((user) => {
+                if (matchesUserRecord(user, normalizedUserQuery)) {
+                    collectUserRecordCandidates(user).forEach((identifier) =>
+                        matchedUserIdentifiers.add(String(identifier).toLowerCase()),
+                    );
+                }
+            });
+
+            auditLogs = auditLogs.filter((log) => {
+                if (matchesUserQuery(log, normalizedUserQuery)) {
+                    return true;
+                }
+
+                if (matchedUserIdentifiers && matchedUserIdentifiers.size > 0) {
+                    const logIdentifiers = collectLogIdentifierSet(log);
+                    for (const identifier of logIdentifiers) {
+                        if (matchedUserIdentifiers.has(identifier)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
             });
         }
 
@@ -147,51 +338,121 @@ router.get('/stats', verifyToken, requireStaff, async(req, res) => {
 // Get audit summary/statistics
 router.get('/stats/summary', verifyToken, requireStaff, async(req, res) => {
     try {
-        const { days = 7 } = req.query;
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(days));
+        const {
+            days = 7,
+            action,
+            entity,
+            role,
+            userQuery,
+            startDate,
+            endDate,
+        } = req.query;
 
-        const allLogs = await req.dbAdapter.findInCollection('audit', {});
+        const normalizedUserQuery = typeof userQuery === 'string' ? userQuery.trim() : '';
+        const parsedDays = Number.isNaN(parseInt(days, 10)) ? 7 : parseInt(days, 10);
 
-        // Filter logs by date
-        const recentLogs = allLogs.filter(log => new Date(log.timestamp) >= startDate);
+        let filters = {};
+        if (action) filters.action = action;
+        if (entity) filters.entity = entity;
+        if (role) filters.userRole = role;
+
+        let filteredLogs = await req.dbAdapter.findInCollection('audit', filters);
+
+        const parseDate = (value) => {
+            if (!value) return null;
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        };
+
+        const rangeStart = parseDate(startDate) || (() => {
+            const fallback = new Date();
+            fallback.setDate(fallback.getDate() - parsedDays);
+            return fallback;
+        })();
+
+        const rangeEnd = parseDate(endDate) || new Date();
+
+        // Normalize ordering if dates are inverted
+        let normalizedStart = rangeStart;
+        let normalizedEnd = rangeEnd;
+        if (normalizedStart > normalizedEnd) {
+            const temp = normalizedStart;
+            normalizedStart = normalizedEnd;
+            normalizedEnd = temp;
+        }
+
+        filteredLogs = filteredLogs.filter((log) => {
+            const timestamp = new Date(log.timestamp);
+            if (Number.isNaN(timestamp.getTime())) {
+                return false;
+            }
+            return timestamp >= normalizedStart && timestamp <= normalizedEnd;
+        });
+
+        if (normalizedUserQuery) {
+            const users = await req.dbAdapter.findInCollection('users', {});
+            const matchedUserIdentifiers = new Set();
+
+            users.forEach((user) => {
+                if (matchesUserRecord(user, normalizedUserQuery)) {
+                    collectUserRecordCandidates(user).forEach((identifier) =>
+                        matchedUserIdentifiers.add(String(identifier).toLowerCase()),
+                    );
+                }
+            });
+
+            filteredLogs = filteredLogs.filter((log) => {
+                if (matchesUserQuery(log, normalizedUserQuery)) {
+                    return true;
+                }
+
+                if (matchedUserIdentifiers.size > 0) {
+                    const logIdentifiers = collectLogIdentifierSet(log);
+                    for (const identifier of logIdentifiers) {
+                        if (matchedUserIdentifiers.has(identifier)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+        }
 
         const stats = {
-            totalLogs: recentLogs.length,
+            totalLogs: filteredLogs.length,
             actionCounts: {},
             entityCounts: {},
             userCounts: {},
-            dailyActivity: {}
+            dailyActivity: {},
         };
 
-        recentLogs.forEach(log => {
-            // Count by action
-            if (!stats.actionCounts[log.action]) {
-                stats.actionCounts[log.action] = 0;
-            }
-            stats.actionCounts[log.action]++;
+        filteredLogs.forEach((log) => {
+            const actionKey = log?.action || 'unknown';
+            stats.actionCounts[actionKey] = (stats.actionCounts[actionKey] || 0) + 1;
 
-            // Count by entity
-            if (!stats.entityCounts[log.entity]) {
-                stats.entityCounts[log.entity] = 0;
-            }
-            stats.entityCounts[log.entity]++;
+            const entityKey = log?.entity || log?.resource || 'unknown';
+            stats.entityCounts[entityKey] = (stats.entityCounts[entityKey] || 0) + 1;
 
-            // Count by user
-            if (!stats.userCounts[log.userId]) {
-                stats.userCounts[log.userId] = 0;
-            }
-            stats.userCounts[log.userId]++;
+            const userKey = log?.userId || log?.userEmail || log?.userName || 'unknown';
+            stats.userCounts[userKey] = (stats.userCounts[userKey] || 0) + 1;
 
-            // Count by day
-            const day = new Date(log.timestamp).toDateString();
-            if (!stats.dailyActivity[day]) {
-                stats.dailyActivity[day] = 0;
-            }
-            stats.dailyActivity[day]++;
+            const dayKey = new Date(log.timestamp).toDateString();
+            stats.dailyActivity[dayKey] = (stats.dailyActivity[dayKey] || 0) + 1;
         });
 
-        res.json(stats);
+        res.json({
+            ...stats,
+            dateRange: {
+                startDate: normalizedStart,
+                endDate: normalizedEnd,
+            },
+            filtersApplied: {
+                action: action || null,
+                entity: entity || null,
+                role: role || null,
+                userQuery: normalizedUserQuery || null,
+            },
+        });
     } catch (error) {
         console.error('Get audit stats error:', error);
         res.status(500).json({ message: 'Failed to fetch audit statistics' });

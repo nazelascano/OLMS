@@ -507,7 +507,9 @@ const Layout = () => {
     const ids = Array.from(
       new Set(
         items
-          .map((item) => item?._id)
+          .map((item) =>
+            item?._id || item?.id || item?.fingerprint || getNotificationFingerprint(item),
+          )
           .filter((value) => value !== undefined && value !== null)
           .map((value) => String(value).trim())
           .filter(Boolean)
@@ -929,13 +931,16 @@ const Layout = () => {
     try {
       setNotificationsLoading(true);
       const { data } = await notificationsAPI.getAll({ limit: 10 });
-      const items = Array.isArray(data?.notifications)
-        ? data.notifications.map((item) => {
-            const fingerprint = getNotificationFingerprint(item);
-            const isRead = fingerprint ? readNotificationIdSet.has(fingerprint) : false;
-            return { ...item, read: isRead, fingerprint };
-          })
+      const sourceItems = Array.isArray(data?.notifications)
+        ? data.notifications
         : [];
+      const items = sourceItems.map((item) => {
+        const fingerprint = item?.fingerprint || getNotificationFingerprint(item);
+        const serverRead = Boolean(item?.read);
+        const cachedRead = fingerprint ? readNotificationIdSet.has(fingerprint) : false;
+        const resolvedRead = serverRead || cachedRead;
+        return { ...item, read: resolvedRead, fingerprint };
+      });
       setNotifications(items);
       setNotificationsError("");
       setNotificationsFetchedAt(Date.now());

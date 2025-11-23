@@ -98,6 +98,23 @@ const BooksList = () => {
   const [categories, setCategories] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("");
 
+  const computeAvailableCopies = useCallback((book) => {
+    if (Array.isArray(book?.copies) && book.copies.length > 0) {
+      const availableCount = book.copies.filter((copy) => {
+        if (!copy) return false;
+        const status = typeof copy.status === "string" ? copy.status.trim().toLowerCase() : "";
+        return status === "available";
+      }).length;
+      return availableCount;
+    }
+
+    if (typeof book?.availableCopies === "number") {
+      return book.availableCopies;
+    }
+
+    return 0;
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -334,6 +351,7 @@ const BooksList = () => {
           {books.map((book, index) => {
             const fallbackKey = `book-${index}`;
             const itemKey = book.id || book._id || book.isbn || fallbackKey;
+            const availableCopies = computeAvailableCopies(book);
             return (
               <Grid
                 item
@@ -362,7 +380,9 @@ const BooksList = () => {
                     <Typography variant="body2" gutterBottom>Category: {book.category}</Typography>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
                       <Chip label={book.status || "available"} size="small" color={getStatusColor(book.status)} />
-                      <Typography variant="caption" color="text.secondary">{book.totalCopies || 0} copies</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {availableCopies} available
+                      </Typography>
                     </Box>
                   </CardContent>
                   <CardActions>

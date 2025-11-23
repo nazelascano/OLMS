@@ -1614,5 +1614,599 @@
     "readBy": [],
     "_id": "mi0jku5ckvb49",
     "updatedAt": "2025-11-15T17:09:37.056Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763885363387_uhxjnc. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763885363387_uhxjnc",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363387_uhxjnc",
+      "itemCount": 2,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:09:23.390Z",
+    "updatedAt": "2025-11-23T08:09:23.391Z",
+    "readBy": [],
+    "_id": "mibfswxra62jk"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763885363387_uhxjnc",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363387_uhxjnc"
+    },
+    "createdAt": "2025-11-23T08:09:23.392Z",
+    "readBy": [],
+    "_id": "mibfswxt1t7n2",
+    "updatedAt": "2025-11-23T08:09:23.393Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763885363760_4230t0. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763885363760_4230t0",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363760_4230t0",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:09:23.763Z",
+    "updatedAt": "2025-11-23T08:09:23.800Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibfsx84y0b0v",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763885363760_4230t0",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363760_4230t0"
+    },
+    "createdAt": "2025-11-23T08:09:23.765Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibfsx85bdld4",
+    "updatedAt": "2025-11-23T08:09:23.801Z",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1763885363760_4230t0 has been approved. Items are due on 2025-12-07.",
+    "type": "request-approved",
+    "transactionId": "borrow_1763885363760_4230t0",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363760_4230t0",
+      "dueDate": "2025-12-07T08:09:23.792Z",
+      "itemCount": 1,
+      "status": "borrowed"
+    },
+    "createdAt": "2025-11-23T08:09:23.797Z",
+    "updatedAt": "2025-11-23T08:09:23.802Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibfsx91bh0i5",
+    "archived": true
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763885363835_z9tjff. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763885363835_z9tjff",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363835_z9tjff",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:09:23.838Z",
+    "updatedAt": "2025-11-23T08:09:23.838Z",
+    "readBy": [],
+    "_id": "mibfsxa68u37r"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763885363835_z9tjff",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885363835_z9tjff"
+    },
+    "createdAt": "2025-11-23T08:09:23.839Z",
+    "readBy": [],
+    "_id": "mibfsxa7lbtn8",
+    "updatedAt": "2025-11-23T08:09:23.839Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763885364859_ng17ef. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763885364859_ng17ef",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885364859_ng17ef",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:09:24.862Z",
+    "updatedAt": "2025-11-23T08:09:24.862Z",
+    "readBy": [],
+    "_id": "mibfsy2m4rba6"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763885364859_ng17ef",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885364859_ng17ef"
+    },
+    "createdAt": "2025-11-23T08:09:24.864Z",
+    "readBy": [],
+    "_id": "mibfsy2oavpk7",
+    "updatedAt": "2025-11-23T08:09:24.864Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1763885364859_ng17ef was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1763885364859_ng17ef",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763885364859_ng17ef"
+    },
+    "createdAt": "2025-11-23T08:09:24.881Z",
+    "readBy": [],
+    "_id": "mibfsy350dgdo",
+    "updatedAt": "2025-11-23T08:09:24.881Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886334284_ubh2n2. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886334284_ubh2n2",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334284_ubh2n2",
+      "itemCount": 2,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:25:34.289Z",
+    "updatedAt": "2025-11-23T08:25:34.291Z",
+    "readBy": [],
+    "_id": "mibgdq37zei8r"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886334284_ubh2n2",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334284_ubh2n2"
+    },
+    "createdAt": "2025-11-23T08:25:34.293Z",
+    "readBy": [],
+    "_id": "mibgdq3an4w5e",
+    "updatedAt": "2025-11-23T08:25:34.294Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886334585_w3r67j. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886334585_w3r67j",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334585_w3r67j",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:25:34.587Z",
+    "updatedAt": "2025-11-23T08:25:34.623Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibgdqbghjl87",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886334585_w3r67j",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334585_w3r67j"
+    },
+    "createdAt": "2025-11-23T08:25:34.589Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibgdqbiwyo9s",
+    "updatedAt": "2025-11-23T08:25:34.625Z",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1763886334585_w3r67j has been approved. Items are due on 2025-12-07.",
+    "type": "request-approved",
+    "transactionId": "borrow_1763886334585_w3r67j",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334585_w3r67j",
+      "dueDate": "2025-12-07T08:25:34.613Z",
+      "itemCount": 1,
+      "status": "borrowed"
+    },
+    "createdAt": "2025-11-23T08:25:34.620Z",
+    "updatedAt": "2025-11-23T08:25:34.627Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibgdqcdrqued",
+    "archived": true
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886334658_i31dgc. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886334658_i31dgc",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334658_i31dgc",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:25:34.660Z",
+    "updatedAt": "2025-11-23T08:25:34.661Z",
+    "readBy": [],
+    "_id": "mibgdqdhamwgj"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886334658_i31dgc",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886334658_i31dgc"
+    },
+    "createdAt": "2025-11-23T08:25:34.663Z",
+    "readBy": [],
+    "_id": "mibgdqdkrliwc",
+    "updatedAt": "2025-11-23T08:25:34.664Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886335223_zqzsf6. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886335223_zqzsf6",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886335223_zqzsf6",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:25:35.225Z",
+    "updatedAt": "2025-11-23T08:25:35.226Z",
+    "readBy": [],
+    "_id": "mibgdqt6bmasx"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886335223_zqzsf6",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886335223_zqzsf6"
+    },
+    "createdAt": "2025-11-23T08:25:35.227Z",
+    "readBy": [],
+    "_id": "mibgdqt7i8lpl",
+    "updatedAt": "2025-11-23T08:25:35.227Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1763886335223_zqzsf6 was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1763886335223_zqzsf6",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886335223_zqzsf6"
+    },
+    "createdAt": "2025-11-23T08:25:35.246Z",
+    "readBy": [],
+    "_id": "mibgdqtrewd4u",
+    "updatedAt": "2025-11-23T08:25:35.247Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886562939_p5w69y. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886562939_p5w69y",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886562939_p5w69y",
+      "itemCount": 2,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:29:22.943Z",
+    "updatedAt": "2025-11-23T08:29:22.944Z",
+    "readBy": [],
+    "_id": "mibgimiohc5u8"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 2 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886562939_p5w69y",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886562939_p5w69y"
+    },
+    "createdAt": "2025-11-23T08:29:22.945Z",
+    "readBy": [],
+    "_id": "mibgimiq3cjrd",
+    "updatedAt": "2025-11-23T08:29:22.946Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886563233_2rervt. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886563233_2rervt",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563233_2rervt",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:29:23.235Z",
+    "updatedAt": "2025-11-23T08:29:23.272Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibgimqskstnh",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886563233_2rervt",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563233_2rervt"
+    },
+    "createdAt": "2025-11-23T08:29:23.238Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibgimqy0oi84",
+    "updatedAt": "2025-11-23T08:29:23.274Z",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1763886563233_2rervt has been approved. Items are due on 2025-12-07.",
+    "type": "request-approved",
+    "transactionId": "borrow_1763886563233_2rervt",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563233_2rervt",
+      "dueDate": "2025-12-07T08:29:23.263Z",
+      "itemCount": 1,
+      "status": "borrowed"
+    },
+    "createdAt": "2025-11-23T08:29:23.269Z",
+    "updatedAt": "2025-11-23T08:29:23.276Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mibgimrq5i4nr",
+    "archived": true
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886563307_tv56o2. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886563307_tv56o2",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563307_tv56o2",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:29:23.309Z",
+    "updatedAt": "2025-11-23T08:29:23.309Z",
+    "readBy": [],
+    "_id": "mibgimstr6ap5"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886563307_tv56o2",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563307_tv56o2"
+    },
+    "createdAt": "2025-11-23T08:29:23.310Z",
+    "readBy": [],
+    "_id": "mibgimsu2w841",
+    "updatedAt": "2025-11-23T08:29:23.310Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1763886563583_u06eod. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1763886563583_u06eod",
+    "recipients": [
+      "mgnhicbwhxfy9",
+      "admin@olms.com",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563583_u06eod",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-11-23T08:29:23.586Z",
+    "updatedAt": "2025-11-23T08:29:23.587Z",
+    "readBy": [],
+    "_id": "mibgin0jnqmj8"
+  },
+  {
+    "title": "New borrow request",
+    "message": "System Administrator requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1763886563583_u06eod",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563583_u06eod"
+    },
+    "createdAt": "2025-11-23T08:29:23.588Z",
+    "readBy": [],
+    "_id": "mibgin0lfzhcx",
+    "updatedAt": "2025-11-23T08:29:23.589Z"
+  },
+  {
+    "title": "Borrow request rejected",
+    "message": "Your borrow request borrow_1763886563583_u06eod was rejected: Not available for loan",
+    "type": "request-rejected",
+    "transactionId": "borrow_1763886563583_u06eod",
+    "recipients": [
+      "mgnhicbwhxfy9"
+    ],
+    "meta": {
+      "transactionId": "borrow_1763886563583_u06eod"
+    },
+    "createdAt": "2025-11-23T08:29:23.607Z",
+    "readBy": [],
+    "_id": "mibgin14xtao9",
+    "updatedAt": "2025-11-23T08:29:23.608Z"
   }
 ]

@@ -4,6 +4,27 @@ const QRCode = require('qrcode');
 const { verifyToken, requireStaff, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
 const router = express.Router();
 
+const allowedCopyStatuses = new Set(['available', 'borrowed', 'lost', 'damaged', 'maintenance']);
+
+const computePublishedYear = (explicitYear, dateValue) => {
+    if (explicitYear !== undefined && explicitYear !== null && String(explicitYear).trim() !== '') {
+        const parsedYear = parseInt(explicitYear, 10);
+        if (Number.isNaN(parsedYear) || `${parsedYear}`.length !== 4) {
+            throw new Error('Invalid published year');
+        }
+        return { shouldUpdate: true, value: parsedYear };
+    }
+
+    if (dateValue) {
+        const parsedDate = new Date(dateValue);
+        if (!Number.isNaN(parsedDate.getTime())) {
+            return { shouldUpdate: true, value: parsedDate.getFullYear() };
+        }
+    }
+
+    return { shouldUpdate: false };
+};
+
 const generateCopyId = (isbn) => {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 4);
@@ -38,6 +59,9 @@ const normalizeString = (value) => {
     if (!value) return '';
     return String(value).toLowerCase().trim();
 };
+
+const availableCopiesCount = (copies = []) =>
+    copies.filter((copy) => normalizeString(copy.status) === 'available').length;
 
 const matchesBookSearch = (book, term) => {
     if (!term) return true;
@@ -767,25 +791,6 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
             return res.status(400).json({ message: 'ISBN is required' });
         }
 
-        const computePublishedYear = (explicitYear, dateValue) => {
-            if (explicitYear !== undefined && explicitYear !== null && String(explicitYear).trim() !== '') {
-                const parsedYear = parseInt(explicitYear, 10);
-                if (Number.isNaN(parsedYear) || `${parsedYear}`.length !== 4) {
-                    throw new Error('Invalid published year');
-                }
-                return { shouldUpdate: true, value: parsedYear };
-            }
-
-            if (dateValue) {
-                const parsedDate = new Date(dateValue);
-                if (!Number.isNaN(parsedDate.getTime())) {
-                    return { shouldUpdate: true, value: parsedDate.getFullYear() };
-                }
-            }
-
-            return { shouldUpdate: false };
-        };
-
         const sanitizedPages = pages !== undefined && pages !== null && `${pages}`.trim() !== '' ? parseInt(pages, 10) : null;
         if (sanitizedPages !== null && Number.isNaN(sanitizedPages)) {
             setAuditContext(req, {
@@ -804,7 +809,6 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
         const existingBook = await req.dbAdapter.findOneInCollection('books', { isbn });
 
         const baseLocation = location || 'main-library';
-        const allowedCopyStatuses = new Set(['available', 'borrowed', 'lost', 'damaged', 'maintenance']);
 
         const buildCopies = () => {
             const rawCopies = Array.isArray(incomingCopies) && incomingCopies.length > 0
@@ -861,9 +865,6 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
             });
             return res.status(400).json({ message: 'At least one book copy is required' });
         }
-
-        const availableCopiesCount = (copies) => copies.filter(c => c.status === 'available').length;
-
         if (existingBook) {
             const existingCopyIds = new Set((existingBook.copies || []).map(copy => copy.copyId));
             for (const copy of copiesToAdd) {
@@ -1016,42 +1017,190 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
 
 router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async(req, res) => {
     try {
-        const { title, author, publisher, publishedYear, category, description, coverImage, status } = req.body;
+        const payload = req.body || {};
         setAuditContext(req, {
             entityId: req.params.id,
             metadata: {
                 updateRequest: {
                     bookId: req.params.id,
-                    fields: Object.keys(req.body || {})
+                    fields: Object.keys(payload)
                 }
             }
         });
+
         const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
         if (!book) {
             setAuditContext(req, {
                 success: false,
                 status: 'BookNotFound',
-                description: `Add copies failed: book ${req.params.id} not found`,
+                description: `Update book failed: book ${req.params.id} not found`,
             });
             return res.status(404).json({ message: 'Book not found' });
         }
+
+        if (Object.prototype.hasOwnProperty.call(payload, 'isbn') && payload.isbn !== book.isbn) {
+            return res.status(400).json({ message: 'ISBN cannot be changed for existing books' });
+        }
+
+        const hasField = (field) => Object.prototype.hasOwnProperty.call(payload, field);
         const updateData = { updatedAt: new Date(), updatedBy: req.user.id };
-        if (title) updateData.title = title;
-        if (author) updateData.author = author;
-        if (publisher) updateData.publisher = publisher;
-        if (publishedYear) updateData.publishedYear = publishedYear;
-        if (category) updateData.category = category;
-        if (description) updateData.description = description;
-        if (coverImage) updateData.coverImage = coverImage;
-        if (status) updateData.status = status;
+        const stringFields = ['title', 'author', 'publisher', 'category', 'description', 'coverImage', 'status', 'language', 'deweyDecimal'];
+        stringFields.forEach((field) => {
+            if (hasField(field)) {
+                updateData[field] = payload[field];
+            }
+        });
+
+        if (hasField('publicationDate')) {
+            updateData.publicationDate = payload.publicationDate || null;
+        }
+
+        if (hasField('pages')) {
+            const pagesValue = payload.pages;
+            if (pagesValue === null || pagesValue === '' || typeof pagesValue === 'undefined') {
+                updateData.pages = null;
+            } else {
+                const parsedPages = parseInt(pagesValue, 10);
+                if (Number.isNaN(parsedPages) || parsedPages <= 0) {
+                    return res.status(400).json({ message: 'Invalid number of pages' });
+                }
+                updateData.pages = parsedPages;
+            }
+        }
+
+        if (hasField('publishedYear') || hasField('publicationDate')) {
+            try {
+                const publishedYearMeta = computePublishedYear(
+                    payload.publishedYear,
+                    hasField('publicationDate') ? payload.publicationDate : book.publicationDate
+                );
+                if (publishedYearMeta.shouldUpdate) {
+                    updateData.publishedYear = publishedYearMeta.value;
+                } else if (payload.publishedYear === '' || payload.publishedYear === null) {
+                    updateData.publishedYear = null;
+                }
+            } catch (err) {
+                return res.status(400).json({ message: err.message });
+            }
+        }
+
+        let copySummary = null;
+        if (hasField('copies')) {
+            const sanitizeCopiesPayload = () => {
+                if (!Array.isArray(payload.copies) || payload.copies.length === 0) {
+                    throw new Error('At least one copy is required');
+                }
+
+                const seenIds = new Set();
+                const normalizedCopies = [];
+                const existingCopies = Array.isArray(book.copies) ? book.copies : [];
+                const existingCopyMap = new Map(
+                    existingCopies
+                        .filter((copy) => copy.copyId)
+                        .map((copy) => [String(copy.copyId).toUpperCase(), copy])
+                );
+
+                const addedCopyIds = [];
+                const updatedCopyIds = [];
+
+                payload.copies.forEach((raw) => {
+                    const normalizedId = String(raw?.copyId || '').trim().toUpperCase();
+                    if (!normalizedId) {
+                        throw new Error('Copy ID is required for each copy');
+                    }
+                    if (seenIds.has(normalizedId)) {
+                        throw new Error(`Duplicate copy ID ${normalizedId}`);
+                    }
+                    seenIds.add(normalizedId);
+
+                    const existing = existingCopyMap.get(normalizedId);
+                    const statusValue = normalizeString(raw.status) || 'available';
+                    const normalizedStatus = allowedCopyStatuses.has(statusValue) ? statusValue : 'available';
+
+                    const baseCopy = existing ? { ...existing } : {
+                        copyId: normalizedId,
+                        createdAt: new Date(),
+                        createdBy: req.user.id,
+                    };
+
+                    baseCopy.status = normalizedStatus;
+                    baseCopy.condition = raw.condition || existing?.condition || 'good';
+                    baseCopy.location = raw.location || existing?.location || 'main-library';
+                    baseCopy.updatedAt = new Date();
+                    baseCopy.updatedBy = req.user.id;
+
+                    normalizedCopies.push(baseCopy);
+                    if (existing) {
+                        updatedCopyIds.push(normalizedId);
+                    } else {
+                        addedCopyIds.push(normalizedId);
+                    }
+                });
+
+                const incomingIdSet = new Set(seenIds);
+                const removedCopyIds = [];
+                const blockedRemovals = [];
+
+                (book.copies || []).forEach((copy) => {
+                    const normalizedExistingId = String(copy.copyId || '').toUpperCase();
+                    if (!incomingIdSet.has(normalizedExistingId)) {
+                        if (normalizeString(copy.status) === 'borrowed') {
+                            blockedRemovals.push(copy.copyId);
+                        } else {
+                            removedCopyIds.push(copy.copyId);
+                        }
+                    }
+                });
+
+                if (blockedRemovals.length > 0) {
+                    const error = new Error('Cannot remove copies that are currently borrowed');
+                    error.details = { copyIds: blockedRemovals };
+                    throw error;
+                }
+
+                return {
+                    copies: normalizedCopies,
+                    summary: {
+                        added: addedCopyIds,
+                        removed: removedCopyIds,
+                        updated: updatedCopyIds,
+                    }
+                };
+            };
+
+            try {
+                const { copies, summary } = sanitizeCopiesPayload();
+                updateData.copies = copies;
+                updateData.totalCopies = copies.length;
+                updateData.availableCopies = availableCopiesCount(copies);
+                copySummary = summary;
+            } catch (error) {
+                const response = { message: error.message };
+                if (error.details) {
+                    response.details = error.details;
+                }
+                return res.status(400).json(response);
+            }
+        }
+
+        const updatedFields = Object.keys(updateData).filter((key) => key !== 'updatedAt' && key !== 'updatedBy');
+        if (updatedFields.length === 0) {
+            return res.status(400).json({ message: 'No valid fields provided for update' });
+        }
+
         await req.dbAdapter.updateInCollection('books', { id: req.params.id }, updateData);
+
+        const auditDetails = {
+            updatedFields: updatedFields.filter((field) => field !== 'copies'),
+        };
+        if (copySummary) {
+            auditDetails.copies = copySummary;
+        }
 
         setAuditContext(req, {
             entityId: req.params.id,
             description: `Updated book ${book.title || req.params.id}`,
-            details: {
-                updatedFields: Object.keys(updateData).filter((key) => key !== 'updatedAt' && key !== 'updatedBy'),
-            },
+            details: auditDetails,
             metadata: {
                 actorId: req.user.id
             },
@@ -1059,7 +1208,7 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
             status: 'Updated'
         });
 
-        res.json({ message: 'Book updated successfully' });
+        res.json({ message: 'Book updated successfully', updatedFields });
     } catch (error) {
         console.error('Update book error:', error);
         setAuditContext(req, {

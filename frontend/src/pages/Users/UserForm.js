@@ -212,7 +212,6 @@ const UserForm = () => {
     if (!formData.username.trim()) errors.username = "Username is required";
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
-    if (!formData.role) errors.role = "Role is required";
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const trimmedEmail = formData.email.trim();
@@ -429,7 +428,6 @@ const UserForm = () => {
                   <Grid item xs={12} md={6}>
                     <FormControl
                       fullWidth
-                      required
                       error={Boolean(validationErrors.role)}
                     >
                       <InputLabel>Role</InputLabel>

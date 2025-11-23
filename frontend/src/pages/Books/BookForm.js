@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -80,6 +80,13 @@ const extractFilename = (disposition, fallback) => {
   return fallback;
 };
 
+const sanitizeCategoryValue = (value) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.trim();
+};
+
 const BookForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -105,7 +112,31 @@ const BookForm = () => {
   const [checkingIsbn, setCheckingIsbn] = useState(false);
   const [prefilledIsbn, setPrefilledIsbn] = useState(null);
 
-  const [categories, setCategories] = useState(BASE_CATEGORIES);
+  const [categories, setCategories] = useState(() => [...BASE_CATEGORIES]);
+
+  const appendCategoryOption = useCallback((value) => {
+    const normalized = sanitizeCategoryValue(value);
+    if (!normalized) {
+      return;
+    }
+
+    setCategories((prev) =>
+      prev.includes(normalized) ? prev : [...prev, normalized],
+    );
+  }, []);
+
+  const categoryOptions = useMemo(() => {
+    const seen = new Set();
+    return categories.reduce((list, entry) => {
+      const normalized = sanitizeCategoryValue(entry);
+      if (!normalized || seen.has(normalized)) {
+        return list;
+      }
+      seen.add(normalized);
+      list.push(normalized);
+      return list;
+    }, []);
+  }, [categories]);
 
   const copyStatuses = [
     "available",
@@ -133,11 +164,7 @@ const BookForm = () => {
             ? book.copies
             : [{ copyId: "", status: "available", location: "" }],
       });
-      if (book.category) {
-        setCategories((prev) =>
-          prev.includes(book.category) ? prev : [...prev, book.category],
-        );
-      }
+      appendCategoryOption(book.category);
     } catch (error) {
       console.error("Failed to fetch book:", error);
       toast.error("Failed to load book details");
@@ -145,7 +172,7 @@ const BookForm = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, appendCategoryOption]);
 
   useEffect(() => {
     if (isEditing) {
@@ -209,13 +236,7 @@ const BookForm = () => {
       return;
     }
 
-    if (duplicateBook.category) {
-      setCategories((prev) =>
-        prev.includes(duplicateBook.category)
-          ? prev
-          : [...prev, duplicateBook.category],
-      );
-    }
+    appendCategoryOption(duplicateBook.category);
 
     setFormData((prev) => ({
       ...prev,
@@ -233,7 +254,7 @@ const BookForm = () => {
       return next;
     });
     setPrefilledIsbn(duplicateBook.isbn);
-  }, [duplicateBook, isEditing, prefilledIsbn]);
+  }, [duplicateBook, isEditing, prefilledIsbn, appendCategoryOption]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -551,13 +572,12 @@ const BookForm = () => {
                         onChange={handleChange}
                         label="Category"
                       >
-                        {categories.map((category) => (
+                        {categoryOptions.map((category) => (
                           <MenuItem key={category} value={category}>
-                            {" "}
-                            {category}{" "}
+                            {category}
                           </MenuItem>
-                        ))}{" "}
-                      </Select>{" "}
+                        ))}
+                      </Select>
                       {errors.category && (
                         <FormHelperText error>
                           {errors.category}

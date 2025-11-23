@@ -14,7 +14,8 @@ class MongoAdapter {
 			'transactions',
 			'settings',
 			'audit',
-			'annualSets'
+			'annualSets',
+			'notificationReads'
 		];
 	}
 

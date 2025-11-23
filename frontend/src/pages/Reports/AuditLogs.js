@@ -15,6 +15,7 @@ import {
   FormControl,
   Grid,
   IconButton,
+  InputAdornment,
   InputLabel,
   LinearProgress,
   List,
@@ -34,18 +35,20 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import {
   Download,
   ExpandLess,
   ExpandMore,
   FilterList,
   Refresh,
+  Search,
   Visibility,
 } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { auditAPI, downloadFile } from "../../utils/api";
+import { auditAPI, downloadFile, usersAPI } from "../../utils/api";
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -55,6 +58,10 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   second: "2-digit",
 });
+
+const FALLBACK_ROLE_OPTIONS = ["admin", "librarian", "staff", "student"];
+const toIsoIfValid = (value) =>
+  value instanceof Date && !Number.isNaN(value.getTime()) ? value.toISOString() : undefined;
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -69,6 +76,36 @@ const formatDateTime = (value) => {
   return DATE_TIME_FORMATTER.format(date);
 };
 
+const humanizeKey = (key = "") =>
+  key
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z\d])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+
+const formatDetailValue = (value) => {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => formatDetailValue(entry)).join(", ");
+  }
+  if (typeof value === "object") {
+    const nested = Object.entries(value)
+      .map(([key, nestedValue]) => `${humanizeKey(key)}: ${formatDetailValue(nestedValue)}`)
+      .join("; ");
+    return nested || "—";
+  }
+  return String(value);
+};
+
 const stringifyDetails = (details) => {
   if (!details) {
     return "No additional details provided.";
@@ -76,12 +113,24 @@ const stringifyDetails = (details) => {
   if (typeof details === "string") {
     return details;
   }
-  try {
-    return JSON.stringify(details, null, 2);
-  } catch (error) {
-    console.error("Failed to stringify audit log details", error);
+  if (typeof details !== "object") {
     return String(details);
   }
+
+  if (Array.isArray(details)) {
+    if (details.length === 0) {
+      return "No additional details provided.";
+    }
+    return details
+      .map((item, index) => `${index + 1}. ${formatDetailValue(item)}`)
+      .join("\n");
+  }
+
+  const entries = Object.entries(details).map(
+    ([key, value]) => `${humanizeKey(key)}: ${formatDetailValue(value)}`,
+  );
+
+  return entries.length > 0 ? entries.join("\n") : "No additional details provided.";
 };
 
 const getLogIdentifier = (log) => log?.id || log?._id || log?.timestamp;
@@ -127,6 +176,141 @@ const getActionLabel = (log) =>
 const getDescription = (log) =>
   log?.description || log?.message || log?.summary || "No description provided.";
 
+const toPlainObject = (value) =>
+  value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+const getUserSearchFields = (log) => {
+  const details = toPlainObject(log?.details);
+  const metadata = toPlainObject(log?.metadata);
+  const nestedUser = toPlainObject(log?.user);
+  const nestedLibrary = toPlainObject(nestedUser.library);
+  const detailStudent = toPlainObject(details.student);
+  const metadataStudent = toPlainObject(metadata.student);
+  const detailProfile = toPlainObject(details.profile);
+  const metadataProfile = toPlainObject(metadata.profile);
+  const request = toPlainObject(metadata.createRequest || metadata.request);
+  const requestStudent = toPlainObject(request.student);
+  const requestLibrary = toPlainObject(request.library);
+  const profileLibrary = toPlainObject(detailProfile.library);
+  const metadataLibrary = toPlainObject(metadataProfile.library);
+  const detailUser = toPlainObject(details.user);
+  const metadataUser = toPlainObject(metadata.user);
+  const borrower = toPlainObject(details.borrower || metadata.borrower || log.borrower);
+
+  const buildName = (source) => {
+    if (!source) {
+      return "";
+    }
+    const fullName = [source.firstName, source.middleName, source.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    return fullName || source.name || "";
+  };
+
+  const studentName =
+    log?.studentName ||
+    details.studentName ||
+    metadata.studentName ||
+    detailProfile.studentName ||
+    metadataProfile.studentName ||
+    detailUser.studentName ||
+    metadataUser.studentName ||
+    borrower.name ||
+    borrower.fullName ||
+    details.borrowerName ||
+    metadata.borrowerName ||
+    log?.borrowerName ||
+    buildName(detailStudent) ||
+    buildName(metadataStudent) ||
+    buildName(detailProfile) ||
+    buildName(detailUser) ||
+    buildName(metadataProfile) ||
+    buildName(request) ||
+    buildName(requestStudent) ||
+    nestedUser.studentName ||
+    nestedUser.name ||
+    getUserPrimary(log);
+
+  const studentId =
+    log?.studentId ||
+    details.studentId ||
+    metadata.studentId ||
+    detailStudent.studentId ||
+    metadataStudent.studentId ||
+    detailProfile.studentId ||
+    metadataProfile.studentId ||
+    detailUser.studentId ||
+    metadataUser.studentId ||
+    request.studentId ||
+    requestStudent.studentId ||
+    nestedUser.studentId ||
+    nestedUser.studentNumber ||
+    borrower.studentId ||
+    log?.userId;
+
+  const username =
+    log?.username ||
+    details.username ||
+    metadata.username ||
+    detailUser.username ||
+    metadataUser.username ||
+    nestedUser.username ||
+    log?.userName ||
+    log?.userEmail;
+
+  const libraryId =
+    log?.libraryId ||
+    log?.libraryCardNumber ||
+    details.libraryId ||
+    details.libraryCardNumber ||
+    detailStudent.libraryCardNumber ||
+    metadataStudent.libraryCardNumber ||
+    detailProfile.libraryCardNumber ||
+    metadataProfile.libraryCardNumber ||
+    detailUser.libraryCardNumber ||
+    metadataUser.libraryCardNumber ||
+    profileLibrary.cardNumber ||
+    metadataLibrary.cardNumber ||
+    request.libraryId ||
+    request.libraryCardNumber ||
+    requestStudent.libraryCardNumber ||
+    requestLibrary.cardNumber ||
+    borrower.libraryCardNumber ||
+    metadata.libraryId ||
+    metadata.libraryCardNumber ||
+    nestedUser.libraryCardNumber ||
+    nestedLibrary.cardNumber;
+
+  return {
+    studentName,
+    studentId,
+    username,
+    libraryId,
+  };
+};
+
+const resolveOptionSearchValue = (option, typedValue) => {
+  if (!option) {
+    return typedValue ?? "";
+  }
+
+  const normalizedTyped = (typedValue || "").trim().toLowerCase();
+  if (normalizedTyped && Array.isArray(option.candidates)) {
+    const match = option.candidates.find((candidate) => {
+      if (!candidate) {
+        return false;
+      }
+      return String(candidate).toLowerCase() === normalizedTyped;
+    });
+    if (match) {
+      return typedValue;
+    }
+  }
+
+  return option.searchValue || option.label || option.value || typedValue || "";
+};
+
 const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -139,39 +323,44 @@ const AuditLogs = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [summary, setSummary] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [roleOptions, setRoleOptions] = useState(FALLBACK_ROLE_OPTIONS);
 
   const [filters, setFilters] = useState({
     action: "all",
     entity: "all",
-    userId: "all",
+    role: "all",
+    userQuery: "",
     startDate: null,
     endDate: null,
   });
+  const handleFiltersUpdate = useCallback((updates) => {
+    setFilters((prev) => {
+      const nextUpdates =
+        typeof updates === "function" ? updates(prev) : { ...updates };
+      return { ...prev, ...nextUpdates };
+    });
+    setPage(0);
+  }, []);
 
   const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPage(0);
+    handleFiltersUpdate({ [key]: value });
   };
 
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      const trimmedQuery = filters.userQuery?.trim();
 
       const params = {
         page: page + 1,
         limit: rowsPerPage,
         action: filters.action !== "all" ? filters.action : undefined,
         entity: filters.entity !== "all" ? filters.entity : undefined,
-        userId: filters.userId !== "all" ? filters.userId : undefined,
-        startDate:
-          filters.startDate instanceof Date && !Number.isNaN(filters.startDate.getTime())
-            ? filters.startDate.toISOString()
-            : undefined,
-        endDate:
-          filters.endDate instanceof Date && !Number.isNaN(filters.endDate.getTime())
-            ? filters.endDate.toISOString()
-            : undefined,
+        role: filters.role !== "all" ? filters.role : undefined,
+        userQuery: trimmedQuery ? trimmedQuery : undefined,
+        startDate: toIsoIfValid(filters.startDate),
+        endDate: toIsoIfValid(filters.endDate),
       };
 
       const { data } = await auditAPI.getLogs(params);
@@ -190,8 +379,19 @@ const AuditLogs = () => {
 
   const loadSummary = useCallback(async () => {
     try {
+      const trimmedQuery = filters.userQuery?.trim();
+      const params = {
+        days: 30,
+        action: filters.action !== "all" ? filters.action : undefined,
+        entity: filters.entity !== "all" ? filters.entity : undefined,
+        role: filters.role !== "all" ? filters.role : undefined,
+        userQuery: trimmedQuery ? trimmedQuery : undefined,
+        startDate: toIsoIfValid(filters.startDate),
+        endDate: toIsoIfValid(filters.endDate),
+      };
+
       const [summaryResponse, recentResponse] = await Promise.all([
-        auditAPI.getSummary({ days: 30 }),
+        auditAPI.getSummary(params),
         auditAPI.getRecentActivity({ limit: 5 }),
       ]);
 
@@ -200,7 +400,7 @@ const AuditLogs = () => {
     } catch (err) {
       console.error("Failed to load audit summary", err);
     }
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     loadLogs();
@@ -209,6 +409,38 @@ const AuditLogs = () => {
   useEffect(() => {
     loadSummary();
   }, [loadSummary]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRoles = async () => {
+      try {
+        const { data } = await usersAPI.getRoles();
+        const rawRoles = Array.isArray(data?.roles) ? data.roles : Array.isArray(data) ? data : [];
+        const normalized = Array.from(
+          new Set(
+            rawRoles
+              .map((role) => (role ? String(role).trim().toLowerCase() : ""))
+              .filter(Boolean),
+          ),
+        ).sort((a, b) => a.localeCompare(b));
+        if (isMounted) {
+          setRoleOptions(normalized.length > 0 ? normalized : FALLBACK_ROLE_OPTIONS);
+        }
+      } catch (err) {
+        console.error("Failed to load user roles", err);
+        if (isMounted) {
+          setRoleOptions(FALLBACK_ROLE_OPTIONS);
+        }
+      }
+    };
+
+    fetchRoles();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const metrics = useMemo(() => {
     if (!summary) {
@@ -246,16 +478,10 @@ const AuditLogs = () => {
   const filterOptions = useMemo(() => {
     const actionSet = new Set();
     const entitySet = new Set();
-    const userMap = new Map();
 
     if (summary) {
       Object.keys(summary.actionCounts ?? {}).forEach((action) => action && actionSet.add(action));
       Object.keys(summary.entityCounts ?? {}).forEach((entity) => entity && entitySet.add(entity));
-      Object.entries(summary.userCounts ?? {}).forEach(([userId]) => {
-        if (userId) {
-          userMap.set(userId, userId);
-        }
-      });
     }
 
     logs.forEach((log) => {
@@ -265,17 +491,134 @@ const AuditLogs = () => {
       if (log?.entity || log?.resource) {
         entitySet.add(log.entity || log.resource);
       }
-      if (log?.userId) {
-        userMap.set(log.userId, getUserPrimary(log));
-      }
     });
 
     return {
       actions: Array.from(actionSet).sort((a, b) => a.localeCompare(b)),
       entities: Array.from(entitySet).sort((a, b) => a.localeCompare(b)),
-      users: Array.from(userMap.entries()).sort((a, b) => a[1].localeCompare(b[1])),
     };
   }, [logs, summary]);
+
+  const userOptions = useMemo(() => {
+    const userMap = new Map();
+
+    const registerOption = (key, option) => {
+      if (!key || userMap.has(key)) {
+        return;
+      }
+      userMap.set(key, option);
+    };
+
+    logs.forEach((log) => {
+      if (!log) {
+        return;
+      }
+      const meta = getUserSearchFields(log);
+      const key =
+        meta.libraryId ||
+        meta.studentId ||
+        meta.studentName ||
+        meta.username ||
+        log.userId ||
+        getLogIdentifier(log);
+      if (!key) {
+        return;
+      }
+
+      const label =
+        meta.studentName ||
+        getUserPrimary(log) ||
+        meta.libraryId ||
+        meta.studentId ||
+        meta.username ||
+        "Unknown user";
+
+      const secondaryParts = [
+        meta.studentId ? `Student ID: ${meta.studentId}` : null,
+        meta.username ? `Username: ${meta.username}` : null,
+        meta.libraryId ? `Library ID: ${meta.libraryId}` : null,
+      ].filter(Boolean);
+
+      const searchValue =
+        meta.libraryId ||
+        meta.studentId ||
+        meta.studentName ||
+        meta.username ||
+        label;
+
+      registerOption(key, {
+        value: key,
+        label,
+        secondary: secondaryParts.join(" • ") || getUserSecondary(log) || "",
+        meta,
+        searchValue,
+        candidates: [
+          meta.libraryId,
+          meta.studentId,
+          meta.studentName,
+          meta.username,
+          getUserPrimary(log),
+          getUserSecondary(log),
+          log.userId,
+        ].filter(Boolean),
+        searchText: [
+          label,
+          secondaryParts.join(" "),
+          meta.studentId,
+          meta.username,
+          meta.libraryId,
+          meta.studentName,
+          log.userEmail,
+        ]
+          .filter(Boolean)
+          .map((entry) => String(entry).toLowerCase())
+          .join(" "),
+      });
+    });
+
+    Object.keys(summary?.userCounts ?? {}).forEach((userId) => {
+      if (!userId) {
+        return;
+      }
+      registerOption(userId, {
+        value: userId,
+        label: userId,
+        secondary: "",
+        meta: { studentId: userId },
+        searchValue: userId,
+        candidates: [userId],
+        searchText: String(userId).toLowerCase(),
+      });
+    });
+
+    return Array.from(userMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [logs, summary]);
+
+  const filterUserOptions = useMemo(
+    () =>
+      createFilterOptions({
+        stringify: (option) =>
+          [
+            option.label,
+            option.secondary,
+            option.meta?.studentId,
+            option.meta?.username,
+            option.meta?.libraryId,
+          ]
+            .filter(Boolean)
+            .join(" "),
+      }),
+    [],
+  );
+
+  const visibleUserOptions = useMemo(() => {
+    const trimmed = filters.userQuery.trim();
+    if (!trimmed) {
+      return [];
+    }
+    return userOptions;
+  }, [filters.userQuery, userOptions]);
+
 
   const toggleRowExpansion = (logId) => {
     if (!logId) {
@@ -305,18 +648,14 @@ const AuditLogs = () => {
   const handleExport = async () => {
     try {
       setError(null);
+      const trimmedQuery = filters.userQuery?.trim();
       const params = {
         action: filters.action !== "all" ? filters.action : undefined,
         entity: filters.entity !== "all" ? filters.entity : undefined,
-        userId: filters.userId !== "all" ? filters.userId : undefined,
-        startDate:
-          filters.startDate instanceof Date && !Number.isNaN(filters.startDate.getTime())
-            ? filters.startDate.toISOString()
-            : undefined,
-        endDate:
-          filters.endDate instanceof Date && !Number.isNaN(filters.endDate.getTime())
-            ? filters.endDate.toISOString()
-            : undefined,
+        role: filters.role !== "all" ? filters.role : undefined,
+        userQuery: trimmedQuery ? trimmedQuery : undefined,
+        startDate: toIsoIfValid(filters.startDate),
+        endDate: toIsoIfValid(filters.endDate),
       };
 
       const { data } = await auditAPI.exportCsv(params);
@@ -336,7 +675,8 @@ const AuditLogs = () => {
     setFilters({
       action: "all",
       entity: "all",
-      userId: "all",
+      role: "all",
+      userQuery: "",
       startDate: null,
       endDate: null,
     });
@@ -424,6 +764,73 @@ const AuditLogs = () => {
         </Grid>
 
         <Paper sx={{ p: 2 }}>
+          <Box sx={{ width: "100%", mb: 2 }}>
+            <Autocomplete
+              fullWidth
+              freeSolo
+              options={visibleUserOptions}
+              filterOptions={filterUserOptions}
+              value={null}
+              inputValue={filters.userQuery}
+              onInputChange={(_, newInputValue, reason) => {
+                if (reason === "reset") {
+                  return;
+                }
+                handleFilterChange("userQuery", newInputValue ?? "");
+              }}
+              onChange={(_, newValue) => {
+                if (!newValue) {
+                  handleFilterChange("userQuery", "");
+                  return;
+                }
+                if (typeof newValue === "string") {
+                  handleFilterChange("userQuery", newValue);
+                  return;
+                }
+                handleFilterChange(
+                  "userQuery",
+                  resolveOptionSearchValue(newValue, filters.userQuery),
+                );
+              }}
+              getOptionLabel={(option) =>
+                typeof option === "string"
+                  ? option
+                  : option.label || option.searchValue || option.value || ""
+              }
+              isOptionEqualToValue={(option, value) => option.value === value?.value}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography variant="body2">{option.label}</Typography>
+                  {option.secondary && (
+                    <Typography variant="caption" color="text.secondary">
+                      {option.secondary}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+              ListboxProps={{ style: { maxHeight: 240 } }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Search user"
+                  placeholder="Student ID, name, username, or library ID"
+                  size="small"
+                  fullWidth
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <InputAdornment position="start">
+                          <Search fontSize="small" />
+                        </InputAdornment>
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Box>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={3}>
               <FormControl fullWidth size="small">
@@ -445,6 +852,24 @@ const AuditLogs = () => {
             </Grid>
             <Grid item xs={12} md={3}>
               <FormControl fullWidth size="small">
+                <InputLabel id="audit-role-filter">Role</InputLabel>
+                <Select
+                  labelId="audit-role-filter"
+                  label="Role"
+                  value={filters.role}
+                  onChange={(event) => handleFilterChange("role", event.target.value)}
+                >
+                  <MenuItem value="all">All roles</MenuItem>
+                  {roleOptions.map((role) => (
+                    <MenuItem key={role} value={role}>
+                      {humanizeKey(role)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth size="small">
                 <InputLabel id="audit-entity-filter">Entity</InputLabel>
                 <Select
                   labelId="audit-entity-filter"
@@ -456,24 +881,6 @@ const AuditLogs = () => {
                   {filterOptions.entities.map((entity) => (
                     <MenuItem key={entity} value={entity}>
                       {entity}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel id="audit-user-filter">User</InputLabel>
-                <Select
-                  labelId="audit-user-filter"
-                  label="User"
-                  value={filters.userId}
-                  onChange={(event) => handleFilterChange("userId", event.target.value)}
-                >
-                  <MenuItem value="all">All users</MenuItem>
-                  {filterOptions.users.map(([userId, label]) => (
-                    <MenuItem key={userId} value={userId}>
-                      {label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -629,9 +1036,9 @@ const AuditLogs = () => {
                                     Details
                                   </Typography>
                                   <Paper variant="outlined" sx={{ p: 2, maxHeight: 240, overflow: "auto" }}>
-                                    <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap" }}>
+                                    <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
                                       {stringifyDetails(log.details)}
-                                    </pre>
+                                    </Typography>
                                   </Paper>
                                 </Box>
                               )}
@@ -722,9 +1129,9 @@ const AuditLogs = () => {
                       Details
                     </Typography>
                     <Paper variant="outlined" sx={{ p: 2, maxHeight: 320, overflow: "auto" }}>
-                      <pre style={{ margin: 0, fontSize: 12, whiteSpace: "pre-wrap" }}>
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
                         {stringifyDetails(selectedLog.details)}
-                      </pre>
+                      </Typography>
                     </Paper>
                   </Grid>
                 )}

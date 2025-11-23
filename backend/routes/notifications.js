@@ -4,6 +4,140 @@ const { verifyToken } = require('../middleware/customAuth');
 const router = express.Router();
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const SYNTHETIC_READ_COLLECTION = 'notificationReads';
+
+const getUserIdString = (user = {}) => {
+  const candidates = [user.id, user._id, user.userId];
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null) {
+      continue;
+    }
+    const normalized = String(candidate).trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return null;
+};
+
+const getNotificationIdentifier = (item) => {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const candidates = [
+    item.id,
+    item._id,
+    item.transactionId,
+    item?.meta?.transactionId,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null) {
+      continue;
+    }
+    const normalized = String(candidate).trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
+};
+
+const ensureNotificationIdentifiers = (notification) => {
+  if (!notification || typeof notification !== 'object') {
+    return notification;
+  }
+
+  const identifier = getNotificationIdentifier(notification);
+  if (identifier) {
+    if (!notification.id) {
+      notification.id = identifier;
+    }
+    if (!notification._id) {
+      notification._id = identifier;
+    }
+  }
+
+  if (!notification.fingerprint) {
+    notification.fingerprint =
+      identifier ||
+      (notification.link
+        ? `${notification.type || 'notification'}:${notification.link}`
+        : null);
+  }
+
+  return notification;
+};
+
+const loadUserReadSet = async (dbAdapter, userId) => {
+  if (!userId) {
+    return new Set();
+  }
+
+  try {
+    const entries = await dbAdapter.findInCollection(SYNTHETIC_READ_COLLECTION, {
+      userId,
+    });
+
+    const identifiers = entries
+      .map((entry) => entry.notificationId)
+      .filter((value) => typeof value === 'string' && value.trim().length > 0)
+      .map((value) => value.trim());
+
+    return new Set(identifiers);
+  } catch (error) {
+    console.error('Notifications read-state load error:', error);
+    return new Set();
+  }
+};
+
+const persistSyntheticReadState = async (dbAdapter, userId, notificationId, read) => {
+  if (!userId || !notificationId) {
+    return null;
+  }
+
+  const normalizedUserId = String(userId).trim();
+  const normalizedNotificationId = String(notificationId).trim();
+
+  if (!normalizedUserId || !normalizedNotificationId) {
+    return null;
+  }
+
+  const existing = await dbAdapter.findOneInCollection(
+    SYNTHETIC_READ_COLLECTION,
+    {
+      userId: normalizedUserId,
+      notificationId: normalizedNotificationId,
+    },
+  );
+
+  if (read) {
+    if (existing) {
+      const updated = await dbAdapter.updateInCollection(
+        SYNTHETIC_READ_COLLECTION,
+        { _id: existing._id },
+        { read: true },
+      );
+      return updated || existing;
+    }
+
+    return await dbAdapter.insertIntoCollection(SYNTHETIC_READ_COLLECTION, {
+      userId: normalizedUserId,
+      notificationId: normalizedNotificationId,
+      read: true,
+    });
+  }
+
+  if (existing) {
+    await dbAdapter.deleteFromCollection(SYNTHETIC_READ_COLLECTION, {
+      _id: existing._id,
+    });
+  }
+
+  return null;
+};
 
 const toDate = (value) => {
   if (!value) return null;
@@ -183,6 +317,7 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
     const role = req.user.role || 'student';
+    const userId = getUserIdString(req.user);
 
     const [transactions, books, users] = await Promise.all([
       req.dbAdapter.findInCollection('transactions', {}),
@@ -220,6 +355,14 @@ router.get('/', verifyToken, async (req, res) => {
     const dueSoonThreshold = new Date(now.getTime() + 3 * MS_IN_DAY);
 
     const notifications = [];
+    const registerNotification = (payload) => {
+      if (!payload) {
+        return;
+      }
+      const normalized = ensureNotificationIdentifiers({ ...payload, read: false });
+      normalized.read = false;
+      notifications.push(normalized);
+    };
 
     transactions.forEach((transaction) => {
       if (role === 'student' && !transactionBelongsToUser(transaction, identifiers)) {
@@ -249,7 +392,7 @@ router.get('/', verifyToken, async (req, res) => {
       const isMissing = status === 'missing' || status === 'lost';
 
       if (isMissing) {
-        notifications.push({
+        registerNotification({
           id: `missing-${baseId}`,
           type: 'missing',
           title: summary.title || 'Missing item',
@@ -271,7 +414,7 @@ router.get('/', verifyToken, async (req, res) => {
 
       // Surface borrow requests to staff as actionable notifications
       if (status === 'requested' && role !== 'student') {
-        notifications.push({
+        registerNotification({
           id: `request-${baseId}`,
           type: 'request',
           title: summary.title || 'Borrow request',
@@ -286,7 +429,7 @@ router.get('/', verifyToken, async (req, res) => {
 
       if (dueDate < now) {
         const overdueDays = daysOverdue(dueDate, now);
-        notifications.push({
+        registerNotification({
           id: `overdue-${baseId}`,
           type: 'overdue',
           title: summary.title || 'Overdue item',
@@ -309,7 +452,7 @@ router.get('/', verifyToken, async (req, res) => {
 
       if (dueDate <= dueSoonThreshold) {
         const daysRemaining = daysUntilDue(dueDate, now);
-        notifications.push({
+        registerNotification({
           id: `due-soon-${baseId}`,
           type: 'due-soon',
           title: summary.title || 'Upcoming due date',
@@ -327,6 +470,14 @@ router.get('/', verifyToken, async (req, res) => {
             daysUntilDue: daysRemaining,
           },
         });
+      }
+    });
+
+    const readIdSet = await loadUserReadSet(req.dbAdapter, userId);
+    notifications.forEach((entry) => {
+      const identifier = getNotificationIdentifier(entry);
+      if (identifier && readIdSet.has(identifier)) {
+        entry.read = true;
       }
     });
 
@@ -361,7 +512,18 @@ router.get('/persistent', verifyToken, async (req, res) => {
       });
     }
     items.sort((a,b) => new Date(b.createdAt || b.timestamp || 0) - new Date(a.createdAt || a.timestamp || 0));
-    res.json({ notifications: items });
+
+    const viewerId = getUserIdString(req.user);
+    const normalizedItems = items.map((entry) => {
+      const readByList = Array.isArray(entry.readBy)
+        ? entry.readBy.map((value) => String(value))
+        : [];
+      const normalized = ensureNotificationIdentifiers({ ...entry });
+      normalized.read = viewerId ? readByList.includes(viewerId) : false;
+      return normalized;
+    });
+
+    res.json({ notifications: normalizedItems });
   } catch (error) {
     console.error('Get persistent notifications error:', error);
     res.status(500).json({ message: 'Failed to fetch persistent notifications' });
@@ -392,20 +554,60 @@ router.post('/', verifyToken, async (req, res) => {
 
 router.put('/:id/read', verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    const { read } = req.body || {};
-    const item = await req.dbAdapter.findOneInCollection('notifications', { id }) || await req.dbAdapter.findOneInCollection('notifications', { _id: id });
-    if (!item) return res.status(404).json({ message: 'Notification not found' });
-    const readBy = Array.isArray(item.readBy) ? item.readBy.slice() : [];
-    if (read) {
-      if (!readBy.includes(req.user.id)) readBy.push(req.user.id);
-    } else {
-      const idx = readBy.indexOf(req.user.id);
-      if (idx >= 0) readBy.splice(idx, 1);
+    const idParam = typeof req.params.id === 'string' ? req.params.id.trim() : '';
+    if (!idParam) {
+      return res.status(400).json({ message: 'Notification id is required' });
     }
-    const q = item.id ? { id: item.id } : { _id: item._id };
-    const updated = await req.dbAdapter.updateInCollection('notifications', q, { readBy, updatedAt: new Date() });
-    res.json(updated);
+
+    const requestBody = req.body || {};
+    const shouldMarkRead =
+      typeof requestBody.read === 'boolean' ? requestBody.read : true;
+    const normalizedUserId = getUserIdString(req.user);
+
+    if (!normalizedUserId) {
+      return res.status(400).json({ message: 'User identifier unavailable' });
+    }
+
+    const item =
+      (await req.dbAdapter.findOneInCollection('notifications', { id: idParam })) ||
+      (await req.dbAdapter.findOneInCollection('notifications', { _id: idParam }));
+
+    if (item) {
+      const readBy = Array.isArray(item.readBy)
+        ? item.readBy.map((value) => String(value))
+        : [];
+      const existingIndex = readBy.indexOf(normalizedUserId);
+
+      if (shouldMarkRead && existingIndex === -1) {
+        readBy.push(normalizedUserId);
+      } else if (!shouldMarkRead && existingIndex !== -1) {
+        readBy.splice(existingIndex, 1);
+      }
+
+      const query = item.id ? { id: item.id } : { _id: item._id };
+      const updated = await req.dbAdapter.updateInCollection('notifications', query, {
+        readBy,
+        updatedAt: new Date(),
+      });
+
+      const responsePayload = updated || { ...item, readBy };
+      responsePayload.read = readBy.includes(normalizedUserId);
+
+      return res.json(responsePayload);
+    }
+
+    await persistSyntheticReadState(
+      req.dbAdapter,
+      normalizedUserId,
+      idParam,
+      shouldMarkRead,
+    );
+
+    return res.json({
+      notificationId: idParam,
+      userId: normalizedUserId,
+      read: shouldMarkRead,
+    });
   } catch (error) {
     console.error('Mark read error:', error);
     res.status(500).json({ message: 'Failed to update notification' });

@@ -6,6 +6,8 @@ const fs = require('fs');
 const { verifyToken, requireRole, requireAdmin, requireLibrarian, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
 const router = express.Router();
 
+const DEFAULT_SYSTEM_ROLES = ['admin', 'librarian', 'staff', 'student'];
+
 const AVATAR_STORAGE_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
 const ALLOWED_AVATAR_MIME_TYPES = {
     'image/jpeg': '.jpg',
@@ -156,6 +158,35 @@ const sanitizeUserSummary = (user) => {
         avatarUrl,
     };
 };
+
+// Fetch distinct roles from database users (Admin, Librarian, Staff only)
+router.get('/roles', verifyToken, requireStaff, async (req, res) => {
+    try {
+        const users = await req.dbAdapter.findInCollection('users', {});
+        const roleSet = new Set();
+
+        users.forEach((user) => {
+            const rawRole = user?.role;
+            if (!rawRole) {
+                return;
+            }
+            const normalized = String(rawRole).trim().toLowerCase();
+            if (normalized) {
+                roleSet.add(normalized);
+            }
+        });
+
+        if (roleSet.size === 0) {
+            DEFAULT_SYSTEM_ROLES.forEach((role) => roleSet.add(role));
+        }
+
+        const roles = Array.from(roleSet).sort((a, b) => a.localeCompare(b));
+        res.json({ roles });
+    } catch (error) {
+        console.error('Failed to load user roles:', error);
+        res.status(500).json({ message: 'Failed to load user roles' });
+    }
+});
 
 // Search users (Admin, Librarian, Staff only)
 router.get('/search', verifyToken, requireStaff, async(req, res) => {
@@ -427,13 +458,15 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
         } = req.body;
 
         const trimmedEmail = typeof rawEmail === 'string' ? rawEmail.trim() : '';
+        const normalizedRoleInput = typeof role === 'string' ? role.trim() : role;
+        const resolvedRole = normalizedRoleInput || 'student';
 
         setAuditContext(req, {
             metadata: {
                 createRequest: {
                     username: username || null,
                     email: trimmedEmail || null,
-                    role: role || null
+                    role: resolvedRole || null
                 }
             },
             details: {
@@ -442,7 +475,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
                     email: trimmedEmail || null,
                     firstName: firstName || null,
                     lastName: lastName || null,
-                    role: role || null,
+                    role: resolvedRole || null,
                     studentNumber: studentNumber || null,
                     curriculum: curriculum || null,
                     gradeLevel: gradeLevel || null
@@ -456,7 +489,6 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
         if (!password) missingFields.push('password');
         if (!firstName || !String(firstName).trim()) missingFields.push('firstName');
         if (!lastName || !String(lastName).trim()) missingFields.push('lastName');
-        if (!role) missingFields.push('role');
 
         if (missingFields.length > 0) {
             setAuditContext(req, {
@@ -523,7 +555,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
         }
 
         // Validate role permissions
-        if (req.user.role === 'librarian' && role === 'admin') {
+        if (req.user.role === 'librarian' && resolvedRole === 'admin') {
             setAuditContext(req, {
                 success: false,
                 status: 'PermissionDenied',
@@ -542,7 +574,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             password: hashedPassword,
             firstName,
             lastName,
-            role,
+            role: resolvedRole,
             studentNumber: studentNumber || null,
             curriculum: curriculum || null,
             gradeLevel: gradeLevel || null,
@@ -559,7 +591,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             library: {
                 cardNumber: studentNumber || `USER-${Date.now()}`,
                 membershipDate: new Date(),
-                borrowingLimit: role === 'student' ? 5 : 10,
+                borrowingLimit: resolvedRole === 'student' ? 5 : 10,
                 fineBalance: 0
             },
             borrowingStats: {
@@ -832,6 +864,10 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
             email
         } = req.body;
 
+        const roleProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'role');
+        const normalizedRoleInput = typeof role === 'string' ? role.trim() : role;
+        const resolvedRole = roleProvided ? (normalizedRoleInput || 'student') : undefined; // fallback to student when role input is blank
+
         setAuditContext(req, {
             entityId: userId,
             metadata: {
@@ -857,8 +893,8 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
         }
 
         // Validate role change permissions
-        if (role && req.user.id !== userId) {
-            if (req.user.role === 'librarian' && role === 'admin') {
+        if (roleProvided && req.user.id !== userId) {
+            if (req.user.role === 'librarian' && resolvedRole === 'admin') {
                 setAuditContext(req, {
                     success: false,
                     status: 'PermissionDenied',
@@ -895,7 +931,7 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
 
         if (firstName) updateData.firstName = firstName;
         if (lastName) updateData.lastName = lastName;
-        if (role && req.user.id !== userId) updateData.role = role;
+        if (roleProvided && req.user.id !== userId) updateData.role = resolvedRole;
         if (studentNumber) updateData.studentNumber = studentNumber;
     if (curriculum) updateData.curriculum = curriculum;
         if (gradeLevel) updateData.gradeLevel = gradeLevel;

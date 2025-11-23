@@ -1,6 +1,120 @@
 const express = require('express');
 const router = express.Router();
 
+const normalizeId = (value) => {
+    if (value === undefined || value === null) {
+        return '';
+    }
+    return String(value).trim();
+};
+
+const findByEntityId = (collection, identifier) => {
+    if (!Array.isArray(collection)) {
+        return undefined;
+    }
+    const target = normalizeId(identifier);
+    if (!target) {
+        return undefined;
+    }
+    return collection.find((entity) => {
+        const candidate = entity || {};
+        return normalizeId(candidate.id) === target || normalizeId(candidate._id) === target;
+    });
+};
+
+const formatUserName = (user) => {
+    if (!user) {
+        return 'Unknown';
+    }
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    return fullName || user.username || user.email || 'Unknown';
+};
+
+const extractBookReferenceId = (reference) => {
+    if (!reference) {
+        return '';
+    }
+    return (
+        normalizeId(reference.bookId) ||
+        normalizeId(reference.book_id) ||
+        normalizeId(reference.book) ||
+        normalizeId(reference.id) ||
+        normalizeId(reference._id)
+    );
+};
+
+const getTransactionBookReferences = (transaction = {}) => {
+    if (Array.isArray(transaction.books) && transaction.books.length) {
+        return transaction.books;
+    }
+    if (Array.isArray(transaction.items) && transaction.items.length) {
+        return transaction.items;
+    }
+    return [];
+};
+
+const resolveTransactionBookTitles = (transaction, books) => {
+    const references = getTransactionBookReferences(transaction);
+    if (!references.length) {
+        return 'Unknown';
+    }
+    const titles = references.map((ref) => {
+        const bookId = extractBookReferenceId(ref);
+        const book = findByEntityId(books, bookId);
+        return book?.title || ref.title || ref.isbn || bookId || 'Unknown';
+    }).filter(Boolean);
+    return titles.length ? titles.join(', ') : 'Unknown';
+};
+
+const resolvePrimaryBookDetails = (transaction, books) => {
+    const [firstReference] = getTransactionBookReferences(transaction);
+    if (!firstReference) {
+        return { title: 'Unknown Book', author: 'Unknown Author', isbn: '' };
+    }
+    const bookId = extractBookReferenceId(firstReference);
+    const book = findByEntityId(books, bookId);
+    return {
+        title: book?.title || firstReference.title || 'Unknown Book',
+        author: book?.author || firstReference.author || 'Unknown Author',
+        isbn: book?.isbn || firstReference.isbn || ''
+    };
+};
+
+const getTransactionFineAmount = (transaction) => {
+    if (!transaction) {
+        return 0;
+    }
+    const rawValue = Number(
+        transaction.fine ??
+        transaction.fineAmount ??
+        transaction.fineDue ??
+        transaction.fineTotal ??
+        0
+    );
+    return Number.isFinite(rawValue) ? rawValue : 0;
+};
+
+const toDateOrNull = (value) => {
+    if (!value) {
+        return null;
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getTransactionReportDate = (transaction) => {
+    if (!transaction) {
+        return null;
+    }
+    return (
+        toDateOrNull(transaction.returnDate) ||
+        toDateOrNull(transaction.updatedAt) ||
+        toDateOrNull(transaction.dueDate) ||
+        toDateOrNull(transaction.borrowDate) ||
+        toDateOrNull(transaction.createdAt)
+    );
+};
+
 // Get library statistics
 router.get('/stats', async(req, res) => {
     try {
@@ -135,20 +249,14 @@ router.get('/overdue/recent', async(req, res) => {
 
         // Enrich with user and book details
         const overdueBooks = overdueTransactions.map(trans => {
-            const user = users.find(u => u.id === trans.userId || u._id === trans.userId);
-            let bookTitle = 'Unknown Book';
-
-            if (trans.items && trans.items.length > 0) {
-                const item = trans.items[0];
-                const book = books.find(b => b.id === item.bookId || b._id === item.bookId);
-                if (book) bookTitle = book.title;
-            }
+            const user = findByEntityId(users, trans.userId);
+            const { title } = resolvePrimaryBookDetails(trans, books);
 
             return {
                 transactionId: trans.id || trans._id,
-                studentId: user ? user.studentId : '',
-                student: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
-                title: bookTitle,
+                studentId: user?.studentId || '',
+                student: formatUserName(user),
+                title,
                 dueDate: trans.dueDate,
                 borrowDate: trans.borrowDate,
                 daysOverdue: Math.floor((now - new Date(trans.dueDate)) / (1000 * 60 * 60 * 24))
@@ -175,28 +283,16 @@ router.get('/transactions/recent', async(req, res) => {
 
             // Enrich with user and book details
             const enrichedTransactions = recent.map(trans => {
-                const user = users.find(u => u.id === trans.userId || u._id === trans.userId);
-                let bookTitle = 'Unknown Book';
-                let author = 'Unknown Author';
-                let isbn = '';
-
-                if (trans.items && trans.items.length > 0) {
-                    const item = trans.items[0];
-                    const book = books.find(b => b.id === item.bookId || b._id === item.bookId);
-                    if (book) {
-                        bookTitle = book.title;
-                        author = book.author;
-                        isbn = book.isbn;
-                    }
-                }
+                const user = findByEntityId(users, trans.userId);
+                const bookDetails = resolvePrimaryBookDetails(trans, books);
 
                 return {
                     ...trans,
-                    studentId: user ? user.studentId : '',
-                    student: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
-                    title: bookTitle,
-                    author: author,
-                    isbn: isbn,
+                    studentId: user?.studentId || '',
+                    student: formatUserName(user),
+                    title: bookDetails.title,
+                    author: bookDetails.author,
+                    isbn: bookDetails.isbn,
                     recordDate: trans.borrowDate,
                     returnedDate: trans.returnDate
                 };
@@ -246,7 +342,7 @@ router.get('/dashboard', async(req, res) => {
 
         const popularBooks = Object.entries(bookBorrowCounts)
             .map(([bookId, count]) => {
-                const book = books.find(b => b.id === bookId || b._id === bookId) || {};
+                const book = findByEntityId(books, bookId) || {};
                 return {
                     id: bookId,
                     title: book.title || 'Unknown',
@@ -307,7 +403,10 @@ router.get('/circulation', async(req, res) => {
             }
             if (t.status === 'borrowed') dailyData[date].borrowed++;
             if (t.status === 'returned') dailyData[date].returned++;
-            if (t.fine && t.finePaid) dailyData[date].finesCollected += t.fine;
+            const fineValue = getTransactionFineAmount(t);
+            if (fineValue > 0 && (t.finePaid || typeof t.finePaid === 'undefined')) {
+                dailyData[date].finesCollected += fineValue;
+            }
         });
 
         // Count new users in date range
@@ -349,12 +448,12 @@ router.get('/popular-books', async(req, res) => {
         filtered.forEach(t => {
             if (t.books && Array.isArray(t.books)) {
                 t.books.forEach(book => {
-                    const bid = book.id || book._id || book.bookId;
+                    const bid = extractBookReferenceId(book);
                     if (bid) bookCounts[bid] = (bookCounts[bid] || 0) + 1;
                 });
             } else if (t.items && Array.isArray(t.items)) {
                 t.items.forEach(item => {
-                    const bid = item.bookId || item.book_id || item.book;
+                    const bid = extractBookReferenceId(item);
                     if (bid) bookCounts[bid] = (bookCounts[bid] || 0) + 1;
                 });
             }
@@ -363,14 +462,14 @@ router.get('/popular-books', async(req, res) => {
         // Convert to array with book details and sort
         const popularBooks = Object.entries(bookCounts)
             .map(([bookId, count]) => {
-                const book = books.find(b => b.id === bookId);
+                const book = findByEntityId(books, bookId);
                 return {
                     id: bookId,
-                    title: book ? book.title : 'Unknown',
-                    author: book ? book.author : 'Unknown',
-                    category: book ? book.category : 'Uncategorized',
+                    title: book?.title || 'Unknown',
+                    author: book?.author || 'Unknown',
+                    category: book?.category || 'Uncategorized',
                     borrowCount: count,
-                    averageRating: book ? book.rating : null
+                    averageRating: book?.rating ?? null
                 };
             })
             .sort((a, b) => b.borrowCount - a.borrowCount)
@@ -401,24 +500,31 @@ router.get('/user-activity', async(req, res) => {
         // Count user activity
         const userActivity = {};
         filtered.forEach(t => {
-            if (!userActivity[t.userId]) {
-                userActivity[t.userId] = { borrowed: 0, returned: 0, totalFines: 0, lastActivity: t.createdAt };
+            const userKey = normalizeId(t.userId);
+            if (!userKey) {
+                return;
             }
-            if (t.status === 'borrowed') userActivity[t.userId].borrowed++;
-            if (t.status === 'returned') userActivity[t.userId].returned++;
-            if (t.fine) userActivity[t.userId].totalFines += t.fine;
-            if (new Date(t.createdAt) > new Date(userActivity[t.userId].lastActivity)) {
-                userActivity[t.userId].lastActivity = t.createdAt;
+            if (!userActivity[userKey]) {
+                userActivity[userKey] = { borrowed: 0, returned: 0, totalFines: 0, lastActivity: t.createdAt };
+            }
+            if (t.status === 'borrowed') userActivity[userKey].borrowed++;
+            if (t.status === 'returned') userActivity[userKey].returned++;
+            const fineValue = getTransactionFineAmount(t);
+            if (fineValue > 0) {
+                userActivity[userKey].totalFines += fineValue;
+            }
+            if (new Date(t.createdAt) > new Date(userActivity[userKey].lastActivity)) {
+                userActivity[userKey].lastActivity = t.createdAt;
             }
         });
 
         // Convert to array with user details
         const result = Object.entries(userActivity).map(([userId, activity]) => {
-            const user = users.find(u => u.id === userId);
+            const user = findByEntityId(users, userId);
             return {
                 id: userId,
-                name: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
-                role: user ? user.role : 'Unknown',
+                name: formatUserName(user),
+                role: user?.role || 'Unknown',
                 borrowed: activity.borrowed,
                 returned: activity.returned,
                 totalFines: activity.totalFines,
@@ -442,28 +548,46 @@ router.get('/fines', async(req, res) => {
         const books = await req.dbAdapter.findInCollection('books', {});
 
         let filtered = transactions;
-        if (startDate && endDate) {
+        const start = toDateOrNull(startDate);
+        const end = toDateOrNull(endDate);
+
+        if (start || end) {
             filtered = transactions.filter(t => {
-                const tDate = new Date(t.returnDate || t.createdAt);
-                return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+                const referenceDate = getTransactionReportDate(t);
+                const withinRange = (() => {
+                    if (!referenceDate) {
+                        return false;
+                    }
+                    if (start && end) {
+                        return referenceDate >= start && referenceDate <= end;
+                    }
+                    if (start) {
+                        return referenceDate >= start;
+                    }
+                    if (end) {
+                        return referenceDate <= end;
+                    }
+                    return true;
+                })();
+                const outstandingFine = !t.returnDate && getTransactionFineAmount(t) > 0;
+                return withinRange || outstandingFine;
             });
         }
 
         // Get transactions with fines
         const fineTransactions = filtered
-            .filter(t => (t.fine || 0) > 0)
+            .filter(t => getTransactionFineAmount(t) > 0)
             .map(t => {
-                const user = users.find(u => u.id === t.userId);
-                const bookTitles = t.books && t.books.length > 0 ?
-                    t.books.map(b => b.title || 'Unknown').join(', ') :
-                    'Unknown';
+                const user = findByEntityId(users, t.userId);
+                const bookTitles = resolveTransactionBookTitles(t, books);
+                const amount = getTransactionFineAmount(t);
 
                 return {
                     id: t.id,
                     date: t.returnDate || t.createdAt,
-                    userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
+                    userName: formatUserName(user),
                     bookTitle: bookTitles,
-                    amount: t.fine || 0,
+                    amount,
                     reason: 'Late Return',
                     status: t.finePaid ? 'paid' : 'unpaid'
                 };
@@ -530,22 +654,17 @@ router.get('/overdue', async(req, res) => {
 
         // Map to frontend structure
         const result = overdueTransactions.map(t => {
-            const user = users.find(u => u.id === t.userId);
+            const user = findByEntityId(users, t.userId);
             const dueDate = new Date(t.dueDate);
             const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
             const fine = daysOverdue * 5; // $5 per day fine
 
-            // Get book titles (support t.items fallback)
-            const bookTitles = (t.books && t.books.length > 0)
-                ? t.books.map(b => b.title || 'Unknown').join(', ')
-                : (t.items && t.items.length > 0)
-                    ? t.items.map(it => it.title || it.isbn || it.bookId || 'Unknown').join(', ')
-                    : 'Unknown';
+            const bookTitles = resolveTransactionBookTitles(t, books);
 
             return {
                 id: t.id,
                 bookTitle: bookTitles,
-                borrowerName: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
+                borrowerName: formatUserName(user),
                 dueDate: t.dueDate,
                 daysOverdue,
                 fine,
@@ -614,7 +733,10 @@ router.get('/export/:type', async (req, res) => {
                     if (!dailyData[date]) dailyData[date] = { date, borrowed: 0, returned: 0, newUsers: 0, finesCollected: 0 };
                     if (t.status === 'borrowed') dailyData[date].borrowed++;
                     if (t.status === 'returned') dailyData[date].returned++;
-                    if (t.fine && t.finePaid) dailyData[date].finesCollected += t.fine;
+                    const fineValue = getTransactionFineAmount(t);
+                    if (fineValue > 0 && (t.finePaid || typeof t.finePaid === 'undefined')) {
+                        dailyData[date].finesCollected += fineValue;
+                    }
                 });
                 if (startDate && endDate) {
                     // count new users
@@ -638,17 +760,20 @@ router.get('/export/:type', async (req, res) => {
                 filtered.forEach(t => {
                     if (t.books && Array.isArray(t.books)) {
                         t.books.forEach(b => {
-                            bookCounts[b.id] = (bookCounts[b.id] || 0) + 1;
+                            const bookKey = extractBookReferenceId(b);
+                            if (bookKey) {
+                                bookCounts[bookKey] = (bookCounts[bookKey] || 0) + 1;
+                            }
                         });
                     } else if (t.items && Array.isArray(t.items)) {
                         t.items.forEach(it => {
-                            const bookId = it.bookId || it.book_id || it.book;
+                            const bookId = extractBookReferenceId(it);
                             if (bookId) bookCounts[bookId] = (bookCounts[bookId] || 0) + 1;
                         });
                     }
                 });
                 data = Object.entries(bookCounts).map(([bookId, count]) => {
-                    const book = books.find(b => b.id === bookId || b._id === bookId) || {};
+                    const book = findByEntityId(books, bookId) || {};
                     return {
                         id: bookId,
                         title: book.title || 'Unknown',
@@ -670,17 +795,24 @@ router.get('/export/:type', async (req, res) => {
                 }
                 const userActivity = {};
                 filtered.forEach(t => {
-                    if (!userActivity[t.userId]) userActivity[t.userId] = { borrowed: 0, returned: 0, totalFines: 0, lastActivity: t.createdAt };
-                    if (t.status === 'borrowed') userActivity[t.userId].borrowed++;
-                    if (t.status === 'returned') userActivity[t.userId].returned++;
-                    if (t.fine) userActivity[t.userId].totalFines += t.fine;
-                    if (new Date(t.createdAt) > new Date(userActivity[t.userId].lastActivity)) userActivity[t.userId].lastActivity = t.createdAt;
+                    const userKey = normalizeId(t.userId);
+                    if (!userKey) {
+                        return;
+                    }
+                    if (!userActivity[userKey]) userActivity[userKey] = { borrowed: 0, returned: 0, totalFines: 0, lastActivity: t.createdAt };
+                    if (t.status === 'borrowed') userActivity[userKey].borrowed++;
+                    if (t.status === 'returned') userActivity[userKey].returned++;
+                    const fineValue = getTransactionFineAmount(t);
+                    if (fineValue > 0) {
+                        userActivity[userKey].totalFines += fineValue;
+                    }
+                    if (new Date(t.createdAt) > new Date(userActivity[userKey].lastActivity)) userActivity[userKey].lastActivity = t.createdAt;
                 });
                 data = Object.entries(userActivity).map(([userId, activity]) => {
-                    const user = users.find(u => u.id === userId || u._id === userId) || {};
+                    const user = findByEntityId(users, userId) || {};
                     return {
                         id: userId,
-                        name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        name: formatUserName(user),
                         role: user.role || '',
                         borrowed: activity.borrowed,
                         returned: activity.returned,
@@ -699,15 +831,15 @@ router.get('/export/:type', async (req, res) => {
                     return dueDate < now;
                 });
                 data = overdueTransactions.map(t => {
-                    const user = users.find(u => u.id === t.userId || u._id === t.userId) || {};
-                    const bookTitles = t.books && t.books.length > 0 ? t.books.map(b => b.title || 'Unknown').join(', ') : (t.items && t.items.length > 0 ? (t.items.map(it => it.title || it.isbn || it.bookId).join(', ')) : 'Unknown');
+                    const user = findByEntityId(users, t.userId) || {};
+                    const bookTitles = resolveTransactionBookTitles(t, books);
                     const dueDate = t.dueDate;
                     const daysOverdue = Math.floor((new Date() - new Date(dueDate)) / (1000 * 60 * 60 * 24));
                     const fine = daysOverdue * 5;
                     return {
                         id: t.id || t._id,
                         bookTitle: bookTitles,
-                        borrowerName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        borrowerName: formatUserName(user),
                         dueDate: dueDate,
                         daysOverdue,
                         fine,
@@ -718,21 +850,40 @@ router.get('/export/:type', async (req, res) => {
             }
             case 'fines': {
                 let filtered = transactions;
-                if (startDate && endDate) {
+                const start = toDateOrNull(startDate);
+                const end = toDateOrNull(endDate);
+                if (start || end) {
                     filtered = transactions.filter(t => {
-                        const tDate = new Date(t.returnDate || t.createdAt);
-                        return tDate >= new Date(startDate) && tDate <= new Date(endDate);
+                        const referenceDate = getTransactionReportDate(t);
+                        const withinRange = (() => {
+                            if (!referenceDate) {
+                                return false;
+                            }
+                            if (start && end) {
+                                return referenceDate >= start && referenceDate <= end;
+                            }
+                            if (start) {
+                                return referenceDate >= start;
+                            }
+                            if (end) {
+                                return referenceDate <= end;
+                            }
+                            return true;
+                        })();
+                        const outstandingFine = !t.returnDate && getTransactionFineAmount(t) > 0;
+                        return withinRange || outstandingFine;
                     });
                 }
-                const fineTransactions = filtered.filter(t => (t.fine || 0) > 0).map(t => {
-                    const user = users.find(u => u.id === t.userId || u._id === t.userId) || {};
-                    const bookTitles = t.books && t.books.length > 0 ? t.books.map(b => b.title || 'Unknown').join(', ') : (t.items && t.items.length > 0 ? t.items.map(it => it.title || it.isbn || it.bookId).join(', ') : 'Unknown');
+                const fineTransactions = filtered.filter(t => getTransactionFineAmount(t) > 0).map(t => {
+                    const user = findByEntityId(users, t.userId) || {};
+                    const bookTitles = resolveTransactionBookTitles(t, books);
+                    const amount = getTransactionFineAmount(t);
                     return {
                         id: t.id || t._id,
                         date: t.returnDate || t.createdAt,
-                        userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
+                        userName: formatUserName(user),
                         bookTitle: bookTitles,
-                        amount: t.fine || 0,
+                        amount,
                         reason: 'Late Return',
                         status: t.finePaid ? 'paid' : 'unpaid'
                     };
@@ -770,20 +921,15 @@ router.get('/export/:type', async (req, res) => {
             case 'recent-transactions': {
                 const recent = transactions.slice(-100).reverse();
                 data = recent.map(t => {
-                    const user = users.find(u => u.id === t.userId || u._id === t.userId) || {};
-                    let bookTitle = 'Unknown';
-                    if (t.items && t.items.length > 0) {
-                        const item = t.items[0];
-                        const book = books.find(b => b.id === item.bookId || b._id === item.bookId);
-                        if (book) bookTitle = book.title;
-                    }
+                    const user = findByEntityId(users, t.userId) || {};
+                    const bookDetails = resolvePrimaryBookDetails(t, books);
                     return {
                         id: t.id || t._id,
                         studentId: user ? user.studentId : '',
-                        student: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Unknown',
-                        title: bookTitle,
-                        author: '',
-                        isbn: '',
+                        student: formatUserName(user),
+                        title: bookDetails.title,
+                        author: bookDetails.author,
+                        isbn: bookDetails.isbn,
                         recordDate: t.borrowDate,
                         returnedDate: t.returnDate
                     };

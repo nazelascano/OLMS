@@ -33,37 +33,44 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const loadDashboardData = async () => {
+      const fetchWithFallback = async (loader, fallback) => {
+        try {
+          const response = await loader();
+          return response?.data ?? fallback;
+        } catch (error) {
+          console.error("Dashboard data fetch failed:", error);
+          return fallback;
+        }
+      };
+
       try {
         setLoading(true);
-        console.log('Starting dashboard data load...');
-        
-        // Load all data in parallel with error handling
-        const [statsResponse, chartResponse, overdueResponse, checkoutsResponse] = await Promise.allSettled([
-          reportsAPI.getStats(),
-          reportsAPI.getDailyTrends(),
-          reportsAPI.getRecentOverdue(),
-          reportsAPI.getRecentCheckouts()
+
+        const [statsData, trendsData, overdueData, checkoutData] = await Promise.all([
+          fetchWithFallback(() => reportsAPI.getStats(), null),
+          fetchWithFallback(() => reportsAPI.getDailyTrends(), []),
+          fetchWithFallback(() => reportsAPI.getRecentOverdue(), []),
+          fetchWithFallback(() => reportsAPI.getRecentCheckouts(), []),
         ]);
 
-        // Set all state at once, handling potential errors
-        setStats(statsResponse.status === 'fulfilled' ? statsResponse.value.data : null);
-        
-        // Transform chart data
-        const chartData = (chartResponse.status === 'fulfilled' && Array.isArray(chartResponse.value.data)) ? chartResponse.value.data : [];
-        const transformedData = chartData.map(item => ({
-          name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          borrowed: item.borrows,
-          returned: item.returns
-        }));
+        setStats(statsData);
+
+        const transformedData = Array.isArray(trendsData)
+          ? trendsData.map((item) => ({
+              name: new Date(item.date).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+              borrowed: item.borrows,
+              returned: item.returns,
+            }))
+          : [];
         setChartData(transformedData);
-        
-        setOverdueBooks(overdueResponse.status === 'fulfilled' && Array.isArray(overdueResponse.value.data) ? overdueResponse.value.data : []);
-        setRecentCheckouts(checkoutsResponse.status === 'fulfilled' && Array.isArray(checkoutsResponse.value.data) ? checkoutsResponse.value.data : []);
-        
-        console.log('All dashboard data loaded successfully');
-        
+
+        setOverdueBooks(Array.isArray(overdueData) ? overdueData : []);
+        setRecentCheckouts(Array.isArray(checkoutData) ? checkoutData : []);
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error("Error loading dashboard data:", error);
       } finally {
         setLoading(false);
       }

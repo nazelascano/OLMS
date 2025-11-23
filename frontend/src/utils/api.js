@@ -124,6 +124,7 @@ export const authAPI = {
 export const usersAPI = {
   getAll: (params) => api.get("/users", { params }),
   getById: (id) => api.get(`/users/${id}`),
+  getRoles: () => api.get("/users/roles"),
   create: (data) => api.post("/users", data),
   update: (id, data) => api.put(`/users/${id}`, data),
   updateStatus: (id, isActive) => api.put(`/users/${id}/status`, { isActive }),

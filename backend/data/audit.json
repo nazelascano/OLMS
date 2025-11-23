@@ -19363,5 +19363,1446 @@
     "_id": "mi149wibgcgxv",
     "createdAt": "2025-11-16T02:48:58.835Z",
     "updatedAt": "2025-11-16T02:48:58.835Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:10:45.785Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-16T02:14:06.760Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibdpiqijlemk",
+    "_id": "mibdpiqijlemk",
+    "createdAt": "2025-11-23T07:10:45.787Z",
+    "updatedAt": "2025-11-23T07:10:45.787Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:12:48.318Z",
+    "action": "UPDATE",
+    "entity": "book",
+    "entityId": "book_1760074423678_t4wrz3dro",
+    "resource": "book",
+    "resourceId": "book_1760074423678_t4wrz3dro",
+    "description": "Updated book 1984",
+    "details": {
+      "updatedFields": [
+        "title",
+        "author",
+        "publisher",
+        "category",
+        "description"
+      ]
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 12,
+      "updateRequest": {
+        "bookId": "book_1760074423678_t4wrz3dro",
+        "fields": [
+          "title",
+          "author",
+          "isbn",
+          "category",
+          "publisher",
+          "publicationDate",
+          "description",
+          "copies",
+          "numberOfCopies",
+          "location"
+        ]
+      },
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/books/book_1760074423678_t4wrz3dro",
+    "id": "mibds5a63t5fx",
+    "_id": "mibds5a63t5fx",
+    "createdAt": "2025-11-23T07:12:48.318Z",
+    "updatedAt": "2025-11-23T07:12:48.318Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:12:57.290Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T07:10:45.748Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibdsc7ey5vgf",
+    "_id": "mibdsc7ey5vgf",
+    "createdAt": "2025-11-23T07:12:57.290Z",
+    "updatedAt": "2025-11-23T07:12:57.290Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:13:36.113Z",
+    "action": "UPDATE",
+    "entity": "book",
+    "entityId": "book_1760074423678_t4wrz3dro",
+    "resource": "book",
+    "resourceId": "book_1760074423678_t4wrz3dro",
+    "description": "Updated book 1984",
+    "details": {
+      "updatedFields": [
+        "title",
+        "author",
+        "publisher",
+        "category",
+        "description"
+      ]
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 10,
+      "updateRequest": {
+        "bookId": "book_1760074423678_t4wrz3dro",
+        "fields": [
+          "title",
+          "author",
+          "isbn",
+          "category",
+          "publisher",
+          "publicationDate",
+          "description",
+          "copies",
+          "numberOfCopies",
+          "location"
+        ]
+      },
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/books/book_1760074423678_t4wrz3dro",
+    "id": "mibdt65tig7jz",
+    "_id": "mibdt65tig7jz",
+    "createdAt": "2025-11-23T07:13:36.113Z",
+    "updatedAt": "2025-11-23T07:13:36.113Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:14:46.637Z",
+    "action": "UPDATE",
+    "entity": "book",
+    "entityId": "book_1760074423678_t4wrz3dro",
+    "resource": "book",
+    "resourceId": "book_1760074423678_t4wrz3dro",
+    "description": "Updated book 1984",
+    "details": {
+      "updatedFields": [
+        "title",
+        "author",
+        "publisher",
+        "category",
+        "description"
+      ]
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 9,
+      "updateRequest": {
+        "bookId": "book_1760074423678_t4wrz3dro",
+        "fields": [
+          "title",
+          "author",
+          "isbn",
+          "category",
+          "publisher",
+          "publicationDate",
+          "description",
+          "language",
+          "pages",
+          "copies",
+          "numberOfCopies",
+          "location"
+        ]
+      },
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/books/book_1760074423678_t4wrz3dro",
+    "id": "mibduokt9hsen",
+    "_id": "mibduokt9hsen",
+    "createdAt": "2025-11-23T07:14:46.637Z",
+    "updatedAt": "2025-11-23T07:14:46.637Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:15:57.021Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T07:12:57.280Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibdw6vx0xla9",
+    "_id": "mibdw6vx0xla9",
+    "createdAt": "2025-11-23T07:15:57.021Z",
+    "updatedAt": "2025-11-23T07:15:57.021Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:33:14.025Z",
+    "action": "UPDATE",
+    "entity": "book",
+    "entityId": "book-approve-test",
+    "resource": "book",
+    "resourceId": "book-approve-test",
+    "description": "UPDATE book failed (status 400)",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/books/book-approve-test",
+        "body": {
+          "title": "Approve Test Bookjhvhjvkhgckhgckh",
+          "author": "hvghkhgckhgchghcghck",
+          "isbn": "ISBN-APPROVE-1hghdkfkgckfkdk",
+          "category": "Mathematics",
+          "publisher": "jgfkytcytckhgcty",
+          "publicationDate": "2025-01-23",
+          "description": "tdkytlclhgclghvlhv;",
+          "language": "dyytityirxitrx",
+          "pages": 10000,
+          "copies": [
+            {
+              "copyId": "APPROVE-COPY-1",
+              "status": "available",
+              "location": "Main"
+            },
+            {
+              "copyId": "APPROVE-COPY-2",
+              "status": "available",
+              "location": "Main"
+            }
+          ],
+          "numberOfCopies": 2,
+          "location": "Main"
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 8,
+      "updateRequest": {
+        "bookId": "book-approve-test",
+        "fields": [
+          "title",
+          "author",
+          "isbn",
+          "category",
+          "publisher",
+          "publicationDate",
+          "description",
+          "language",
+          "pages",
+          "copies",
+          "numberOfCopies",
+          "location"
+        ]
+      }
+    },
+    "status": "Failed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/books/book-approve-test",
+    "id": "mibeif1mngtb7",
+    "_id": "mibeif1mngtb7",
+    "createdAt": "2025-11-23T07:33:14.026Z",
+    "updatedAt": "2025-11-23T07:33:14.026Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:35:50.189Z",
+    "action": "DELETE",
+    "entity": "book",
+    "entityId": "book_1760074423678_t4wrz3dro",
+    "resource": "book",
+    "resourceId": "book_1760074423678_t4wrz3dro",
+    "description": "Delete book failed: 1 copies currently borrowed",
+    "details": {
+      "borrowedCount": 1
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 5
+    },
+    "status": "Conflict",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "DELETE",
+    "requestPath": "/api/books/book_1760074423678_t4wrz3dro",
+    "id": "mibelrjhh345f",
+    "_id": "mibelrjhh345f",
+    "createdAt": "2025-11-23T07:35:50.189Z",
+    "updatedAt": "2025-11-23T07:35:50.189Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:36:10.953Z",
+    "action": "DELETE",
+    "entity": "book",
+    "entityId": "book-approve-test",
+    "resource": "book",
+    "resourceId": "book-approve-test",
+    "description": "Deleted book Approve Test Book",
+    "details": {
+      "isbn": "ISBN-APPROVE-1",
+      "totalCopies": 2
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 12,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Deleted",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "DELETE",
+    "requestPath": "/api/books/book-approve-test",
+    "id": "mibem7k91i939",
+    "_id": "mibem7k91i939",
+    "createdAt": "2025-11-23T07:36:10.953Z",
+    "updatedAt": "2025-11-23T07:36:10.953Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:42:49.005Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T07:15:57.014Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibeuqp93hgzo",
+    "_id": "mibeuqp93hgzo",
+    "createdAt": "2025-11-23T07:42:49.005Z",
+    "updatedAt": "2025-11-23T07:42:49.005Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:59:23.476Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T07:42:48.993Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibfg21hnvmu1",
+    "_id": "mibfg21hnvmu1",
+    "createdAt": "2025-11-23T07:59:23.477Z",
+    "updatedAt": "2025-11-23T07:59:23.477Z"
+  },
+  {
+    "timestamp": "2025-11-23T07:59:35.789Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T07:59:23.468Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibfgbjhtxyly",
+    "_id": "mibfgbjhtxyly",
+    "createdAt": "2025-11-23T07:59:35.789Z",
+    "updatedAt": "2025-11-23T07:59:35.789Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:23.399Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763885363387_uhxjnc",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885363387_uhxjnc",
+    "description": "Created borrow request (borrow_1763885363387_uhxjnc) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 12,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 2
+      },
+      "requestId": "borrow_1763885363387_uhxjnc",
+      "itemCount": 2,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibfswxz83i7l",
+    "_id": "mibfswxz83i7l",
+    "createdAt": "2025-11-23T08:09:23.399Z",
+    "updatedAt": "2025-11-23T08:09:23.399Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:23.767Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763885363760_4230t0",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885363760_4230t0",
+    "description": "Created borrow request (borrow_1763885363760_4230t0) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 8,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763885363760_4230t0",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibfsx8794yl8",
+    "_id": "mibfsx8794yl8",
+    "createdAt": "2025-11-23T08:09:23.767Z",
+    "updatedAt": "2025-11-23T08:09:23.767Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:23.804Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763885363760_4230t0",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885363760_4230t0",
+    "description": "Approved borrow request borrow_1763885363760_4230t0",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/approve/borrow_1763885363760_4230t0"
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 17,
+      "approvedBy": "mgnhicbwhxfy9"
+    },
+    "status": "Approved",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763885363760_4230t0",
+    "id": "mibfsx98tgjls",
+    "_id": "mibfsx98tgjls",
+    "createdAt": "2025-11-23T08:09:23.804Z",
+    "updatedAt": "2025-11-23T08:09:23.804Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:23.841Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763885363835_z9tjff",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885363835_z9tjff",
+    "description": "Created borrow request (borrow_1763885363835_z9tjff) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 6,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763885363835_z9tjff",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibfsxa91fr86",
+    "_id": "mibfsxa91fr86",
+    "createdAt": "2025-11-23T08:09:23.841Z",
+    "updatedAt": "2025-11-23T08:09:23.841Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:23.860Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763885363835_z9tjff",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885363835_z9tjff",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1763885363835_z9tjff_item_1",
+            "copyId": "nonexistent-copy",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 2
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763885363835_z9tjff",
+    "id": "mibfsxat5zzwv",
+    "_id": "mibfsxat5zzwv",
+    "createdAt": "2025-11-23T08:09:23.861Z",
+    "updatedAt": "2025-11-23T08:09:23.861Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:24.866Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763885364859_ng17ef",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885364859_ng17ef",
+    "description": "Created borrow request (borrow_1763885364859_ng17ef) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 8,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763885364859_ng17ef",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibfsy2qdc99u",
+    "_id": "mibfsy2qdc99u",
+    "createdAt": "2025-11-23T08:09:24.866Z",
+    "updatedAt": "2025-11-23T08:09:24.866Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:09:24.883Z",
+    "action": "REJECT",
+    "entity": "transaction",
+    "entityId": "borrow_1763885364859_ng17ef",
+    "resource": "transaction",
+    "resourceId": "borrow_1763885364859_ng17ef",
+    "description": "Rejected borrow request borrow_1763885364859_ng17ef",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/reject/borrow_1763885364859_ng17ef",
+        "body": {
+          "reason": "Not available for loan"
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 6,
+      "rejectedBy": "mgnhicbwhxfy9",
+      "reason": "Not available for loan"
+    },
+    "status": "Rejected",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/reject/borrow_1763885364859_ng17ef",
+    "id": "mibfsy37oj6jy",
+    "_id": "mibfsy37oj6jy",
+    "createdAt": "2025-11-23T08:09:24.883Z",
+    "updatedAt": "2025-11-23T08:09:24.883Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:34.299Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886334284_ubh2n2",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886334284_ubh2n2",
+    "description": "Created borrow request (borrow_1763886334284_ubh2n2) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 17,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 2
+      },
+      "requestId": "borrow_1763886334284_ubh2n2",
+      "itemCount": 2,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgdq3fj6268",
+    "_id": "mibgdq3fj6268",
+    "createdAt": "2025-11-23T08:25:34.299Z",
+    "updatedAt": "2025-11-23T08:25:34.299Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:34.595Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886334585_w3r67j",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886334585_w3r67j",
+    "description": "Created borrow request (borrow_1763886334585_w3r67j) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 12,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763886334585_w3r67j",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgdqbnlz71p",
+    "_id": "mibgdqbnlz71p",
+    "createdAt": "2025-11-23T08:25:34.595Z",
+    "updatedAt": "2025-11-23T08:25:34.595Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:34.629Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763886334585_w3r67j",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886334585_w3r67j",
+    "description": "Approved borrow request borrow_1763886334585_w3r67j",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/approve/borrow_1763886334585_w3r67j"
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 22,
+      "approvedBy": "mgnhicbwhxfy9"
+    },
+    "status": "Approved",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763886334585_w3r67j",
+    "id": "mibgdqclbzgia",
+    "_id": "mibgdqclbzgia",
+    "createdAt": "2025-11-23T08:25:34.629Z",
+    "updatedAt": "2025-11-23T08:25:34.629Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:34.666Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886334658_i31dgc",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886334658_i31dgc",
+    "description": "Created borrow request (borrow_1763886334658_i31dgc) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 9,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763886334658_i31dgc",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgdqdm5so6c",
+    "_id": "mibgdqdm5so6c",
+    "createdAt": "2025-11-23T08:25:34.666Z",
+    "updatedAt": "2025-11-23T08:25:34.666Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:34.680Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763886334658_i31dgc",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886334658_i31dgc",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1763886334658_i31dgc_item_1",
+            "copyId": "nonexistent-copy",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 3
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763886334658_i31dgc",
+    "id": "mibgdqe08wo0o",
+    "_id": "mibgdqe08wo0o",
+    "createdAt": "2025-11-23T08:25:34.680Z",
+    "updatedAt": "2025-11-23T08:25:34.680Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:35.230Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886335223_zqzsf6",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886335223_zqzsf6",
+    "description": "Created borrow request (borrow_1763886335223_zqzsf6) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 9,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763886335223_zqzsf6",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgdqtaria7q",
+    "_id": "mibgdqtaria7q",
+    "createdAt": "2025-11-23T08:25:35.230Z",
+    "updatedAt": "2025-11-23T08:25:35.230Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:25:35.249Z",
+    "action": "REJECT",
+    "entity": "transaction",
+    "entityId": "borrow_1763886335223_zqzsf6",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886335223_zqzsf6",
+    "description": "Rejected borrow request borrow_1763886335223_zqzsf6",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/reject/borrow_1763886335223_zqzsf6",
+        "body": {
+          "reason": "Not available for loan"
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 8,
+      "rejectedBy": "mgnhicbwhxfy9",
+      "reason": "Not available for loan"
+    },
+    "status": "Rejected",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/reject/borrow_1763886335223_zqzsf6",
+    "id": "mibgdqttz9pwg",
+    "_id": "mibgdqttz9pwg",
+    "createdAt": "2025-11-23T08:25:35.249Z",
+    "updatedAt": "2025-11-23T08:25:35.249Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:22.950Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886562939_p5w69y",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886562939_p5w69y",
+    "description": "Created borrow request (borrow_1763886562939_p5w69y) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 12,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 2
+      },
+      "requestId": "borrow_1763886562939_p5w69y",
+      "itemCount": 2,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgimiu19l7p",
+    "_id": "mibgimiu19l7p",
+    "createdAt": "2025-11-23T08:29:22.950Z",
+    "updatedAt": "2025-11-23T08:29:22.950Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:23.244Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886563233_2rervt",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886563233_2rervt",
+    "description": "Created borrow request (borrow_1763886563233_2rervt) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 13,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763886563233_2rervt",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgimr1mhtfq",
+    "_id": "mibgimr1mhtfq",
+    "createdAt": "2025-11-23T08:29:23.245Z",
+    "updatedAt": "2025-11-23T08:29:23.245Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:23.277Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763886563233_2rervt",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886563233_2rervt",
+    "description": "Approved borrow request borrow_1763886563233_2rervt",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/approve/borrow_1763886563233_2rervt"
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 20,
+      "approvedBy": "mgnhicbwhxfy9"
+    },
+    "status": "Approved",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763886563233_2rervt",
+    "id": "mibgimrxjt6ab",
+    "_id": "mibgimrxjt6ab",
+    "createdAt": "2025-11-23T08:29:23.277Z",
+    "updatedAt": "2025-11-23T08:29:23.277Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:23.312Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886563307_tv56o2",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886563307_tv56o2",
+    "description": "Created borrow request (borrow_1763886563307_tv56o2) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 7,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763886563307_tv56o2",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgimswhvtb0",
+    "_id": "mibgimswhvtb0",
+    "createdAt": "2025-11-23T08:29:23.312Z",
+    "updatedAt": "2025-11-23T08:29:23.312Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:23.327Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763886563307_tv56o2",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886563307_tv56o2",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1763886563307_tv56o2_item_1",
+            "copyId": "nonexistent-copy",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 3
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763886563307_tv56o2",
+    "id": "mibgimtbmc6s3",
+    "_id": "mibgimtbmc6s3",
+    "createdAt": "2025-11-23T08:29:23.327Z",
+    "updatedAt": "2025-11-23T08:29:23.327Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:23.591Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763886563583_u06eod",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886563583_u06eod",
+    "description": "Created borrow request (borrow_1763886563583_u06eod) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 10,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763886563583_u06eod",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibgin0nyxff8",
+    "_id": "mibgin0nyxff8",
+    "createdAt": "2025-11-23T08:29:23.591Z",
+    "updatedAt": "2025-11-23T08:29:23.591Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:29:23.610Z",
+    "action": "REJECT",
+    "entity": "transaction",
+    "entityId": "borrow_1763886563583_u06eod",
+    "resource": "transaction",
+    "resourceId": "borrow_1763886563583_u06eod",
+    "description": "Rejected borrow request borrow_1763886563583_u06eod",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/reject/borrow_1763886563583_u06eod",
+        "body": {
+          "reason": "Not available for loan"
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 7,
+      "rejectedBy": "mgnhicbwhxfy9",
+      "reason": "Not available for loan"
+    },
+    "status": "Rejected",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/reject/borrow_1763886563583_u06eod",
+    "id": "mibgin16vol07",
+    "_id": "mibgin16vol07",
+    "createdAt": "2025-11-23T08:29:23.610Z",
+    "updatedAt": "2025-11-23T08:29:23.610Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:31:01.255Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T07:59:35.782Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibgkqdjpstfe",
+    "_id": "mibgkqdjpstfe",
+    "createdAt": "2025-11-23T08:31:01.255Z",
+    "updatedAt": "2025-11-23T08:31:01.255Z"
+  },
+  {
+    "timestamp": "2025-11-23T08:36:45.828Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T08:31:01.251Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibgs490ie4h5",
+    "_id": "mibgs490ie4h5",
+    "createdAt": "2025-11-23T08:36:45.829Z",
+    "updatedAt": "2025-11-23T08:36:45.829Z"
+  },
+  {
+    "timestamp": "2025-11-23T09:58:01.890Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T08:36:45.821Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibjomn7phhom",
+    "_id": "mibjomn7phhom",
+    "createdAt": "2025-11-23T09:58:01.891Z",
+    "updatedAt": "2025-11-23T09:58:01.891Z"
+  },
+  {
+    "timestamp": "2025-11-23T10:24:54.002Z",
+    "action": "UPDATE",
+    "entity": "user",
+    "entityId": "mhj2rmag3fu2s",
+    "resource": "user",
+    "resourceId": "mhj2rmag3fu2s",
+    "description": "Updated profile for user 123456789029",
+    "details": {
+      "updatedFields": [
+        "firstName",
+        "lastName",
+        "email",
+        "isActive"
+      ],
+      "role": "student",
+      "isActive": true
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 9,
+      "updateRequest": {
+        "userId": "mhj2rmag3fu2s",
+        "fields": [
+          "username",
+          "email",
+          "firstName",
+          "lastName",
+          "curriculum",
+          "phoneNumber",
+          "address",
+          "isActive"
+        ]
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "updatedAt": "2025-11-23T10:24:53.996Z"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/users/mhj2rmag3fu2s",
+    "id": "mibkn6k499yjd",
+    "_id": "mibkn6k499yjd",
+    "createdAt": "2025-11-23T10:24:54.004Z",
+    "updatedAt": "2025-11-23T10:24:54.004Z"
   }
 ]
