@@ -72,6 +72,7 @@ const curriculumRoutes = require('./routes/curriculum');
 const annualSetsRoutes = require('./routes/annualSets');
 const searchRoutes = require('./routes/search');
 const notificationRoutes = require('./routes/notifications');
+const locationRoutes = require('./routes/locations');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -85,6 +86,7 @@ app.use('/api/curriculum', curriculumRoutes);
 app.use('/api/annual-sets', annualSetsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Simple health and root endpoints
 app.get('/health', async(req, res) => {

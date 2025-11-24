@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   Checkbox,
+  Autocomplete,
   FormControl,
   FormControlLabel,
   Grid,
@@ -32,6 +33,11 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { api, settingsAPI } from "../../utils/api";
 import { ensureUserAttributes } from "../../utils/userAttributes";
+import {
+  getProvinces,
+  getMunicipalities,
+  getBarangays,
+} from "../../utils/addressService";
 
 const ROLE_OPTIONS = [
   { value: "staff", label: "Staff" },
@@ -43,6 +49,44 @@ const PHONE_FIELD_NAMES = new Set(["phoneNumber"]);
 
 const sanitizePhoneInput = (value = "") =>
   String(value ?? "").replace(/\D/g, "").slice(0, 11);
+
+const composeFullAddress = ({ street = "", barangay = "", municipality = "", province = "" }) =>
+  [street, barangay, municipality, province]
+    .map((segment) => segment?.trim())
+    .filter(Boolean)
+    .join(", ");
+
+const resolveAddressComponents = (raw = "") => {
+  if (!raw) {
+    return {
+      street: "",
+      barangay: "",
+      municipality: "",
+      province: "",
+    };
+  }
+
+  const parts = raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return {
+      street: raw,
+      barangay: "",
+      municipality: "",
+      province: "",
+    };
+  }
+
+  const province = parts.pop() || "";
+  const municipality = parts.pop() || "";
+  const barangay = parts.pop() || "";
+  const street = parts.join(", ");
+
+  return { street, barangay, municipality, province };
+};
 
 const DEFAULT_FORM_DATA = {
   username: "",
@@ -57,6 +101,12 @@ const DEFAULT_FORM_DATA = {
   gradeLevel: "",
   phoneNumber: "",
   address: "",
+  province: "",
+  provinceCode: "",
+  municipality: "",
+  municipalityCode: "",
+  barangay: "",
+  barangayCode: "",
   isActive: true,
 };
 
@@ -77,6 +127,37 @@ const UserForm = () => {
     ensureUserAttributes(),
   );
   const [userAttributesError, setUserAttributesError] = useState("");
+  const [provinceOptions, setProvinceOptions] = useState([]);
+  const [municipalityOptions, setMunicipalityOptions] = useState([]);
+  const [barangayOptions, setBarangayOptions] = useState([]);
+  const [addressLoading, setAddressLoading] = useState({
+    provinces: false,
+    municipalities: false,
+    barangays: false,
+  });
+  const [addressError, setAddressError] = useState("");
+
+  const selectedProvinceOption = useMemo(
+    () =>
+      provinceOptions.find((option) => option.code === formData.provinceCode) ||
+      null,
+    [provinceOptions, formData.provinceCode],
+  );
+
+  const selectedMunicipalityOption = useMemo(
+    () =>
+      municipalityOptions.find(
+        (option) => option.code === formData.municipalityCode,
+      ) || null,
+    [municipalityOptions, formData.municipalityCode],
+  );
+
+  const selectedBarangayOption = useMemo(
+    () =>
+      barangayOptions.find((option) => option.code === formData.barangayCode) ||
+      null,
+    [barangayOptions, formData.barangayCode],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -114,6 +195,9 @@ const UserForm = () => {
         setLoading(true);
         const response = await api.get(`/users/${id}`);
         const userData = response.data || {};
+        const resolvedAddress = resolveAddressComponents(
+          userData.address || userData.profile?.address || userData.fullAddress || "",
+        );
 
         setFormData({
           username: userData.username || "",
@@ -126,7 +210,29 @@ const UserForm = () => {
           phoneNumber: sanitizePhoneInput(
             userData.phoneNumber || userData.profile?.phone,
           ),
-          address: userData.address || userData.profile?.address || "",
+          address:
+            resolvedAddress.street ||
+            userData.address ||
+            userData.profile?.address ||
+            "",
+          province:
+            userData.province ||
+            resolvedAddress.province ||
+            userData.profile?.province ||
+            "",
+          provinceCode: userData.provinceCode || "",
+          municipality:
+            userData.municipality ||
+            resolvedAddress.municipality ||
+            userData.profile?.municipality ||
+            "",
+          municipalityCode: userData.municipalityCode || "",
+          barangay:
+            userData.barangay ||
+            resolvedAddress.barangay ||
+            userData.profile?.barangay ||
+            "",
+          barangayCode: userData.barangayCode || "",
           isActive:
             typeof userData.isActive === "boolean" ? userData.isActive : true,
         });
@@ -185,6 +291,158 @@ const UserForm = () => {
     });
   }, [userAttributes]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProvinces = async () => {
+      setAddressLoading((prev) => ({ ...prev, provinces: true }));
+      setAddressError("");
+      try {
+        const provinces = await getProvinces();
+        if (isMounted) {
+          setProvinceOptions(provinces);
+        }
+      } catch (provinceError) {
+        console.error("Failed to load provinces:", provinceError);
+        if (isMounted) {
+          setAddressError("Unable to load provinces from PSGC API.");
+        }
+      } finally {
+        if (isMounted) {
+          setAddressLoading((prev) => ({ ...prev, provinces: false }));
+        }
+      }
+    };
+
+    loadProvinces();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!formData.provinceCode) {
+      setMunicipalityOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+    setAddressLoading((prev) => ({ ...prev, municipalities: true }));
+
+    const loadMunicipalities = async () => {
+      try {
+        const municipalities = await getMunicipalities(formData.provinceCode);
+        if (isMounted) {
+          setMunicipalityOptions(municipalities);
+        }
+      } catch (municipalityError) {
+        console.error("Failed to load municipalities:", municipalityError);
+        if (isMounted) {
+          setAddressError("Unable to load municipalities for the selected province.");
+        }
+      } finally {
+        if (isMounted) {
+          setAddressLoading((prev) => ({ ...prev, municipalities: false }));
+        }
+      }
+    };
+
+    loadMunicipalities();
+    return () => {
+      isMounted = false;
+    };
+  }, [formData.provinceCode]);
+
+  useEffect(() => {
+    if (!formData.municipalityCode) {
+      setBarangayOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+    setAddressLoading((prev) => ({ ...prev, barangays: true }));
+
+    const loadBarangays = async () => {
+      try {
+        const barangays = await getBarangays(formData.municipalityCode);
+        if (isMounted) {
+          setBarangayOptions(barangays);
+        }
+      } catch (barangayError) {
+        console.error("Failed to load barangays:", barangayError);
+        if (isMounted) {
+          setAddressError("Unable to load barangays for the selected municipality.");
+        }
+      } finally {
+        if (isMounted) {
+          setAddressLoading((prev) => ({ ...prev, barangays: false }));
+        }
+      }
+    };
+
+    loadBarangays();
+    return () => {
+      isMounted = false;
+    };
+  }, [formData.municipalityCode]);
+
+  useEffect(() => {
+    if (
+      !formData.province ||
+      formData.provinceCode ||
+      provinceOptions.length === 0
+    ) {
+      return;
+    }
+    const match = provinceOptions.find(
+      (option) => option.name.toLowerCase() === formData.province.toLowerCase(),
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        provinceCode: match.code,
+      }));
+    }
+  }, [formData.province, formData.provinceCode, provinceOptions]);
+
+  useEffect(() => {
+    if (
+      !formData.municipality ||
+      formData.municipalityCode ||
+      municipalityOptions.length === 0
+    ) {
+      return;
+    }
+    const match = municipalityOptions.find(
+      (option) => option.name.toLowerCase() === formData.municipality.toLowerCase(),
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        municipalityCode: match.code,
+      }));
+    }
+  }, [
+    formData.municipality,
+    formData.municipalityCode,
+    municipalityOptions,
+  ]);
+
+  useEffect(() => {
+    if (!formData.barangay || formData.barangayCode || barangayOptions.length === 0) {
+      return;
+    }
+    const match = barangayOptions.find(
+      (option) => option.name.toLowerCase() === formData.barangay.toLowerCase(),
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        barangayCode: match.code,
+      }));
+    }
+  }, [formData.barangay, formData.barangayCode, barangayOptions]);
+
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     const isCheckbox = type === "checkbox";
@@ -205,6 +463,144 @@ const UserForm = () => {
       }));
     }
   };
+
+  const clearMunicipalityFields = () => ({
+    municipality: "",
+    municipalityCode: "",
+    barangay: "",
+    barangayCode: "",
+  });
+
+  const clearBarangayFields = () => ({
+    barangay: "",
+    barangayCode: "",
+  });
+
+  const handleProvinceSelect = (_, option) => {
+    if (!option) {
+      setFormData((prev) => ({
+        ...prev,
+        province: "",
+        provinceCode: "",
+        ...clearMunicipalityFields(),
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      province: option.name,
+      provinceCode: option.code,
+      ...clearMunicipalityFields(),
+    }));
+  };
+
+  const handleProvinceInput = (_, value, reason) => {
+    if (reason === "input") {
+      setFormData((prev) => ({
+        ...prev,
+        province: value,
+        provinceCode: "",
+        ...clearMunicipalityFields(),
+      }));
+    }
+    if (reason === "clear") {
+      setFormData((prev) => ({
+        ...prev,
+        province: "",
+        provinceCode: "",
+        ...clearMunicipalityFields(),
+      }));
+    }
+  };
+
+  const handleMunicipalitySelect = (_, option) => {
+    if (!option) {
+      setFormData((prev) => ({
+        ...prev,
+        municipality: "",
+        municipalityCode: "",
+        ...clearBarangayFields(),
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      municipality: option.name,
+      municipalityCode: option.code,
+      ...clearBarangayFields(),
+    }));
+  };
+
+  const handleMunicipalityInput = (_, value, reason) => {
+    if (reason === "input") {
+      setFormData((prev) => ({
+        ...prev,
+        municipality: value,
+        municipalityCode: "",
+        ...clearBarangayFields(),
+      }));
+    }
+    if (reason === "clear") {
+      setFormData((prev) => ({
+        ...prev,
+        municipality: "",
+        municipalityCode: "",
+        ...clearBarangayFields(),
+      }));
+    }
+  };
+
+  const handleBarangaySelect = (_, option) => {
+    if (!option) {
+      setFormData((prev) => ({
+        ...prev,
+        barangay: "",
+        barangayCode: "",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      barangay: option.name,
+      barangayCode: option.code,
+    }));
+  };
+
+  const handleBarangayInput = (_, value, reason) => {
+    if (reason === "input") {
+      setFormData((prev) => ({
+        ...prev,
+        barangay: value,
+        barangayCode: "",
+      }));
+    }
+    if (reason === "clear") {
+      setFormData((prev) => ({
+        ...prev,
+        barangay: "",
+        barangayCode: "",
+      }));
+    }
+  };
+
+  const previewAddress = useMemo(
+    () =>
+      composeFullAddress({
+        street: formData.address,
+        barangay: formData.barangay,
+        municipality: formData.municipality,
+        province: formData.province,
+      }),
+    [
+      formData.address,
+      formData.barangay,
+      formData.municipality,
+      formData.province,
+    ],
+  );
 
   const validateForm = () => {
     const errors = {};
@@ -258,6 +654,13 @@ const UserForm = () => {
       const payload = { ...formData };
       payload.phoneNumber = sanitizePhoneInput(payload.phoneNumber);
       delete payload.confirmPassword;
+
+      payload.address = composeFullAddress({
+        street: payload.address,
+        barangay: payload.barangay,
+        municipality: payload.municipality,
+        province: payload.province,
+      });
 
       payload.email = (payload.email || "").trim();
       if (!payload.email) {
@@ -319,6 +722,11 @@ const UserForm = () => {
       {userAttributesError && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           {userAttributesError}
+        </Alert>
+      )}
+      {addressError && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {addressError}
         </Alert>
       )}
 
@@ -559,15 +967,91 @@ const UserForm = () => {
                   Additional Information
                 </Typography>
                 <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Autocomplete
+                      freeSolo
+                      loading={addressLoading.provinces}
+                      options={provinceOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      value={selectedProvinceOption}
+                      inputValue={formData.province}
+                      onChange={handleProvinceSelect}
+                      onInputChange={handleProvinceInput}
+                      loadingText="Loading provinces..."
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Province"
+                          placeholder="Select or type province"
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Autocomplete
+                      freeSolo
+                      loading={addressLoading.municipalities}
+                      options={municipalityOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      value={selectedMunicipalityOption}
+                      inputValue={formData.municipality}
+                      onChange={handleMunicipalitySelect}
+                      onInputChange={handleMunicipalityInput}
+                      loadingText="Loading municipalities..."
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Municipality"
+                          placeholder="Select or type municipality"
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Autocomplete
+                      freeSolo
+                      loading={addressLoading.barangays}
+                      options={barangayOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      value={selectedBarangayOption}
+                      inputValue={formData.barangay}
+                      onChange={handleBarangaySelect}
+                      onInputChange={handleBarangayInput}
+                      loadingText="Loading barangays..."
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Barangay"
+                          placeholder="Select or type barangay"
+                        />
+                      )}
+                    />
+                  </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Address"
+                      label="House No. / Street"
                       name="address"
                       multiline
-                      rows={3}
+                      rows={2}
                       value={formData.address}
                       onChange={handleChange}
+                      placeholder="e.g., 123 Library Street"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Full Address (auto-generated)"
+                      value={previewAddress}
+                      InputProps={{ readOnly: true }}
+                      helperText="This is what will be saved with the user account"
                     />
                   </Grid>
                 </Grid>

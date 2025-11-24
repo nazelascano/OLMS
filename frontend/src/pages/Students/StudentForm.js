@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   Box,
@@ -13,6 +13,7 @@ import {
   IconButton,
   InputAdornment,
   Divider,
+  Autocomplete,
 } from "@mui/material";
 import {
   Save,
@@ -28,11 +29,22 @@ import { api, studentsAPI, settingsAPI } from "../../utils/api";
 import { ensureUserAttributes } from "../../utils/userAttributes";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
+import {
+  getProvinces,
+  getMunicipalities,
+  getBarangays,
+} from "../../utils/addressService";
 
 const PHONE_FIELD_NAMES = new Set(["phoneNumber", "parentPhone"]);
+const LRN_MAX_LENGTH = 12;
 
 const sanitizePhoneInput = (value = "") =>
   String(value ?? "").replace(/\D/g, "").slice(0, 11);
+
+const sanitizeLrnInput = (value = "") =>
+  String(value ?? "")
+    .replace(/\D/g, "")
+    .slice(0, LRN_MAX_LENGTH);
 
 const StudentForm = () => {
   const navigate = useNavigate();
@@ -59,9 +71,13 @@ const StudentForm = () => {
   curriculum: "",
 
     // Address Information
+    streetAddress: "",
     barangay: "",
+    barangayCode: "",
     municipality: "",
+    municipalityCode: "",
     province: "",
+    provinceCode: "",
     fullAddress: "",
 
     // Parent/Guardian Information
@@ -89,6 +105,40 @@ const StudentForm = () => {
   const curriculumOptions = userAttributes.curriculum;
   const hasGradeOptions = gradeOptions.length > 0;
   const hasCurriculumOptions = curriculumOptions.length > 0;
+  const [provinceOptions, setProvinceOptions] = useState([]);
+  const [municipalityOptions, setMunicipalityOptions] = useState([]);
+  const [barangayOptions, setBarangayOptions] = useState([]);
+  const [addressLoading, setAddressLoading] = useState({
+    provinces: false,
+    municipalities: false,
+    barangays: false,
+  });
+  const [addressError, setAddressError] = useState("");
+
+  const selectedProvinceOption = useMemo(
+    () =>
+      provinceOptions.find((option) => option.code === formData.provinceCode) ||
+      null,
+    [provinceOptions, formData.provinceCode],
+  );
+
+  const selectedMunicipalityOption = useMemo(
+    () =>
+      municipalityOptions.find(
+        (option) => option.code === formData.municipalityCode,
+      ) || null,
+    [municipalityOptions, formData.municipalityCode],
+  );
+
+  const selectedBarangayOption = useMemo(
+    () =>
+      barangayOptions.find((option) => option.code === formData.barangayCode) ||
+      null,
+    [barangayOptions, formData.barangayCode],
+  );
+
+  const composeFullAddress = ({ street, barangay, municipality, province }) =>
+    [street, barangay, municipality, province].filter(Boolean).join(", ");
 
   useEffect(() => {
     if (isEditing) {
@@ -156,6 +206,98 @@ const StudentForm = () => {
     });
   }, [gradeOptions, curriculumOptions]);
 
+  useEffect(() => {
+    let isMounted = true;
+    const loadProvinces = async () => {
+      setAddressLoading((prev) => ({ ...prev, provinces: true }));
+      setAddressError("");
+      try {
+        const provinces = await getProvinces();
+        if (isMounted) {
+          setProvinceOptions(provinces);
+        }
+      } catch (error) {
+        console.error("Failed to load provinces:", error);
+        if (isMounted) {
+          setAddressError("Unable to load provinces from PSGC.");
+        }
+      } finally {
+        if (isMounted) {
+          setAddressLoading((prev) => ({ ...prev, provinces: false }));
+        }
+      }
+    };
+
+    loadProvinces();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!formData.provinceCode) {
+      setMunicipalityOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+    setAddressLoading((prev) => ({ ...prev, municipalities: true }));
+    const loadMunicipalities = async () => {
+      try {
+        const municipalities = await getMunicipalities(formData.provinceCode);
+        if (isMounted) {
+          setMunicipalityOptions(municipalities);
+        }
+      } catch (error) {
+        console.error("Failed to load municipalities:", error);
+        if (isMounted) {
+          setAddressError("Unable to load municipalities for the province.");
+        }
+      } finally {
+        if (isMounted) {
+          setAddressLoading((prev) => ({ ...prev, municipalities: false }));
+        }
+      }
+    };
+
+    loadMunicipalities();
+    return () => {
+      isMounted = false;
+    };
+  }, [formData.provinceCode]);
+
+  useEffect(() => {
+    if (!formData.municipalityCode) {
+      setBarangayOptions([]);
+      return;
+    }
+
+    let isMounted = true;
+    setAddressLoading((prev) => ({ ...prev, barangays: true }));
+    const loadBarangays = async () => {
+      try {
+        const barangays = await getBarangays(formData.municipalityCode);
+        if (isMounted) {
+          setBarangayOptions(barangays);
+        }
+      } catch (error) {
+        console.error("Failed to load barangays:", error);
+        if (isMounted) {
+          setAddressError("Unable to load barangays for the municipality.");
+        }
+      } finally {
+        if (isMounted) {
+          setAddressLoading((prev) => ({ ...prev, barangays: false }));
+        }
+      }
+    };
+
+    loadBarangays();
+    return () => {
+      isMounted = false;
+    };
+  }, [formData.municipalityCode]);
+
   const fetchNextLibraryCard = async () => {
     try {
       const response = await api.get("/students/next-library-card");
@@ -180,13 +322,21 @@ const StudentForm = () => {
         middleName: studentData.middleName || "",
         email: studentData.email || "",
   phoneNumber: sanitizePhoneInput(studentData.phoneNumber),
-        lrn: studentData.lrn || "",
+        lrn: sanitizeLrnInput(studentData.lrn),
   grade: studentData.grade || "",
   section: studentData.section || "",
   curriculum: studentData.curriculum || "",
+        streetAddress:
+          studentData.streetAddress ||
+          studentData.street ||
+          studentData.address ||
+          "",
         barangay: studentData.barangay || "",
+        barangayCode: studentData.barangayCode || "",
         municipality: studentData.municipality || "",
+        municipalityCode: studentData.municipalityCode || "",
         province: studentData.province || "",
+        provinceCode: studentData.provinceCode || "",
         fullAddress: studentData.fullAddress || "",
         parentGuardianName: studentData.parentGuardianName || "",
         parentOccupation: studentData.parentOccupation || "",
@@ -207,10 +357,15 @@ const StudentForm = () => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const isCheckbox = type === "checkbox";
-    const sanitizedValue =
-      !isCheckbox && PHONE_FIELD_NAMES.has(name)
-        ? sanitizePhoneInput(value)
-        : value;
+    let sanitizedValue = value;
+
+    if (!isCheckbox) {
+      if (PHONE_FIELD_NAMES.has(name)) {
+        sanitizedValue = sanitizePhoneInput(value);
+      } else if (name === "lrn") {
+        sanitizedValue = sanitizeLrnInput(value);
+      }
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: isCheckbox ? checked : sanitizedValue,
@@ -225,13 +380,196 @@ const StudentForm = () => {
     }
   };
 
+  const resetMunicipalityFields = () => ({
+    municipality: "",
+    municipalityCode: "",
+    barangay: "",
+    barangayCode: "",
+  });
+
+  const resetBarangayFields = () => ({
+    barangay: "",
+    barangayCode: "",
+  });
+
+  const handleProvinceSelect = (_, option) => {
+    if (!option) {
+      setFormData((prev) => ({
+        ...prev,
+        province: "",
+        provinceCode: "",
+        ...resetMunicipalityFields(),
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      province: option.name,
+      provinceCode: option.code,
+      ...resetMunicipalityFields(),
+    }));
+  };
+
+  const handleProvinceInput = (_, value, reason) => {
+    if (reason === "input") {
+      setFormData((prev) => ({
+        ...prev,
+        province: value,
+        provinceCode: "",
+        ...resetMunicipalityFields(),
+      }));
+    }
+    if (reason === "clear") {
+      setFormData((prev) => ({
+        ...prev,
+        province: "",
+        provinceCode: "",
+        ...resetMunicipalityFields(),
+      }));
+    }
+  };
+
+  const handleMunicipalitySelect = (_, option) => {
+    if (!option) {
+      setFormData((prev) => ({
+        ...prev,
+        municipality: "",
+        municipalityCode: "",
+        ...resetBarangayFields(),
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      municipality: option.name,
+      municipalityCode: option.code,
+      ...resetBarangayFields(),
+    }));
+  };
+
+  const handleMunicipalityInput = (_, value, reason) => {
+    if (reason === "input") {
+      setFormData((prev) => ({
+        ...prev,
+        municipality: value,
+        municipalityCode: "",
+        ...resetBarangayFields(),
+      }));
+    }
+    if (reason === "clear") {
+      setFormData((prev) => ({
+        ...prev,
+        municipality: "",
+        municipalityCode: "",
+        ...resetBarangayFields(),
+      }));
+    }
+  };
+
+  const handleBarangaySelect = (_, option) => {
+    if (!option) {
+      setFormData((prev) => ({
+        ...prev,
+        barangay: "",
+        barangayCode: "",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      barangay: option.name,
+      barangayCode: option.code,
+    }));
+  };
+
+  const handleBarangayInput = (_, value, reason) => {
+    if (reason === "input") {
+      setFormData((prev) => ({
+        ...prev,
+        barangay: value,
+        barangayCode: "",
+      }));
+    }
+    if (reason === "clear") {
+      setFormData((prev) => ({
+        ...prev,
+        barangay: "",
+        barangayCode: "",
+      }));
+    }
+  };
+
+  useEffect(() => {
+    if (
+      !formData.province ||
+      formData.provinceCode ||
+      provinceOptions.length === 0
+    ) {
+      return;
+    }
+    const match = provinceOptions.find(
+      (option) => option.name.toLowerCase() === formData.province.toLowerCase(),
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        provinceCode: match.code,
+      }));
+    }
+  }, [formData.province, formData.provinceCode, provinceOptions]);
+
+  useEffect(() => {
+    if (
+      !formData.municipality ||
+      formData.municipalityCode ||
+      municipalityOptions.length === 0
+    ) {
+      return;
+    }
+    const match = municipalityOptions.find(
+      (option) => option.name.toLowerCase() === formData.municipality.toLowerCase(),
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        municipalityCode: match.code,
+      }));
+    }
+  }, [
+    formData.municipality,
+    formData.municipalityCode,
+    municipalityOptions,
+  ]);
+
+  useEffect(() => {
+    if (!formData.barangay || formData.barangayCode || barangayOptions.length === 0) {
+      return;
+    }
+    const match = barangayOptions.find(
+      (option) => option.name.toLowerCase() === formData.barangay.toLowerCase(),
+    );
+    if (match) {
+      setFormData((prev) => ({
+        ...prev,
+        barangayCode: match.code,
+      }));
+    }
+  }, [formData.barangay, formData.barangayCode, barangayOptions]);
+
   const validateForm = () => {
     const errors = {};
 
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
-    if (!formData.lrn.trim())
+    const normalizedLrn = formData.lrn.trim();
+    if (!normalizedLrn)
       errors.lrn = "LRN (Learner Reference Number) is required";
+    else if (!/^\d{12}$/.test(normalizedLrn)) {
+      errors.lrn = "LRN must be exactly 12 digits";
+    }
     if (!formData.grade) errors.grade = "Grade is required";
     if (!formData.section) errors.section = "Section is required";
 
@@ -304,6 +642,24 @@ const StudentForm = () => {
     }
   };
 
+  useEffect(() => {
+    setFormData((prev) => {
+      const combinedAddress = composeFullAddress({
+        street: prev.streetAddress,
+        barangay: prev.barangay,
+        municipality: prev.municipality,
+        province: prev.province,
+      });
+      if (combinedAddress === (prev.fullAddress || "")) {
+        return prev;
+      }
+      return {
+        ...prev,
+        fullAddress: combinedAddress,
+      };
+    });
+  }, [formData.streetAddress, formData.barangay, formData.municipality, formData.province]);
+
   const canManageStudents =
     user?.role === "admin" ||
     user?.role === "librarian" ||
@@ -352,6 +708,11 @@ const StudentForm = () => {
       {attributeError && (
         <Alert severity="warning" sx={{ mb: 3 }}>
           {attributeError}
+        </Alert>
+      )}
+      {addressError && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          {addressError}
         </Alert>
       )}
       <form onSubmit={handleSubmit}>
@@ -604,30 +965,79 @@ const StudentForm = () => {
                     </Divider>{" "}
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      label="Barangay"
-                      name="barangay"
-                      value={formData.barangay}
-                      onChange={handleChange}
+                    <Autocomplete
+                      freeSolo
+                      loading={addressLoading.provinces}
+                      options={provinceOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      value={selectedProvinceOption}
+                      inputValue={formData.province}
+                      onChange={handleProvinceSelect}
+                      onInputChange={handleProvinceInput}
+                      loadingText="Loading provinces..."
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Province"
+                          placeholder="Select or type province"
+                        />
+                      )}
                     />{" "}
                   </Grid>{" "}
                   <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      label="Municipality"
-                      name="municipality"
-                      value={formData.municipality}
-                      onChange={handleChange}
+                    <Autocomplete
+                      freeSolo
+                      loading={addressLoading.municipalities}
+                      options={municipalityOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      value={selectedMunicipalityOption}
+                      inputValue={formData.municipality}
+                      onChange={handleMunicipalitySelect}
+                      onInputChange={handleMunicipalityInput}
+                      loadingText="Loading municipalities..."
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Municipality"
+                          placeholder="Select or type municipality"
+                        />
+                      )}
                     />{" "}
                   </Grid>{" "}
                   <Grid item xs={12} sm={4}>
+                    <Autocomplete
+                      freeSolo
+                      loading={addressLoading.barangays}
+                      options={barangayOptions}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      value={selectedBarangayOption}
+                      inputValue={formData.barangay}
+                      onChange={handleBarangaySelect}
+                      onInputChange={handleBarangayInput}
+                      loadingText="Loading barangays..."
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Barangay"
+                          placeholder="Select or type barangay"
+                        />
+                      )}
+                    />{" "}
+                  </Grid>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Province"
-                      name="province"
-                      value={formData.province}
+                      label="House No. / Street"
+                      name="streetAddress"
+                      value={formData.streetAddress}
                       onChange={handleChange}
+                      placeholder="e.g., 123 Library Street"
                     />{" "}
                   </Grid>
                   {/* Parent/Guardian Section */}{" "}
@@ -686,7 +1096,6 @@ const StudentForm = () => {
                 type="submit"
                 variant="contained"
                 startIcon={<Save />}
-                loading={loading}
                 disabled={loading}
                 sx={{
                   backgroundColor:'#0f5132',
