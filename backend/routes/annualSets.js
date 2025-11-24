@@ -271,10 +271,8 @@ const findUserByAnyIdentifier = async(dbAdapter, identifier) => {
         'id',
         '_id',
         'userId',
-        'studentId',
         'libraryCardNumber',
         'library.cardNumber',
-        'profile.studentId',
         'lrn'
     ];
 
@@ -487,7 +485,6 @@ router.get('/:id/issue-context', verifyToken, requireStaff, async(req, res) => {
                 const identifiers = [
                     student.id,
                     student._id,
-                    student.studentId,
                     student.libraryCardNumber,
                     student.library?.cardNumber,
                     student.lrn,
@@ -508,7 +505,7 @@ router.get('/:id/issue-context', verifyToken, requireStaff, async(req, res) => {
         const studentSummaries = students
             .slice(0, 150)
             .map(student => {
-                const identifier = String(student.id || student._id || student.studentId || student.libraryCardNumber || '');
+                const identifier = String(student.id || student._id || student.libraryCardNumber || '');
                 return {
                     id: identifier,
                     name: student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.username || student.email || 'Unnamed student',
@@ -560,14 +557,15 @@ router.get('/:id', verifyToken, requireStaff, async(req, res) => {
 
 router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual_set'), async(req, res) => {
     try {
-    const { studentId, items = [], notes = '', allowPartial = false, dueDate } = req.body || {};
-    const sanitizedNotes = typeof notes === 'string' ? notes : '';
+	const { studentReference, libraryCardNumber, items = [], notes = '', allowPartial = false, dueDate } = req.body || {};
+	const sanitizedNotes = typeof notes === 'string' ? notes : '';
+        const resolvedStudentReference = (studentReference || libraryCardNumber || '').toString().trim();
 
         setAuditContext(req, {
             entityId: req.params.id,
             metadata: {
                 issueRequest: {
-                    studentId: studentId || null,
+                    studentReference: resolvedStudentReference || null,
                     itemsRequested: Array.isArray(items) ? items.length : 0,
                     allowPartial,
                     dueDate: dueDate || null
@@ -588,9 +586,9 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
             });
         };
 
-        if (!studentId) {
-            recordFailure('ValidationError', 'Annual set issuance failed: studentId is required');
-            return res.status(400).json({ message: 'studentId is required' });
+        if (!resolvedStudentReference) {
+            recordFailure('ValidationError', 'Annual set issuance failed: student identifier is required');
+            return res.status(400).json({ message: 'Student identifier is required' });
         }
 
         const set = await req.dbAdapter.findOneInCollection('annualSets', { id: req.params.id });
@@ -604,13 +602,13 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
             return res.status(400).json({ message: 'Annual set does not contain any books' });
         }
 
-        let student = await req.dbAdapter.findUserById(studentId);
+        let student = await req.dbAdapter.findUserById(resolvedStudentReference);
         if (!student) {
-            student = await findUserByAnyIdentifier(req.dbAdapter, studentId);
+            student = await findUserByAnyIdentifier(req.dbAdapter, resolvedStudentReference);
         }
 
         if (!student) {
-            recordFailure('StudentNotFound', `Annual set issuance failed: student ${studentId} not found`);
+            recordFailure('StudentNotFound', `Annual set issuance failed: student ${resolvedStudentReference} not found`);
             return res.status(404).json({ message: 'Student not found' });
         }
 
@@ -829,11 +827,11 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
         }
 
     const transactionId = generateTransactionId('annual');
-        const studentIdentifier = student.id || student._id;
+        const studentRecordKey = student.id || student._id;
 
         const transactionData = {
             id: transactionId,
-            userId: studentIdentifier,
+            userId: studentRecordKey,
             items: transactionItems,
             type: 'annual-set',
             status: 'borrowed',
@@ -887,7 +885,7 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
             status: 'Issued',
             entityId: set.id,
             resourceId: transactionId,
-            description: `Issued annual set ${set.name || set.id} to student ${studentIdentifier}`,
+            description: `Issued annual set ${set.name || set.id} to student ${studentRecordKey}`,
             metadata: {
                 actorId,
                 transactionId,
@@ -897,7 +895,7 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
             },
             details: {
                 student: {
-                    id: studentIdentifier,
+                    id: studentRecordKey,
                     name: student.firstName ? `${student.firstName} ${student.lastName || ''}`.trim() : student.username || student.email || ''
                 },
                 items: transactionItems

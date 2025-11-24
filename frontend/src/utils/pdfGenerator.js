@@ -17,6 +17,33 @@ const createDoc = (opts = {}) => {
   return new jsPDF({ orientation, unit: MM, format });
 };
 
+const getValidDateLabel = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString();
+};
+
+const formatStudentFullName = (student = {}) => {
+  const parts = [student.firstName, student.middleName, student.lastName]
+    .map((p) => (p || '').trim())
+    .filter(Boolean);
+  if (parts.length > 0) {
+    return parts.join(' ');
+  }
+  return student.name || 'Unknown';
+};
+
+const deriveStudentLibraryId = (student = {}) => {
+  return (
+    student.libraryId ||
+    student.libraryCardNumber ||
+    (student.library && student.library.cardNumber) ||
+    student.studentId ||
+    'N/A'
+  );
+};
+
 // (no longer using a wrapper for splitTextToSize; use doc.splitTextToSize directly)
 
 // Draw front side of the library card on the given doc at the current page
@@ -48,10 +75,8 @@ const drawCardFront = async (doc, student) => {
   doc.text('PHOTO', photoX + photoSize / 2, photoY + photoSize / 2 + 1, { align: 'center' });
 
   // Student ID under the photo, bold
-  const cardNoY = photoY + photoSize + 4;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text(String(student.studentId || 'N/A'), photoX, cardNoY);
   
 
   // Right side: info area (to the right of photo)
@@ -79,7 +104,7 @@ const drawCardFront = async (doc, student) => {
   // QR code on the rightmost area, align top with the name area
   const qrY = pageHeight / 2 - qrSizeMm / 2;
   try {
-    const qrData = (student.libraryCardNumber || student.studentId || 'N/A');
+    const qrData = (student.libraryCardNumber || 'N/A');
     const dataUrl = await QRCode.toDataURL(String(qrData));
     doc.addImage(dataUrl, 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
   } catch (err) {
@@ -298,7 +323,139 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
   return doc;
 };
 
+const addStudentListHeader = (doc, options = {}) => {
+  const margin = 15;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const headerY = margin;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('Student List Report', margin, headerY);
+
+  const dateRange = [];
+  const startLabel = getValidDateLabel(options.startDate);
+  const endLabel = getValidDateLabel(options.endDate);
+  if (startLabel || endLabel) {
+    dateRange.push(`Date Range: ${startLabel || 'N/A'} - ${endLabel || 'N/A'}`);
+  }
+
+  const filterParts = [];
+  const filters = options.studentFilters || {};
+  if (filters.grade) filterParts.push(`Grade: ${filters.grade}`);
+  if (filters.section) filterParts.push(`Section: ${filters.section}`);
+  if (filters.schoolYear) filterParts.push(`School Year: ${filters.schoolYear}`);
+  if (filterParts.length > 0) {
+    dateRange.push(filterParts.join(' | '));
+  }
+
+  if (dateRange.length > 0) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.text(dateRange, margin, headerY + 8);
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - 15, headerY, { align: 'right' });
+};
+
+const drawStudentListTable = (doc, students = [], options = {}) => {
+  const margin = 15;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const columns = [
+    { key: 'libraryId', label: 'Library ID', width: 28 },
+    { key: 'name', label: 'Name', width: 55 },
+    { key: 'gradeSection', label: 'Grade & Section', width: 35 },
+    { key: 'email', label: 'Email', width: 55 },
+    { key: 'phone', label: 'Phone', width: 32 },
+  ];
+
+  const lineHeight = 6;
+  let y = margin + 20;
+
+  const drawTableHeader = () => {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    let x = margin;
+    columns.forEach((col) => {
+      doc.text(col.label, x, y);
+      x += col.width;
+    });
+    doc.setLineWidth(0.3);
+    doc.line(margin, y + 1, margin + columns.reduce((sum, col) => sum + col.width, 0), y + 1);
+    y += lineHeight;
+  };
+
+  const ensureSpace = (rowHeight) => {
+    if (y + rowHeight <= pageHeight - margin) {
+      return;
+    }
+    doc.addPage();
+    y = margin;
+    addStudentListHeader(doc, options);
+    y += 20;
+    drawTableHeader();
+  };
+
+  drawTableHeader();
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+
+  students.forEach((student, index) => {
+    const rowData = {
+      libraryId: deriveStudentLibraryId(student),
+      name: formatStudentFullName(student),
+      gradeSection:
+        student.grade && student.section
+          ? `${student.grade} - ${student.section}`
+          : student.grade || student.section || 'N/A',
+      email: student.email || 'N/A',
+      phone: student.phoneNumber || student.parentPhone || 'N/A',
+    };
+
+    const wrapped = columns.map((col) => {
+      const text = String(rowData[col.key] ?? '') || 'N/A';
+      const lines = doc.splitTextToSize(text, col.width - 2);
+      return { lines, height: Math.max(lines.length * (lineHeight - 2), lineHeight) };
+    });
+
+    const rowHeight = Math.max(...wrapped.map((w) => w.height)) + 2;
+    ensureSpace(rowHeight);
+
+    let x = margin;
+    wrapped.forEach(({ lines }, colIndex) => {
+      doc.text(lines, x, y, { baseline: 'top' });
+      x += columns[colIndex].width;
+    });
+
+    y += rowHeight;
+
+    if ((index + 1) % 15 === 0) {
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.1);
+      doc.line(margin, y - 1, margin + columns.reduce((sum, col) => sum + col.width, 0), y - 1);
+    }
+  });
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(9);
+  y += 4;
+  ensureSpace(lineHeight);
+  doc.text(`Total Students: ${students.length}`, margin, y);
+};
+
+const generateStudentListReportPDF = async (students = [], options = {}) => {
+  const doc = createDoc({ orientation: 'portrait', format: 'letter' });
+  addStudentListHeader(doc, options);
+  drawStudentListTable(doc, students, options);
+  return doc;
+};
+
 export const generateReportPDF = async (reportType, data = [], options = {}) => {
+  if (reportType === 'student-list') {
+    return generateStudentListReportPDF(data, options);
+  }
+
   const doc = createDoc();
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');

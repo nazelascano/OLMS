@@ -1539,8 +1539,14 @@ const SettingsPage = () => {
                     </Typography>
                   ) : (
                     <List>
-                      {categories.map((category) => (
-                        <ListItem key={category._id} divider secondaryAction={
+                      {categories.map((category, index) => {
+                        const fallbackKey = `${category?.name || "category"}-${index}`;
+                        const categoryKey =
+                          category?._id ||
+                          category?.id ||
+                          fallbackKey;
+                        return (
+                          <ListItem key={categoryKey} divider secondaryAction={
                           <IconButton
                             edge="end"
                             color="error"
@@ -1551,7 +1557,8 @@ const SettingsPage = () => {
                         }>
                           <ListItemText primary={category.name} />
                         </ListItem>
-                      ))}
+                        );
+                      })}
                     </List>
                   )}
                 </Grid>

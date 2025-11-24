@@ -23,10 +23,25 @@ import {
   Checkbox,
 } from "@mui/material";
 import { CloudUpload, GetApp, Check, Error, Close } from "@mui/icons-material";
-import { studentsAPI, settingsAPI } from "../../utils/api";
 import toast from "react-hot-toast";
+import { studentsAPI, settingsAPI } from "../../utils/api";
 import { ensureUserAttributes } from "../../utils/userAttributes";
 import { downloadPDF } from "../../utils/pdfGenerator";
+
+const SECTION_OPTIONS = ["A", "B", "C", "D", "E"];
+
+const sanitizeLibraryCardNumber = (value = "") =>
+  value.toString().trim().toUpperCase();
+
+const normalizeLibraryCardNumber = (value = "") =>
+  sanitizeLibraryCardNumber(value).replace(/[^A-Z0-9]/g, "");
+
+const isValidLibraryCardNumber = (value = "") => {
+  if (!value) {
+    return true;
+  }
+  return /^[A-Z0-9-]{4,30}$/.test(sanitizeLibraryCardNumber(value));
+};
 
 const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [file, setFile] = useState(null);
@@ -36,14 +51,11 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [step, setStep] = useState(1); // 1: Upload, 2: Preview, 3: Results
   const [existingStudents, setExistingStudents] = useState([]);
   const [importSuccessful, setImportSuccessful] = useState(false);
-  const [userAttributes, setUserAttributes] = useState(() =>
-    ensureUserAttributes(),
-  );
+  const [userAttributes, setUserAttributes] = useState(() => ensureUserAttributes());
   const [attributeError, setAttributeError] = useState("");
-  const [autoPrintCards, setAutoPrintCards] = useState(true); // Default to true for automatic printing
+  const [autoPrintCards, setAutoPrintCards] = useState(true);
 
-  const gradeOptions = userAttributes.gradeLevels;
-  const sections = ["A", "B", "C", "D", "E"];
+  const gradeOptions = userAttributes.gradeLevels || [];
 
   useEffect(() => {
     if (!open) {
@@ -63,9 +75,7 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
         console.error("Failed to load user attribute options:", error);
         if (isMounted) {
           setUserAttributes(ensureUserAttributes());
-          setAttributeError(
-            "Failed to load curriculum and grade options. Using defaults.",
-          );
+          setAttributeError("Failed to load curriculum and grade options. Using defaults.");
         }
       }
     };
@@ -78,55 +88,77 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   }, [open]);
 
   const handleFileUpload = async (event) => {
-    const uploadedFile = event.target.files[0];
-    if (uploadedFile && uploadedFile.type === "text/csv") {
-      setFile(uploadedFile);
+    const uploadedFile = event.target.files?.[0];
+    if (!uploadedFile) {
+      return;
+    }
 
-      try {
-        // Fetch existing students first
-        const existingStudentsResponse = await studentsAPI.getAll();
-        setExistingStudents(existingStudentsResponse.data.students || []);
+    const isCSV =
+      uploadedFile.type === "text/csv" || uploadedFile.name.toLowerCase().endsWith(".csv");
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
+    if (!isCSV) {
+      toast.error("Please upload a valid CSV file");
+      return;
+    }
+
+    setFile(uploadedFile);
+
+    try {
+      const existingStudentsResponse = await studentsAPI.getAll();
+      setExistingStudents(existingStudentsResponse.data.students || []);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
           const text = e.target.result;
-          const rows = text.split("\n").filter((row) => row.trim());
-          const headers = rows[0].split(",").map((h) => h.trim());
+          const rows = text.split(/\r?\n/).filter((row) => row.trim());
+
+          if (rows.length <= 1) {
+            toast.error("CSV file does not contain student rows");
+            return;
+          }
+
+          const headers = rows[0]
+            .split(",")
+            .map((header) => header.trim().replace(/^"|"$/g, ""));
 
           const data = rows.slice(1).map((row, index) => {
             const values = row
               .split(",")
-              .map((v) => v.trim().replace(/"/g, ""));
+              .map((value) => value.trim().replace(/^"|"$/g, ""));
             const student = {};
             headers.forEach((header, i) => {
-              student[header.toLowerCase().replace(/\s+/g, "")] =
-                values[i] || "";
+              const key = header.toLowerCase().replace(/\s+/g, "");
+              student[key] = values[i] || "";
             });
-            student.rowIndex = index + 2; // +2 because of 0-based index and header row
+            student.rowIndex = index + 2; // account for header row
             return student;
           });
 
           setCsvData(data);
           setStep(2);
-        };
-        reader.readAsText(uploadedFile);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error("Failed to load student data");
-      }
-    } else {
-      toast.error("Please upload a valid CSV file");
+        } catch (parseError) {
+          console.error("Failed to parse CSV:", parseError);
+          toast.error("Failed to parse CSV file");
+        }
+      };
+      reader.onerror = () => toast.error("Failed to read CSV file");
+      reader.readAsText(uploadedFile);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      toast.error("Failed to load student data");
     }
   };
 
   const downloadTemplate = () => {
     const sampleGradePrimary = gradeOptions[0] || "Grade 9";
     const sampleGradeSecondary = gradeOptions[1] || gradeOptions[0] || "Grade 10";
-    const sampleSectionPrimary = sections[0] || "A";
-    const sampleSectionSecondary = sections[1] || sections[0] || "A";
-    const template = `firstName,lastName,middleName,email,phoneNumber,studentId,lrn,grade,section,barangay,municipality,province,fullAddress,parentGuardianName,parentPhone
-John,Doe,Santos,john.doe@student.example.edu,09123456789,2024001,123456789012,${sampleGradePrimary},${sampleSectionPrimary},Barangay 1,Quezon City,Metro Manila,"123 Main St Barangay 1 Quezon City",Jane Doe,09987654321
-Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,${sampleGradeSecondary},${sampleSectionSecondary},Barangay 2,Manila,Metro Manila,"789 Pine St Barangay 2 Manila",Bob Smith,09444555666`;
+    const sampleSectionPrimary = SECTION_OPTIONS[0];
+    const sampleSectionSecondary = SECTION_OPTIONS[1] || SECTION_OPTIONS[0];
+
+    const template = `firstName,lastName,middleName,email,phoneNumber,libraryCardNumber,lrn,grade,section,barangay,municipality,province,fullAddress,parentGuardianName,parentPhone
+John,Doe,Santos,john.doe@student.example.edu,09123456789,LIB-25-0101,123456789012,${sampleGradePrimary},${sampleSectionPrimary},Barangay 1,Quezon City,Metro Manila,"123 Main St Barangay 1 Quezon City",Jane Doe,09987654321
+Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,,123456789013,${sampleGradeSecondary},${sampleSectionSecondary},Barangay 2,Manila,Metro Manila,"789 Pine St Barangay 2 Manila",Bob Smith,09444555666`;
 
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -140,59 +172,68 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     document.body.removeChild(a);
   };
 
-  const validateStudentData = (student, existingStudents = []) => {
+  const validateStudentData = (student, existingList = []) => {
     const errors = [];
 
-    // Required fields
-    if (!student.firstname) errors.push("First name required");
-    if (!student.lastname) errors.push("Last name required");
-    if (!student.studentid) errors.push("Student ID required");
-    if (!student.lrn) errors.push("LRN required");
-    if (!student.grade) errors.push("Grade required");
-    if (!student.section) errors.push("Section required");
+    const firstName = (student.firstname || student.firstName || "").trim();
+    const lastName = (student.lastname || student.lastName || "").trim();
+    const normalizedLRN = (student.lrn || "").trim();
+    const rawLibraryCard = (student.librarycardnumber || student.libraryCardNumber || "").trim();
+    const cleanedLibraryCard = sanitizeLibraryCardNumber(rawLibraryCard);
+    const normalizedLibraryCard = normalizeLibraryCardNumber(cleanedLibraryCard);
+    const normalizedGrade = (student.grade || "").trim();
+    const normalizedSection = (student.section || "").trim();
 
-    // Email validation
-    if (student.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(student.email)) {
-      errors.push("Invalid email format");
+    if (!firstName) errors.push("First name required");
+    if (!lastName) errors.push("Last name required");
+    if (!normalizedLRN) errors.push("LRN required");
+    if (!normalizedGrade) errors.push("Grade required");
+    if (!normalizedSection) errors.push("Section required");
+
+    if (student.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(student.email.trim())) {
+        errors.push("Invalid email format");
+      }
     }
 
-    // LRN validation (should be 12 digits)
-    if (student.lrn && !/^\d{12}$/.test(student.lrn)) {
+    if (normalizedLRN && !/^\d{12}$/.test(normalizedLRN)) {
       errors.push("Invalid LRN (must be 12 digits)");
     }
 
-    // Check for duplicate LRN in existing students
-    if (student.lrn && existingStudents.some((s) => s.lrn === student.lrn)) {
+    if (
+      normalizedLRN &&
+      existingList.some((s) => ((s.lrn || s.username || "").trim()) === normalizedLRN)
+    ) {
       errors.push("LRN already exists in system");
     }
 
-    // Check for duplicate Student ID in existing students
-    if (
-      student.studentid &&
-      existingStudents.some((s) => s.studentId === student.studentid)
-    ) {
-      errors.push("Student ID already exists in system");
+    if (rawLibraryCard && !isValidLibraryCardNumber(rawLibraryCard)) {
+      errors.push("Invalid library card number");
     }
 
-    // Grade validation
-    const normalizedGrade = (student.grade || "").trim();
+    if (
+      normalizedLibraryCard &&
+      existingList.some(
+        (s) =>
+          normalizeLibraryCardNumber(s.libraryCardNumber || s.library?.cardNumber || "") ===
+          normalizedLibraryCard,
+      )
+    ) {
+      errors.push("Library card number already exists in system");
+    }
+
     if (
       normalizedGrade &&
-      !gradeOptions.some(
-        (grade) => grade.toLowerCase() === normalizedGrade.toLowerCase(),
-      )
+      gradeOptions.length > 0 &&
+      !gradeOptions.some((grade) => grade.toLowerCase() === normalizedGrade.toLowerCase())
     ) {
       errors.push("Invalid grade (must match the configured list)");
     }
 
-    // Section validation
-    const normalizedSection = (student.section || "").trim();
     if (
       normalizedSection &&
-      !sections.some(
-        (section) =>
-          section.toLowerCase() === normalizedSection.toLowerCase(),
-      )
+      !SECTION_OPTIONS.some((section) => section.toLowerCase() === normalizedSection.toLowerCase())
     ) {
       errors.push("Invalid section (must be A-E)");
     }
@@ -204,50 +245,44 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     setImporting(true);
 
     const csvLRNs = new Set();
-    const csvStudentIds = new Set();
+    const csvLibraryCards = new Set();
     const validStudents = [];
     const invalidStudents = [];
 
     try {
-      // Track LRNs and Student IDs within the CSV to detect duplicates
-
       csvData.forEach((student) => {
         const errors = validateStudentData(student, existingStudents);
+        const normalizedLRN = (student.lrn || "").trim();
+        const cleanedLibraryCard = sanitizeLibraryCardNumber(
+          student.librarycardnumber || student.libraryCardNumber || "",
+        );
+        const normalizedCard = normalizeLibraryCardNumber(cleanedLibraryCard);
 
-        // Check for duplicates within the CSV file itself
-        if (student.lrn && csvLRNs.has(student.lrn)) {
+        if (normalizedLRN && csvLRNs.has(normalizedLRN)) {
           errors.push("Duplicate LRN in CSV file");
         }
-        if (student.studentid && csvStudentIds.has(student.studentid)) {
-          errors.push("Duplicate Student ID in CSV file");
+        if (normalizedCard && csvLibraryCards.has(normalizedCard)) {
+          errors.push("Duplicate library card number in CSV file");
         }
 
         if (errors.length === 0) {
-          // Add to tracking sets
-          if (student.lrn) csvLRNs.add(student.lrn);
-          if (student.studentid) csvStudentIds.add(student.studentid);
+          if (normalizedLRN) csvLRNs.add(normalizedLRN);
+          if (normalizedCard) csvLibraryCards.add(normalizedCard);
 
           validStudents.push({
-            // Basic Information
             firstName: student.firstname || student.firstName,
             lastName: student.lastname || student.lastName,
             middleName: student.middlename || student.middleName || "",
             email: student.email,
             phoneNumber: student.phonenumber || student.phoneNumber || "",
-
-            // Academic Information
-            studentId: student.studentid || student.studentId,
-            lrn: student.lrn, // Learner Reference Number (used as username)
+            lrn: normalizedLRN,
             grade: student.grade,
             section: student.section,
-
-            // Address Information
+            libraryCardNumber: cleanedLibraryCard || undefined,
             barangay: student.barangay || "",
             municipality: student.municipality || "",
             province: student.province || "",
             fullAddress: student.fulladdress || student.fullAddress || "",
-
-            // Parent/Guardian Information
             parentGuardianName:
               student.parentguardianname ||
               student.parentGuardianName ||
@@ -255,7 +290,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
               student.parentName ||
               "",
             parentPhone: student.parentphone || student.parentPhone || "",
-            username: student.lrn,
+            username: normalizedLRN,
             rowIndex: student.rowIndex,
           });
         } else {
@@ -272,7 +307,6 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
         return;
       }
 
-      // Import valid students
       const response = await studentsAPI.bulkImport(validStudents);
 
       setImportResults({
@@ -284,17 +318,13 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
 
       setStep(3);
 
-      if (response.data.results && response.data.results.success > 0) {
-        toast.success(
-          `Successfully imported ${response.data.results.success} students`,
-        );
+      if (response.data.results?.success > 0) {
+        toast.success(`Successfully imported ${response.data.results.success} students`);
         setImportSuccessful(true);
       }
 
-      if (response.data.results.errors > 0) {
-        toast.error(
-          `${response.data.results.errors} students failed to import`,
-        );
+      if (response.data.results?.errors > 0) {
+        toast.error(`${response.data.results.errors} students failed to import`);
       }
     } catch (error) {
       console.error("Import error:", error);
@@ -305,17 +335,20 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
 
       if (Array.isArray(responseDetails) && responseDetails.length > 0) {
         setImportResults({
-          success: responseDetails.filter((detail) => detail.status === 'success').length,
-          errors: responseDetails.filter((detail) => detail.status !== 'success').length,
+          success: responseDetails.filter((detail) => detail.status === "success").length,
+          errors: responseDetails.filter((detail) => detail.status !== "success").length,
           details: responseDetails,
           invalidStudents,
         });
         setStep(3);
-        toast.error(responseMessage || 'Bulk import failed. Review the details for row-specific errors.', { duration: 6000 });
+        toast.error(
+          responseMessage || "Bulk import failed. Review the details for row-specific errors.",
+          { duration: 6000 },
+        );
         return;
       }
 
-      if (responseErrors && Array.isArray(responseErrors) && responseErrors.length > 0) {
+      if (Array.isArray(responseErrors) && responseErrors.length > 0) {
         console.warn("Import validation errors:", responseErrors);
         const summarized = responseErrors
           .slice(0, 5)
@@ -323,22 +356,20 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
             const rowNumber = entry.rowIndex
               ? entry.rowIndex
               : typeof entry.idx === "number"
-                ? entry.idx + 2
-                : "?";
+              ? entry.idx + 2
+              : "?";
             const issues = Array.isArray(entry.issues)
               ? entry.issues
               : Array.isArray(entry.errors)
-                ? entry.errors
-                : [entry.error || "Unknown validation issue"];
+              ? entry.errors
+              : [entry.error || "Unknown validation issue"];
             return `Row ${rowNumber}: ${issues.join(", ")}`;
           })
           .join("\n");
 
         toast.error(
-          responseMessage
-            ? `${responseMessage}\n${summarized}`
-            : `Bulk import failed:\n${summarized}`,
-          { duration: 8000 }
+          responseMessage ? `${responseMessage}\n${summarized}` : `Bulk import failed:\n${summarized}`,
+          { duration: 8000 },
         );
         return;
       }
@@ -350,27 +381,21 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
             const rowNumber = entry.rowIndex
               ? entry.rowIndex
               : typeof entry.idx === "number"
-                ? entry.idx + 2
-                : "?";
-            const studentRef = entry.studentId ? ` (Student ID ${entry.studentId})` : "";
-            return `Row ${rowNumber}${studentRef}: Missing LRN`;
+              ? entry.idx + 2
+              : "?";
+            const cardRef = entry.libraryCardNumber ? ` (Library Card ${entry.libraryCardNumber})` : "";
+            return `Row ${rowNumber}${cardRef}: Missing LRN`;
           })
           .join("\n");
 
         toast.error(
-          responseMessage
-            ? `${responseMessage}\n${summarized}`
-            : `Bulk import failed:\n${summarized}`,
-          { duration: 8000 }
+          responseMessage ? `${responseMessage}\n${summarized}` : `Bulk import failed:\n${summarized}`,
+          { duration: 8000 },
         );
         return;
       }
 
-      if (responseMessage) {
-        toast.error(responseMessage);
-      } else {
-        toast.error("Failed to import students");
-      }
+      toast.error(responseMessage || "Failed to import students");
     } finally {
       setImporting(false);
     }
@@ -378,9 +403,9 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
 
   const handleClose = async () => {
     const wasSuccessful = importSuccessful;
+    const shouldAutoPrint = autoPrintCards;
+    const successfulStudents = importResults?.details?.filter((detail) => detail.status === "success") || [];
 
-    // Reset all state first
-    const successfulStudents = importResults?.details?.filter(detail => detail.status === 'success') || [];
     setFile(null);
     setCsvData([]);
     setImportResults(null);
@@ -388,49 +413,62 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     setExistingStudents([]);
     setImportSuccessful(false);
     setAttributeError("");
-    setAutoPrintCards(true); // Reset to default
+    setAutoPrintCards(true);
 
-    // Generate a single combined PDF for the successfully imported students
-    if (wasSuccessful && successfulStudents.length > 0 && autoPrintCards) {
+    if (wasSuccessful && successfulStudents.length > 0 && shouldAutoPrint) {
+      const loadingId = toast.loading("Generating library cards for imported students...");
       try {
-        toast.loading("Generating library cards for imported students...");
-
-        // Fetch all students and filter down to the newly imported ones
         const allStudentsResponse = await studentsAPI.getAll();
         const allStudents = allStudentsResponse.data.students || [];
 
-        const importedStudents = allStudents.filter((student) =>
-          successfulStudents.some((success) => success.studentId === student.studentId) && student.libraryCardNumber,
-        );
+        const importedStudents = allStudents.filter((student) => {
+          const studentCard = normalizeLibraryCardNumber(
+            student.libraryCardNumber || student.library?.cardNumber || "",
+          );
+          const studentLRN = (student.lrn || "").trim();
+
+          const matched = successfulStudents.some((success) => {
+            const successCard = normalizeLibraryCardNumber(
+              success.libraryCardNumber || success.librarycardnumber || "",
+            );
+            const successLRN = (success.lrn || "").trim();
+            return (
+              (successCard && studentCard && successCard === studentCard) ||
+              (successLRN && studentLRN && successLRN === studentLRN)
+            );
+          });
+
+          return matched && !!student.libraryCardNumber;
+        });
 
         if (importedStudents.length > 0) {
-          // Create a single PDF with all cards (front+back pages per student)
           try {
-            const multiPDF = await import(/* webpackChunkName: "pdf-generator" */ '../../utils/pdfGenerator').then(m => m.generateLibraryCardsPDF(importedStudents));
+            const pdfModule = await import(
+              /* webpackChunkName: "pdf-generator" */ "../../utils/pdfGenerator"
+            );
+            const multiPDF = await pdfModule.generateLibraryCardsPDF(importedStudents);
             const filename = `library_cards_import_${Date.now()}.pdf`;
             downloadPDF(multiPDF, filename);
-            toast.dismiss();
+            toast.dismiss(loadingId);
             toast.success(`Generated ${importedStudents.length} library cards successfully!`);
-          } catch (err) {
-            console.error('Failed to generate combined library cards PDF:', err);
-            toast.dismiss();
-            toast.error('Failed to generate library cards');
+          } catch (pdfError) {
+            console.error("Failed to generate combined library cards PDF:", pdfError);
+            toast.dismiss(loadingId);
+            toast.error("Failed to generate library cards");
           }
         } else {
-          toast.dismiss();
-          toast.error('No imported students with assigned library card numbers found');
+          toast.dismiss(loadingId);
+          toast.error("No imported students with assigned library card numbers found");
         }
       } catch (error) {
-        toast.dismiss();
-        toast.error('Failed to generate library cards');
-        console.error('Error generating library cards after import:', error);
+        console.error("Error generating library cards after import:", error);
+        toast.dismiss(loadingId);
+        toast.error("Failed to generate library cards");
       }
     }
 
-    // Close the dialog
     onClose();
 
-    // Then trigger refresh if import was successful
     if (wasSuccessful && onImportComplete) {
       onImportComplete();
     }
@@ -440,8 +478,7 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
         <Typography variant="body2">
-          Upload a CSV file with student data. Download the template below to see
-          the required format.
+          Upload a CSV file with student data. Download the template below to see the required format.
         </Typography>
       </Alert>
       {gradeOptions.length > 0 && (
@@ -450,15 +487,11 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
         </Typography>
       )}
       <Box display="flex" gap={2} mb={3}>
-        <Button
-          variant="outlined"
-          startIcon={<GetApp />}
-          onClick={downloadTemplate}
-        >
-          Download Template{" "}
-        </Button>{" "}
+        <Button variant="outlined" startIcon={<GetApp />} onClick={downloadTemplate}>
+          Download Template
+        </Button>
       </Box>
-      <label htmlFor="csv-file-input" style={{display:'block',cursor:'pointer'}}>
+      <label htmlFor="csv-file-input" style={{ display: "block", cursor: "pointer" }}>
         <Paper
           role="button"
           tabIndex={0}
@@ -471,13 +504,13 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
             "&:hover": { borderColor: "#22C55E" },
           }}
         >
-          <CloudUpload aria-hidden="true" sx={{ fontSize: 48, color: "#666", mb: 2 }} />{" "}
+          <CloudUpload aria-hidden="true" sx={{ fontSize: 48, color: "#666", mb: 2 }} />
           <Typography variant="h6" gutterBottom>
-            Click or press Enter to upload CSV file{" "}
-          </Typography>{" "}
+            Click or press Enter to upload CSV file
+          </Typography>
           <Typography variant="body2" color="text.secondary">
-            Supported format: CSV files only{" "}
-          </Typography>{" "}
+            Supported format: CSV files only
+          </Typography>
         </Paper>
       </label>
       <input
@@ -491,32 +524,39 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
       {file && (
         <Box mt={2}>
           <Typography variant="body2">
-            Selected file: <strong> {file.name} </strong>{" "}
-          </Typography>{" "}
+            Selected file: <strong>{file.name}</strong>
+          </Typography>
         </Box>
-      )}{" "}
+      )}
     </Box>
   );
 
   const renderPreviewStep = () => {
-    // Track duplicates within CSV
     const csvLRNs = new Set();
-    const csvStudentIds = new Set();
-    const duplicatesInCSV = new Set();
+    const csvLibraryCards = new Set();
+    const duplicateLRNs = new Set();
+    const duplicateCards = new Set();
 
-    // First pass: identify duplicates
     csvData.forEach((student) => {
-      if (student.lrn) {
-        if (csvLRNs.has(student.lrn)) {
-          duplicatesInCSV.add(student.lrn);
+      const normalizedLRN = (student.lrn || "").trim();
+      const normalizedCard = normalizeLibraryCardNumber(
+        student.librarycardnumber || student.libraryCardNumber || "",
+      );
+
+      if (normalizedLRN) {
+        if (csvLRNs.has(normalizedLRN)) {
+          duplicateLRNs.add(normalizedLRN);
+        } else {
+          csvLRNs.add(normalizedLRN);
         }
-        csvLRNs.add(student.lrn);
       }
-      if (student.studentid) {
-        if (csvStudentIds.has(student.studentid)) {
-          duplicatesInCSV.add(student.studentid);
+
+      if (normalizedCard) {
+        if (csvLibraryCards.has(normalizedCard)) {
+          duplicateCards.add(normalizedCard);
+        } else {
+          csvLibraryCards.add(normalizedCard);
         }
-        csvStudentIds.add(student.studentid);
       }
     });
 
@@ -524,14 +564,11 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
       <Box>
         <Alert severity="success" sx={{ mb: 3 }}>
           <Typography variant="body2">
-            Found {csvData.length}
-            students in the CSV file.Review the data below and click Import to
-            proceed.{" "}
-          </Typography>{" "}
+            Found {csvData.length} students in the CSV file. Review the data below and click Import to proceed.
+          </Typography>
         </Alert>
 
-        {/* Auto-print cards option */}
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+        <Box sx={{ mb: 3, p: 2, bgcolor: "background.paper", borderRadius: 1 }}>
           <FormControlLabel
             control={
               <Checkbox
@@ -542,8 +579,8 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
             }
             label="Automatically generate and download library cards for imported students"
           />
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: 'block' }}>
-            PDFs will be downloaded to your browser after successful import
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 4, display: "block" }}>
+            PDFs will download automatically after a successful import
           </Typography>
         </Box>
 
@@ -551,25 +588,29 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell> Name </TableCell> <TableCell> Email </TableCell>{" "}
-                <TableCell> Student ID </TableCell> <TableCell> LRN </TableCell>{" "}
-                <TableCell> Grade </TableCell> <TableCell> Section </TableCell>{" "}
-                <TableCell> Status </TableCell>{" "}
-              </TableRow>{" "}
-            </TableHead>{" "}
+                <TableCell>Name</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Library Card</TableCell>
+                <TableCell>LRN</TableCell>
+                <TableCell>Grade</TableCell>
+                <TableCell>Section</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Issues</TableCell>
+              </TableRow>
+            </TableHead>
             <TableBody>
               {csvData.map((student, index) => {
                 const errors = validateStudentData(student, existingStudents);
+                const normalizedLRN = (student.lrn || "").trim();
+                const normalizedCard = normalizeLibraryCardNumber(
+                  student.librarycardnumber || student.libraryCardNumber || "",
+                );
 
-                // Check for duplicates within CSV
-                if (student.lrn && duplicatesInCSV.has(student.lrn)) {
+                if (normalizedLRN && duplicateLRNs.has(normalizedLRN)) {
                   errors.push("Duplicate LRN in CSV file");
                 }
-                if (
-                  student.studentid &&
-                  duplicatesInCSV.has(student.studentid)
-                ) {
-                  errors.push("Duplicate Student ID in CSV file");
+                if (normalizedCard && duplicateCards.has(normalizedCard)) {
+                  errors.push("Duplicate library card number in CSV file");
                 }
 
                 const isValid = errors.length === 0;
@@ -577,12 +618,13 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
                 return (
                   <TableRow key={index}>
                     <TableCell>
-                      {student.firstname || student.firstName}{" "}
-                      {student.lastname || student.lastName}
+                      {(student.firstname || student.firstName || "").trim()} {(
+                        student.lastname || student.lastName || ""
+                      ).trim()}
                     </TableCell>
                     <TableCell>{student.email}</TableCell>
                     <TableCell>
-                      {student.studentid || student.studentId}
+                      {student.librarycardnumber || student.libraryCardNumber || "(auto)"}
                     </TableCell>
                     <TableCell>{student.lrn}</TableCell>
                     <TableCell>{student.grade}</TableCell>
@@ -595,12 +637,27 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
                         icon={isValid ? <Check /> : <Error />}
                       />
                     </TableCell>
+                    <TableCell>
+                      {errors.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                          No issues detected
+                        </Typography>
+                      ) : (
+                        <Box component="ul" sx={{ pl: 2, mb: 0 }}>
+                          {errors.map((err, errIdx) => (
+                            <Typography component="li" variant="body2" key={`err-${errIdx}`}>
+                              {err}
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
-            </TableBody>{" "}
-          </Table>{" "}
-        </TableContainer>{" "}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     );
   };
@@ -617,17 +674,19 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell> Row </TableCell>{" "}
-                <TableCell> Student ID </TableCell>{" "}
-                <TableCell> Status </TableCell>{" "}
-                <TableCell> Message </TableCell>{" "}
-              </TableRow>{" "}
-            </TableHead>{" "}
+                <TableCell>Row</TableCell>
+                <TableCell>Library Card</TableCell>
+                <TableCell>LRN</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Message</TableCell>
+              </TableRow>
+            </TableHead>
             <TableBody>
               {(importResults.details || []).map((detail, index) => (
-                <TableRow key={index}>
-                  <TableCell>{detail.rowIndex ? `Row ${detail.rowIndex}` : '-'}</TableCell>
-                  <TableCell>{detail.studentId}</TableCell>
+                <TableRow key={`result-${index}`}>
+                  <TableCell>{detail.rowIndex ? `Row ${detail.rowIndex}` : "-"}</TableCell>
+                  <TableCell>{detail.libraryCardNumber || "-"}</TableCell>
+                  <TableCell>{detail.lrn || "-"}</TableCell>
                   <TableCell>
                     <Chip
                       label={detail.status === "success" ? "Success" : "Error"}
@@ -636,29 +695,30 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
                     />
                   </TableCell>
                   <TableCell>
-                      {(() => {
-                        const issues = Array.isArray(detail.issues) && detail.issues.length > 0
-                          ? detail.issues.join(', ')
-                          : null;
-                        return detail.message || issues || (detail.status === 'success' ? 'Imported successfully' : 'No details provided');
-                      })()}
+                    {(() => {
+                      const issues = Array.isArray(detail.issues) && detail.issues.length > 0
+                        ? detail.issues.join(", ")
+                        : null;
+                      return detail.message || issues || (detail.status === "success" ? "Imported successfully" : "No details provided");
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}
               {(importResults.invalidStudents || []).map((student, index) => (
-                <TableRow key={`invalid-${student.studentid || student.studentId || index}`}>
-                  <TableCell>{student.rowIndex ? `Row ${student.rowIndex}` : '-'}</TableCell>
-                  <TableCell>{student.studentid || student.studentId || 'N/A'}</TableCell>
+                <TableRow key={`invalid-${student.librarycardnumber || student.libraryCardNumber || index}`}>
+                  <TableCell>{student.rowIndex ? `Row ${student.rowIndex}` : "-"}</TableCell>
+                  <TableCell>{student.librarycardnumber || student.libraryCardNumber || "(auto)"}</TableCell>
+                  <TableCell>{student.lrn || "-"}</TableCell>
                   <TableCell>
                     <Chip label="Invalid" color="error" size="small" />
                   </TableCell>
-                  <TableCell>{Array.isArray(student.errors) ? student.errors.join(', ') : 'Invalid data'}</TableCell>
+                  <TableCell>{Array.isArray(student.errors) ? student.errors.join(", ") : "Invalid data"}</TableCell>
                 </TableRow>
               ))}
-            </TableBody>{" "}
-          </Table>{" "}
+            </TableBody>
+          </Table>
         </TableContainer>
-      )}{" "}
+      )}
     </Box>
   );
 
@@ -666,11 +726,11 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6"> Import Students </Typography>{" "}
+          <Typography variant="h6">Import Students</Typography>
           <IconButton onClick={handleClose}>
             <Close />
-          </IconButton>{" "}
-        </Box>{" "}
+          </IconButton>
+        </Box>
       </DialogTitle>
       <DialogContent>
         {importing && <LinearProgress sx={{ mb: 2 }} />}
@@ -681,30 +741,23 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,2024002,123456789013,
         )}
         {step === 1 && renderUploadStep()}
         {step === 2 && renderPreviewStep()}
-        {step === 3 && renderResultsStep()}
+        {step === 3 && importResults && renderResultsStep()}
       </DialogContent>
       <DialogActions>
-        {" "}
         {step === 2 && (
           <>
-            <Button onClick={() => setStep(1)}> Back </Button>{" "}
-            <Button
-              variant="contained"
-              onClick={handleImport}
-              disabled={importing || csvData.length === 0}
-            >
-              {importing
-                ? "Importing..."
-                : `Import ${csvData.length} Students`}{" "}
-            </Button>{" "}
+            <Button onClick={() => setStep(1)}>Back</Button>
+            <Button variant="contained" onClick={handleImport} disabled={importing || csvData.length === 0}>
+              {importing ? "Importing..." : `Import ${csvData.length} Students`}
+            </Button>
           </>
-        )}{" "}
+        )}
         {step === 3 && (
           <Button variant="contained" onClick={handleClose}>
-            Done{" "}
+            Done
           </Button>
-        )}{" "}
-      </DialogActions>{" "}
+        )}
+      </DialogActions>
     </Dialog>
   );
 };

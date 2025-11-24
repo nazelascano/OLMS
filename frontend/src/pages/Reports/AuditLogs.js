@@ -245,7 +245,6 @@ const getUserSearchFields = (log) => {
     request.studentId ||
     requestStudent.studentId ||
     nestedUser.studentId ||
-    nestedUser.studentNumber ||
     borrower.studentId ||
     log?.userId;
 

@@ -356,7 +356,7 @@ const ReportsPage = () => {
     try {
       if (type === "student-list") {
         const studentRows = (reportData.studentListReport || []).map((student) => ({
-          StudentID: student.studentId || "",
+          LibraryID: student.libraryId || student.libraryCardNumber || student.studentId || "",
           Name:
             student.firstName && student.lastName
               ? `${student.firstName} ${student.middleName || ""} ${student.lastName}`.replace(/\s+/g, " ").trim()
@@ -765,7 +765,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("circulation", reportData.circulationReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -821,7 +821,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("popular-books", reportData.popularBooksReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -887,7 +887,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("user-activity", reportData.userActivityReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -953,7 +953,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("overdue", reportData.overdueReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -1021,7 +1021,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("fines", reportData.fineReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -1093,7 +1093,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("inventory", reportData.inventoryReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -1159,7 +1159,7 @@ const ReportsPage = () => {
                   startIcon={<Download />}
                   onClick={() => handlePrintReport("student-list", reportData.studentListReport)}
                 >
-                  Print PDF{" "}
+                  Export PDF{" "}
                 </Button>{" "}
               </Box>
             </Box>{" "}
@@ -1167,7 +1167,7 @@ const ReportsPage = () => {
               <Table size="small">
                 <TableHead sx={tableHeadSx}>
                   <TableRow>
-                    <TableCell>Student ID</TableCell>
+                    <TableCell>Library ID</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Grade & Section</TableCell>
                     <TableCell>Email</TableCell>
@@ -1181,7 +1181,7 @@ const ReportsPage = () => {
                     reportData.studentListReport,
                     (student, index) => (
                       <TableRow key={student.id || student._id || index} sx={stripedRowSx}>
-                        <TableCell>{student.studentId || "N/A"}</TableCell>
+                        <TableCell>{student.libraryId || student.libraryCardNumber || student.studentId || "N/A"}</TableCell>
                         <TableCell>
                           {student.firstName && student.lastName
                             ? `${student.firstName} ${student.middleName || ""} ${student.lastName}`.trim()

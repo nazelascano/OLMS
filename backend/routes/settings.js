@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyToken, requireAdmin, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
+const { invalidateSettingsCache } = require('../utils/settingsCache');
 const {
     DEFAULT_CURRICULA,
     DEFAULT_GRADE_LEVELS,
@@ -8,6 +9,7 @@ const {
 const router = express.Router();
 
 const LIBRARY_CATEGORY = 'library';
+const LEGACY_LIBRARY_CATEGORIES = [LIBRARY_CATEGORY, 'receipt'];
 const SYSTEM_CATEGORY = 'system';
 const NOTIFICATION_CATEGORY = 'notifications';
 const USER_CATEGORY = 'user';
@@ -98,6 +100,12 @@ const updateOrCreateSetting = async (dbAdapter, userId, {
     });
 };
 
+const applySettingsUpdates = async (dbAdapter, userId, updates = []) => {
+    for (const item of updates) {
+        await updateOrCreateSetting(dbAdapter, userId, item);
+    }
+};
+
 // Get all settings (Admin only)
 router.get('/', verifyToken, requireAdmin, async(req, res) => {
     try {
@@ -116,8 +124,15 @@ router.get('/', verifyToken, requireAdmin, async(req, res) => {
 // Get settings by category (specific routes for frontend)
 router.get('/library', verifyToken, requireLibrarian, async(req, res) => {
     try {
-        const settings = await req.dbAdapter.findInCollection('settings', { category: LIBRARY_CATEGORY });
-        const index = settings.reduce((acc, setting) => {
+        const [librarySettings, legacyReceiptSettings] = await Promise.all(
+            LEGACY_LIBRARY_CATEGORIES.map((category) =>
+                req.dbAdapter.findInCollection('settings', { category })
+            )
+        );
+
+        // Process legacy "receipt" records first so current "library" entries override them.
+        const combinedSettings = [...legacyReceiptSettings, ...librarySettings];
+        const index = combinedSettings.reduce((acc, setting) => {
             acc[setting.id] = setting.value;
             return acc;
         }, {});
@@ -273,18 +288,18 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
         const mergedHours = mergeOperatingHours(operatingHours);
 
         const updates = [
-            { id: 'LIBRARY_NAME', value: libraryName, type: 'string' },
-            { id: 'LIBRARY_ADDRESS', value: libraryAddress, type: 'string' },
-            { id: 'LIBRARY_PHONE', value: libraryPhone, type: 'string' },
-            { id: 'LIBRARY_EMAIL', value: libraryEmail, type: 'string' },
-            { id: 'LIBRARY_WEBSITE', value: website, type: 'string' },
-            { id: 'LIBRARY_DESCRIPTION', value: description, type: 'string' },
-            { id: 'OPERATING_HOURS', value: mergedHours, type: 'object' }
+            { id: 'LIBRARY_NAME', value: libraryName, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_ADDRESS', value: libraryAddress, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_PHONE', value: libraryPhone, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_EMAIL', value: libraryEmail, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_WEBSITE', value: website, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_DESCRIPTION', value: description, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'OPERATING_HOURS', value: mergedHours, type: 'object', category: LIBRARY_CATEGORY }
         ];
 
-        await Promise.all(
-            updates.map((item) => updateOrCreateSetting(req.dbAdapter, req.user.id, item))
-        );
+        await applySettingsUpdates(req.dbAdapter, req.user.id, updates);
+        invalidateSettingsCache();
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -334,9 +349,7 @@ router.put('/borrowing-rules', verifyToken, requireAdmin, logAction('UPDATE', 's
             { id: 'ALLOW_RENEWALS_WITH_OVERDUE', value: toBoolean(allowRenewalsWithOverdue, false), type: 'boolean' }
         ];
 
-        await Promise.all(
-            updates.map((item) => updateOrCreateSetting(req.dbAdapter, req.user.id, item))
-        );
+        await applySettingsUpdates(req.dbAdapter, req.user.id, updates);
 
         setAuditContext(req, {
             success: true,
@@ -390,6 +403,7 @@ router.put('/notifications', verifyToken, requireAdmin, logAction('UPDATE', 'set
             type: 'object',
             category: NOTIFICATION_CATEGORY
         });
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -419,22 +433,23 @@ router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 's
         const normalizedCurriculum = normalizeStringList(curriculum, DEFAULT_CURRICULA);
         const normalizedGradeLevels = normalizeStringList(gradeLevels, DEFAULT_GRADE_LEVELS);
 
-        await Promise.all([
-            updateOrCreateSetting(req.dbAdapter, req.user.id, {
+        await applySettingsUpdates(req.dbAdapter, req.user.id, [
+            {
                 id: 'USER_CURRICULA',
                 value: normalizedCurriculum,
                 type: 'array',
                 category: USER_CATEGORY,
                 description: 'Configured curriculum options for users and students'
-            }),
-            updateOrCreateSetting(req.dbAdapter, req.user.id, {
+            },
+            {
                 id: 'USER_GRADE_LEVELS',
                 value: normalizedGradeLevels,
                 type: 'array',
                 category: USER_CATEGORY,
                 description: 'Configured grade level options for users and students'
-            })
+            }
         ]);
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -495,9 +510,8 @@ router.put('/system', verifyToken, requireAdmin, logAction('UPDATE', 'settings-s
             { id: 'PASSWORD_REQUIRE_SPECIAL_CHARS', value: normalizedPolicy.requireSpecialChars, type: 'boolean', category: SYSTEM_CATEGORY }
         ];
 
-        await Promise.all(
-            [...updates, ...policyUpdates].map((item) => updateOrCreateSetting(req.dbAdapter, req.user.id, item))
-        );
+        await applySettingsUpdates(req.dbAdapter, req.user.id, [...updates, ...policyUpdates]);
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -584,6 +598,7 @@ router.put('/:key', verifyToken, requireAdmin, logAction('UPDATE', 'setting'), a
         if (description !== undefined) updateData.description = description;
 
         await req.dbAdapter.updateInCollection('settings', { id: settingKey }, updateData);
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -663,6 +678,7 @@ router.post('/', verifyToken, requireAdmin, logAction('CREATE', 'setting'), asyn
         };
 
         await req.dbAdapter.insertIntoCollection('settings', settingData);
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -711,6 +727,7 @@ router.delete('/:key', verifyToken, requireAdmin, logAction('DELETE', 'setting')
         }
 
         await req.dbAdapter.deleteFromCollection('settings', { id: settingKey });
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,
@@ -753,8 +770,8 @@ router.post('/reset/defaults', verifyToken, requireAdmin, logAction('RESET_DEFAU
             { id: 'FINE_PER_DAY', value: 5, type: 'number', category: 'library', description: 'Fine amount per day for overdue books' },
             { id: 'SCHOOL_YEAR_START', value: '2024-08-01', type: 'string', category: 'library', description: 'School year start date' },
             { id: 'SCHOOL_YEAR_END', value: '2025-05-31', type: 'string', category: 'library', description: 'School year end date' },
-            { id: 'LIBRARY_NAME', value: 'ONHS Library', type: 'string', category: 'receipt', description: 'Library name for receipts' },
-            { id: 'LIBRARY_ADDRESS', value: 'School Address', type: 'string', category: 'receipt', description: 'Library address for receipts' },
+            { id: 'LIBRARY_NAME', value: 'ONHS Library', type: 'string', category: LIBRARY_CATEGORY, description: 'Library name for receipts' },
+            { id: 'LIBRARY_ADDRESS', value: 'School Address', type: 'string', category: LIBRARY_CATEGORY, description: 'Library address for receipts' },
             { id: 'ENABLE_FINES', value: true, type: 'boolean', category: 'library', description: 'Enable or disable fine system' },
             { id: 'MAX_BOOKS_PER_TRANSACTION', value: 10, type: 'number', category: 'library', description: 'Maximum number of books per transaction' }
         ];
@@ -775,6 +792,8 @@ router.post('/reset/defaults', verifyToken, requireAdmin, logAction('RESET_DEFAU
                 await req.dbAdapter.insertIntoCollection('settings', settingData);
             }
         }
+
+        invalidateSettingsCache();
 
         setAuditContext(req, {
             success: true,

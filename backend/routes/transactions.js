@@ -1,7 +1,65 @@
 const express = require('express');
 const { verifyToken, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
 const { generateTransactionId, ensureTransactionId } = require('../utils/transactionIds');
+const {
+    getSettingsSnapshot,
+    BORROWING_DEFAULTS,
+    NOTIFICATION_DEFAULTS,
+    getNotificationChannelState
+} = require('../utils/settingsCache');
 const router = express.Router();
+
+const ensureSettingsSnapshot = async (req) => {
+    if (req.settingsSnapshot) {
+        return req.settingsSnapshot;
+    }
+    const snapshot = await getSettingsSnapshot(req.dbAdapter);
+    req.settingsSnapshot = snapshot;
+    if (!req.systemSettings) {
+        req.systemSettings = snapshot.system;
+    }
+    return snapshot;
+};
+
+const getBorrowingSettings = async (req) => {
+    try {
+        const snapshot = await ensureSettingsSnapshot(req);
+        return snapshot?.borrowing || BORROWING_DEFAULTS;
+    } catch (error) {
+        console.error('Borrowing settings load error:', error);
+        return BORROWING_DEFAULTS;
+    }
+};
+
+const getNotificationSettings = async (req) => {
+    try {
+        const snapshot = await ensureSettingsSnapshot(req);
+        return snapshot?.notifications || NOTIFICATION_DEFAULTS;
+    } catch (error) {
+        console.error('Notification settings load error:', error);
+        return NOTIFICATION_DEFAULTS;
+    }
+};
+
+const normalizeTransactionType = (value) => {
+    if (!value) return 'regular';
+    return String(value).trim().toLowerCase();
+};
+
+const isOvernightType = (type) => normalizeTransactionType(type) === 'overnight';
+const isAnnualType = (type) => {
+    const normalized = normalizeTransactionType(type);
+    return normalized === 'annual' || normalized === 'annual-set';
+};
+
+const resolveBorrowWindowDays = (type, borrowingSettings) => {
+    if (isOvernightType(type)) {
+        return 1;
+    }
+    const fallback = BORROWING_DEFAULTS.maxBorrowDays || 14;
+    const configured = Number(borrowingSettings?.maxBorrowDays) || fallback;
+    return configured > 0 ? configured : fallback;
+};
 
 const calculateDueDate = (borrowDate, maxBorrowDays = 14) => {
     const dueDate = new Date(borrowDate);
@@ -9,11 +67,19 @@ const calculateDueDate = (borrowDate, maxBorrowDays = 14) => {
     return dueDate;
 };
 
-const calculateFine = (dueDate, returnDate, finePerDay = 5) => {
-    if (returnDate <= dueDate) return 0;
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+
+const calculateFine = (dueDate, returnDate, options = {}) => {
+    const finePerDay = Number(options.finePerDay) || 5;
+    const gracePeriodDays = Number(options.gracePeriodDays) || 0;
+    if (!dueDate || !returnDate || returnDate <= dueDate) return 0;
     const diffTime = returnDate - dueDate;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays * finePerDay;
+    const diffDays = Math.ceil(diffTime / MS_IN_DAY);
+    const chargeableDays = Math.max(0, diffDays - gracePeriodDays);
+    if (chargeableDays === 0) {
+        return 0;
+    }
+    return chargeableDays * finePerDay;
 };
 
 const normalizeStatus = (status) => {
@@ -97,6 +163,41 @@ const loadBorrowingLookups = async(dbAdapter) => {
     });
 
     return { usersLookup, booksLookup, copiesLookup };
+};
+
+const resolveItemBookMetadata = (item = {}, lookups = {}) => {
+    const copyMatch = lookups.copiesLookup?.get(String(item.copyId || ''));
+    const matchingBook = copyMatch?.book || lookups.booksLookup?.get(String(item.bookId)) || null;
+
+    const bookTitle = matchingBook?.title || item.title || item.isbn || 'Unknown Book';
+    const author = matchingBook?.author || matchingBook?.publisher || item.author || '';
+
+    return {
+        ...item,
+        bookTitle,
+        author
+    };
+};
+
+const enrichTransactionsWithBookMetadata = async(transactions, dbAdapter) => {
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+        return Array.isArray(transactions) ? transactions : [];
+    }
+
+    const lookups = await loadBorrowingLookups(dbAdapter);
+
+    return transactions.map(transaction => {
+        const items = (transaction.items || []).map(item => resolveItemBookMetadata(item, lookups));
+        const titleList = items.map(item => item.bookTitle).filter(Boolean);
+        const authorList = items.map(item => item.author).filter(Boolean);
+
+        return {
+            ...transaction,
+            items,
+            bookTitle: titleList.length > 0 ? titleList.join(', ') : (transaction.bookTitle || 'Unknown Book'),
+            bookAuthor: authorList.length > 0 ? authorList.join(', ') : (transaction.bookAuthor || '')
+        };
+    });
 };
 
 const buildBorrowedRecord = ({ transaction, item, lookups }) => {
@@ -206,7 +307,8 @@ const processReturnTransaction = async({
     items,
     actorId,
     notes = '',
-    returnDateOverride = null
+    returnDateOverride = null,
+    borrowingSettings = BORROWING_DEFAULTS
 }) => {
     if (!transaction) {
         throw new Error('Transaction not found');
@@ -218,14 +320,10 @@ const processReturnTransaction = async({
         throw new Error('Transaction already returned');
     }
 
-    const allSettings = await dbAdapter.findInCollection('settings', {});
-    const settings = {};
-    allSettings.forEach(setting => {
-        settings[setting.id] = setting.value;
-    });
-
-    const finePerDay = Number(settings.FINE_PER_DAY) || 5;
-    const enableFines = !(settings.ENABLE_FINES === false || settings.ENABLE_FINES === 'false');
+    const finePerDay = Number(borrowingSettings?.finePerDay) || BORROWING_DEFAULTS.finePerDay;
+    const enableFines = borrowingSettings?.enableFines !== false;
+    const gracePeriodDays = Number(borrowingSettings?.gracePeriodDays) || BORROWING_DEFAULTS.gracePeriodDays;
+    const maxFineAmount = Number(borrowingSettings?.maxFineAmount) || 0;
 
     const allBooks = await dbAdapter.findInCollection('books', {});
     let returnDate = returnDateOverride ? new Date(returnDateOverride) : new Date();
@@ -275,7 +373,14 @@ const processReturnTransaction = async({
     }
 
     if (enableFines && dueDate && !Number.isNaN(dueDate.getTime()) && returnDate > dueDate && returnedItems > 0) {
-        totalFine = calculateFine(dueDate, returnDate, finePerDay) * returnedItems;
+        const perItemFine = calculateFine(dueDate, returnDate, {
+            finePerDay,
+            gracePeriodDays
+        });
+        totalFine = perItemFine * returnedItems;
+        if (maxFineAmount > 0) {
+            totalFine = Math.min(totalFine, maxFineAmount);
+        }
     }
 
     const updatedItems = (transaction.items || []).map(item => {
@@ -545,9 +650,10 @@ router.get('/overdue/list', verifyToken, requireStaff, async(req, res) => {
 // User transactions (MUST be before /:id)
 router.get('/user/:userId', verifyToken, async(req, res) => {
     try {
-        const transactions = await req.dbAdapter.findInCollection('transactions', { userId: req.params.userId });
+        let transactions = await req.dbAdapter.findInCollection('transactions', { userId: req.params.userId });
         transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        res.json(transactions);
+        const enriched = await enrichTransactionsWithBookMetadata(transactions, req.dbAdapter);
+        res.json(enriched);
     } catch (error) {
         console.error('Get user transactions error:', error);
         res.status(500).json({ message: 'Failed to fetch user transactions' });
@@ -739,6 +845,7 @@ router.get('/:id/history', verifyToken, async(req, res) => {
 router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transaction'), async(req, res) => {
     try {
         const { userId, items, type = 'regular', notes } = req.body;
+        const transactionType = normalizeTransactionType(type);
         const requestedItems = Array.isArray(items) ? items : [];
 
         setAuditContext(req, {
@@ -747,7 +854,7 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
             },
             metadata: {
                 borrowRequest: {
-                    type,
+                    type: transactionType,
                     itemCount: requestedItems.length,
                     copyIds: requestedItems
                         .map(item => item && item.copyId)
@@ -764,12 +871,28 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
             });
             return res.status(400).json({ message: 'User ID and items are required' });
         }
-        const allSettings = await req.dbAdapter.findInCollection('settings', {});
-        const settings = {};
-        allSettings.forEach(setting => { settings[setting.id] = setting.value; });
-        const maxBorrowDays = settings.MAX_BORROW_DAYS || 14;
-        const maxBooksPerTransaction = settings.MAX_BOOKS_PER_TRANSACTION || 10;
-        if (items.length > maxBooksPerTransaction) {
+        const borrowingSettings = await getBorrowingSettings(req);
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+        if (isOvernightType(transactionType) && borrowingSettings.overnightBorrowingEnabled === false) {
+            setAuditContext(req, {
+                success: false,
+                status: 'OvernightDisabled',
+                description: 'Borrow request blocked: overnight borrowing disabled'
+            });
+            return res.status(403).json({ message: 'Overnight borrowing is currently disabled' });
+        }
+        if (isAnnualType(transactionType) && borrowingSettings.annualBorrowingEnabled === false) {
+            setAuditContext(req, {
+                success: false,
+                status: 'AnnualDisabled',
+                description: 'Borrow request blocked: annual borrowing disabled'
+            });
+            return res.status(403).json({ message: 'Annual borrowing is currently disabled' });
+        }
+
+        const maxBooksPerTransaction = Number(borrowingSettings.maxBooksPerTransaction) || 0;
+        if (maxBooksPerTransaction > 0 && items.length > maxBooksPerTransaction) {
             setAuditContext(req, {
                 success: false,
                 status: 'LimitExceeded',
@@ -805,7 +928,8 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
         }
         const transactionItems = [];
         const borrowDate = new Date();
-        const dueDate = calculateDueDate(borrowDate, maxBorrowDays);
+        const borrowWindowDays = resolveBorrowWindowDays(transactionType, borrowingSettings);
+        const dueDate = calculateDueDate(borrowDate, borrowWindowDays);
         for (const item of items) {
             const { copyId } = item;
             const allBooks = await req.dbAdapter.findInCollection('books', {});
@@ -847,13 +971,13 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
             transactionItems.push({ copyId, bookId: targetBook.id, isbn: targetBook.isbn, status: 'borrowed' });
         }
     const transactionId = generateTransactionId('borrow');
-        const transactionData = { id: transactionId, userId, items: transactionItems, type, status: 'borrowed', borrowDate, dueDate, returnDate: null, fineAmount: 0, notes: notes || '', renewalCount: 0, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.id };
+        const transactionData = { id: transactionId, userId, items: transactionItems, type: transactionType, status: 'borrowed', borrowDate, dueDate, returnDate: null, fineAmount: 0, notes: notes || '', renewalCount: 0, createdAt: new Date(), updatedAt: new Date(), createdBy: req.user.id, metadata: { borrowWindowDays } };
         await req.dbAdapter.insertIntoCollection('transactions', transactionData);
         const userBorrowingStats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0 };
         await req.dbAdapter.updateInCollection('users', { id: userId }, { borrowingStats: { totalBorrowed: (userBorrowingStats.totalBorrowed || 0) + items.length, currentlyBorrowed: (userBorrowingStats.currentlyBorrowed || 0) + items.length, totalFines: userBorrowingStats.totalFines || 0 }, updatedAt: new Date() });
 
         const borrowerRecipients = buildRecipientList(user.id, user._id, user.userId, user.libraryCardNumber, user.email, user.username);
-        if (borrowerRecipients.length > 0) {
+        if (channelState.hasActiveChannel && borrowerRecipients.length > 0) {
             try {
                 await req.dbAdapter.insertIntoCollection('notifications', {
                     title: 'Borrow transaction created',
@@ -889,7 +1013,7 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
                 },
                 transaction: {
                     id: transactionId,
-                    type,
+                    type: transactionType,
                     notes: notes || '',
                     dueDate: dueDate.toISOString(),
                     items: transactionItems.map(entry => ({
@@ -930,12 +1054,16 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         const { userId: providedUserId, items, type = 'regular', notes } = req.body || {};
         // If caller didn't provide userId, default to authenticated user
         const userId = providedUserId || req.user && req.user.id;
+        const borrowingSettings = await getBorrowingSettings(req);
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+        const transactionType = normalizeTransactionType(type);
         const requestItems = Array.isArray(items) ? items : [];
 
         setAuditContext(req, {
             metadata: {
                 borrowRequest: {
-                    type,
+                    type: transactionType,
                     itemCount: requestItems.length
                 }
             },
@@ -961,12 +1089,18 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         }
 
         // Respect settings for max books per transaction if available but do not reserve copies here
-        const allSettings = await req.dbAdapter.findInCollection('settings', {});
-        const settings = {};
-        allSettings.forEach(setting => { settings[setting.id] = setting.value; });
-        const parsedMaxBooks = parseInt(settings.MAX_BOOKS_PER_TRANSACTION, 10);
-        const maxBooksPerTransaction = Number.isFinite(parsedMaxBooks) && parsedMaxBooks > 0 ? parsedMaxBooks : 10;
-        if (requestItems.length > maxBooksPerTransaction) {
+        if (isOvernightType(transactionType) && borrowingSettings.overnightBorrowingEnabled === false) {
+            setAuditContext(req, { success: false, status: 'OvernightDisabled', description: 'Request blocked: overnight borrowing disabled' });
+            return res.status(403).json({ message: 'Overnight borrowing is currently disabled' });
+        }
+        if (isAnnualType(transactionType) && borrowingSettings.annualBorrowingEnabled === false) {
+            setAuditContext(req, { success: false, status: 'AnnualDisabled', description: 'Request blocked: annual borrowing disabled' });
+            return res.status(403).json({ message: 'Annual borrowing is currently disabled' });
+        }
+
+        const parsedMaxBooks = parseInt(borrowingSettings.maxBooksPerTransaction, 10);
+        const maxBooksPerTransaction = Number.isFinite(parsedMaxBooks) && parsedMaxBooks > 0 ? parsedMaxBooks : 0;
+        if (maxBooksPerTransaction > 0 && requestItems.length > maxBooksPerTransaction) {
             setAuditContext(req, { success: false, status: 'LimitExceeded', description: `Request exceeds maximum ${maxBooksPerTransaction} books per transaction` });
             return res.status(400).json({ message: `Maximum ${maxBooksPerTransaction} books per transaction` });
         }
@@ -1003,7 +1137,7 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
             id: transactionId,
             userId,
             items: transactionItems,
-            type,
+            type: transactionType,
             status: 'requested',
             createdAt: now,
             updatedAt: now,
@@ -1022,7 +1156,11 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
             user.username
         );
 
-        if (borrowerRecipients.length > 0) {
+        if (
+            notificationSettings.reservationNotifications !== false &&
+            channelState.hasActiveChannel &&
+            borrowerRecipients.length > 0
+        ) {
             try {
                 await req.dbAdapter.insertIntoCollection('notifications', {
                     title: 'Borrow request submitted',
@@ -1045,19 +1183,21 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         }
 
         // Create a persistent notification for staff about this request
-        try {
-            await req.dbAdapter.insertIntoCollection('notifications', {
-                title: 'New borrow request',
-                message: `${getBorrowerName(user)} requested ${transactionItems.length} item(s).`,
-                type: 'request',
-                transactionId,
-                recipients: ['staff','librarian','admin'],
-                meta: { transactionId },
-                createdAt: new Date(),
-                readBy: []
-            });
-        } catch (nerr) {
-            console.error('Failed to create persistent notification for request:', nerr);
+        if (notificationSettings.reservationNotifications !== false && channelState.hasActiveChannel) {
+            try {
+                await req.dbAdapter.insertIntoCollection('notifications', {
+                    title: 'New borrow request',
+                    message: `${getBorrowerName(user)} requested ${transactionItems.length} item(s).`,
+                    type: 'request',
+                    transactionId,
+                    recipients: ['staff','librarian','admin'],
+                    meta: { transactionId },
+                    createdAt: new Date(),
+                    readBy: []
+                });
+            } catch (nerr) {
+                console.error('Failed to create persistent notification for request:', nerr);
+            }
         }
 
         setAuditContext(req, {
@@ -1402,13 +1542,30 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             updatedBooks.push({ bookId: targetBook.id || targetBook._id, copyId });
         }
 
-        // Compute due date and borrowDate
-        const allSettings = await req.dbAdapter.findInCollection('settings', {});
-        const settings = {};
-        allSettings.forEach(s => { settings[s.id] = s.value; });
-        const maxBorrowDays = settings.MAX_BORROW_DAYS || 14;
+        const borrowingSettings = await getBorrowingSettings(req);
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+        const transactionType = normalizeTransactionType(transaction.type);
+        if (isOvernightType(transactionType) && borrowingSettings.overnightBorrowingEnabled === false) {
+            setAuditContext(req, {
+                success: false,
+                status: 'OvernightDisabled',
+                description: 'Approve request blocked: overnight borrowing disabled'
+            });
+            return res.status(403).json({ message: 'Overnight borrowing is currently disabled' });
+        }
+        if (isAnnualType(transactionType) && borrowingSettings.annualBorrowingEnabled === false) {
+            setAuditContext(req, {
+                success: false,
+                status: 'AnnualDisabled',
+                description: 'Approve request blocked: annual borrowing disabled'
+            });
+            return res.status(403).json({ message: 'Annual borrowing is currently disabled' });
+        }
+
+        const borrowWindowDays = resolveBorrowWindowDays(transactionType, borrowingSettings);
         const borrowDate = new Date();
-        const dueDate = calculateDueDate(borrowDate, maxBorrowDays);
+        const dueDate = calculateDueDate(borrowDate, borrowWindowDays);
 
         // Update transaction
         const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
@@ -1436,7 +1593,11 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: new Date() });
 
             const borrowerRecipients = buildRecipientList(user.id, user._id, user.userId, user.libraryCardNumber, user.email, user.username);
-            if (borrowerRecipients.length > 0) {
+            if (
+                notificationSettings.reservationNotifications !== false &&
+                channelState.hasActiveChannel &&
+                borrowerRecipients.length > 0
+            ) {
                 try {
                     const dueDateValue = dueDate instanceof Date ? dueDate : new Date(dueDate);
                     const dueDateIso = Number.isNaN(dueDateValue.getTime()) ? null : dueDateValue.toISOString();
@@ -1503,6 +1664,9 @@ router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'trans
             return res.status(400).json({ message: 'Only requested transactions can be rejected' });
         }
 
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+
         const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
         const updatedTransaction = await req.dbAdapter.updateInCollection('transactions', txQuery, {
             status: 'rejected',
@@ -1512,19 +1676,21 @@ router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'trans
         });
 
         // Create a notification for the requester
-        try {
-            await req.dbAdapter.insertIntoCollection('notifications', {
-                title: 'Borrow request rejected',
-                message: `Your borrow request ${transaction.id || transaction._id} was rejected${reason ? `: ${reason}` : ''}`,
-                type: 'request-rejected',
-                transactionId: transaction.id || transaction._id,
-                recipients: [transaction.userId],
-                meta: { transactionId: transaction.id || transaction._id },
-                createdAt: new Date(),
-                readBy: []
-            });
-        } catch (nerr) {
-            console.error('Failed to create notification for rejection:', nerr);
+        if (notificationSettings.reservationNotifications !== false && channelState.hasActiveChannel) {
+            try {
+                await req.dbAdapter.insertIntoCollection('notifications', {
+                    title: 'Borrow request rejected',
+                    message: `Your borrow request ${transaction.id || transaction._id} was rejected${reason ? `: ${reason}` : ''}`,
+                    type: 'request-rejected',
+                    transactionId: transaction.id || transaction._id,
+                    recipients: [transaction.userId],
+                    meta: { transactionId: transaction.id || transaction._id },
+                    createdAt: new Date(),
+                    readBy: []
+                });
+            } catch (nerr) {
+                console.error('Failed to create notification for rejection:', nerr);
+            }
         }
 
         setAuditContext(req, {
@@ -1573,6 +1739,7 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
             return res.status(400).json({ message: 'Transactions payload is required' });
         }
 
+        const borrowingSettings = await getBorrowingSettings(req);
         const results = [];
         let totalReturnedItems = 0;
 
@@ -1622,7 +1789,8 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
                 items: itemsToProcess,
                 actorId: req.user.id,
                 notes: notes || '',
-                returnDateOverride: returnDate || null
+                returnDateOverride: returnDate || null,
+                borrowingSettings
             });
 
             totalReturnedItems += result.returnedItems;
@@ -1692,6 +1860,7 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
                 }
             }
         });
+        const borrowingSettings = await getBorrowingSettings(req);
         const transaction = await findTransactionByIdentifier(req.dbAdapter, req.params.id);
         if (!transaction) {
             setAuditContext(req, {
@@ -1722,7 +1891,8 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
             items: itemsToProcess,
             actorId: req.user.id,
             notes: (req.body && req.body.notes) || '',
-            returnDateOverride: (req.body && req.body.returnDate) || null
+            returnDateOverride: (req.body && req.body.returnDate) || null,
+            borrowingSettings
         });
 
         setAuditContext(req, {
@@ -1815,23 +1985,56 @@ router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transac
             });
             return res.status(400).json({ message: 'Transaction does not have a due date to renew' });
         }
+        const borrowingSettings = await getBorrowingSettings(req);
+        const maxRenewals = Number(borrowingSettings.maxRenewals) || 0;
+        const currentRenewals = Number(transaction.renewalCount || 0);
+        if (maxRenewals > 0 && currentRenewals >= maxRenewals) {
+            setAuditContext(req, {
+                success: false,
+                status: 'RenewalLimit',
+                description: `Renew request failed: transaction ${transactionId} reached renewal limit`,
+                metadata: {
+                    maxRenewals
+                }
+            });
+            return res.status(400).json({ message: 'Maximum number of renewals reached for this transaction' });
+        }
+
+        const allowRenewalsWithOverdue = borrowingSettings.allowRenewalsWithOverdue === true;
         const currentDueDate = new Date(transaction.dueDate);
+        const isOverdue = Date.now() > currentDueDate.getTime();
+        if (isOverdue && !allowRenewalsWithOverdue) {
+            setAuditContext(req, {
+                success: false,
+                status: 'OverdueRenewalBlocked',
+                description: `Renew request failed: transaction ${transactionId} is overdue`,
+                metadata: {
+                    dueDate: currentDueDate.toISOString()
+                }
+            });
+            return res.status(400).json({ message: 'Cannot renew overdue transactions at this time' });
+        }
+
+        const requestedExtension = parseInt(extensionDays, 10);
+        const defaultExtension = resolveBorrowWindowDays(transaction.type, borrowingSettings);
+        const effectiveExtensionDays = Number.isFinite(requestedExtension) && requestedExtension > 0 ? requestedExtension : defaultExtension;
         const newDueDate = new Date(currentDueDate);
-        newDueDate.setDate(newDueDate.getDate() + extensionDays);
-        await req.dbAdapter.updateInCollection('transactions', { id: transactionId }, { dueDate: newDueDate, renewalCount: (transaction.renewalCount || 0) + 1, updatedAt: new Date(), renewedBy: req.user.id });
+        newDueDate.setDate(newDueDate.getDate() + effectiveExtensionDays);
+        const nextRenewalCount = currentRenewals + 1;
+        await req.dbAdapter.updateInCollection('transactions', { id: transactionId }, { dueDate: newDueDate, renewalCount: nextRenewalCount, updatedAt: new Date(), renewedBy: req.user.id });
         setAuditContext(req, {
             success: true,
             status: 'Completed',
             entityId: transactionId,
             resourceId: transactionId,
-            description: `Renewed transaction ${transactionId} by ${extensionDays} day(s)`,
+            description: `Renewed transaction ${transactionId} by ${effectiveExtensionDays} day(s)`,
             metadata: {
                 actorId: req.user.id,
-                extensionDays,
+                extensionDays: effectiveExtensionDays,
                 newDueDate: newDueDate.toISOString()
             },
             details: {
-                renewalCount: (transaction.renewalCount || 0) + 1,
+                renewalCount: nextRenewalCount,
                 previousDueDate: currentDueDate.toISOString(),
                 newDueDate: newDueDate.toISOString()
             }
@@ -1855,3 +2058,4 @@ router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transac
 });
 
 module.exports = router;
+module.exports.enrichTransactionsWithBookMetadata = enrichTransactionsWithBookMetadata;

@@ -1,18 +1,10 @@
 [
   {
     "userId": "mgnhicbwhxfy9",
-    "notificationId": "missing-trans_1760081060088_g7c42sm5h",
-    "read": true,
-    "_id": "mibifvuo0e8ox",
-    "createdAt": "2025-11-23T09:23:14.304Z",
-    "updatedAt": "2025-11-23T09:23:14.304Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
     "notificationId": "overdue-trans_1760081060086_uin6kswg2",
     "read": true,
-    "_id": "mibifvvbqwrt8",
-    "createdAt": "2025-11-23T09:23:14.327Z",
-    "updatedAt": "2025-11-23T09:23:14.327Z"
+    "_id": "mibpwfbm9vs7k",
+    "createdAt": "2025-11-23T12:52:03.346Z",
+    "updatedAt": "2025-11-23T12:52:03.346Z"
   }
 ]

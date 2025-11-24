@@ -331,7 +331,6 @@ const TransactionsList = () => {
           fullName: extractedName.fullName,
           studentId:
             profile.studentId ||
-            profile.studentNumber ||
             profile.id ||
             profile.uid ||
             profile.userId ||

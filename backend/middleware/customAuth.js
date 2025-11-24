@@ -4,9 +4,29 @@ const {
   captureRequestSnapshot,
   setAuditContext,
 } = require('../utils/auditLogger');
+const { getSettingsSnapshot } = require('../utils/settingsCache');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+const normalizeRole = (role) => (role ? String(role).toLowerCase() : '');
+const isAdminUser = (user) => normalizeRole(user && user.role) === 'admin';
+
+const loadAndAttachSettingsSnapshot = async (req) => {
+  if (!req || !req.dbAdapter || typeof req.dbAdapter.findInCollection !== 'function') {
+    return null;
+  }
+
+  try {
+    const snapshot = await getSettingsSnapshot(req.dbAdapter);
+    req.settingsSnapshot = snapshot;
+    req.systemSettings = snapshot.system;
+    return snapshot;
+  } catch (error) {
+    console.error('Settings snapshot load error:', error);
+    return null;
+  }
+};
 
 // Middleware to verify JWT token and get user data from MongoDB
 const verifyToken = async (req, res, next) => {
@@ -32,6 +52,7 @@ const verifyToken = async (req, res, next) => {
           ...userData
         };
 
+        await loadAndAttachSettingsSnapshot(req);
         return next();
       } catch (err) {
         console.error('Test auth bypass failed:', err);
@@ -79,6 +100,11 @@ const verifyToken = async (req, res, next) => {
       lastName: userData.lastName,
       preferences: safePreferences,
     };
+
+    const snapshot = await loadAndAttachSettingsSnapshot(req);
+    if (snapshot && snapshot.system && snapshot.system.maintenanceMode && !isAdminUser(req.user)) {
+      return res.status(503).json({ message: 'System is currently in maintenance mode' });
+    }
     
     next();
   } catch (error) {

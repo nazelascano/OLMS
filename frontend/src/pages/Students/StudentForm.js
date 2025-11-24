@@ -6,9 +6,6 @@ import {
   Grid,
   TextField,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   Card,
   CardContent,
@@ -56,7 +53,6 @@ const StudentForm = () => {
     phoneNumber: "",
 
     // Academic Information
-    studentId: "",
     lrn: "", // Learner Reference Number
   grade: "",
   section: "",
@@ -88,8 +84,6 @@ const StudentForm = () => {
     ensureUserAttributes(),
   );
   const [attributeError, setAttributeError] = useState("");
-
-  const sections = ["A", "B", "C", "D", "E"];
 
   const gradeOptions = userAttributes.gradeLevels;
   const curriculumOptions = userAttributes.curriculum;
@@ -186,7 +180,6 @@ const StudentForm = () => {
         middleName: studentData.middleName || "",
         email: studentData.email || "",
   phoneNumber: sanitizePhoneInput(studentData.phoneNumber),
-        studentId: studentData.studentId || "",
         lrn: studentData.lrn || "",
   grade: studentData.grade || "",
   section: studentData.section || "",
@@ -237,7 +230,6 @@ const StudentForm = () => {
 
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
-    if (!formData.studentId.trim()) errors.studentId = "Student ID is required";
     if (!formData.lrn.trim())
       errors.lrn = "LRN (Learner Reference Number) is required";
     if (!formData.grade) errors.grade = "Grade is required";
@@ -272,7 +264,7 @@ const StudentForm = () => {
       const studentData = {
         ...formData,
         role: "student",
-        username: (formData.firstName.charAt(0) + formData.lastName).toLowerCase(), // First letter of first name + surname
+        username: (formData.lrn || "").toString().trim(),
       };
 
       studentData.phoneNumber = sanitizePhoneInput(studentData.phoneNumber);
@@ -464,46 +456,20 @@ const StudentForm = () => {
                         />
                       )}
                   </Grid>
-                  {/* Row 2: Student ID and Section */}{" "}
+                  {/* Row 2: Section input */}{" " }
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
-                      label="Student ID"
-                      name="studentId"
-                      value={formData.studentId}
+                      label="Section"
+                      name="section"
+                      value={formData.section}
                       onChange={handleChange}
-                      error={!!validationErrors.studentId}
-                      helperText={validationErrors.studentId}
+                      error={!!validationErrors.section}
+                      helperText={validationErrors.section}
+                      placeholder="Enter section"
                       required
-                    />
-                  </Grid>{" "}
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth error={!!validationErrors.section}>
-                      <InputLabel required> Section </InputLabel>{" "}
-                      <Select
-                        name="section"
-                        value={formData.section}
-                        onChange={handleChange}
-                        label="Section"
-                      >
-                        {sections.map((section) => (
-                          <MenuItem key={section} value={section}>
-                            Section {section}{" "}
-                          </MenuItem>
-                        ))}{" "}
-                      </Select>{" "}
-                      {validationErrors.section && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ ml: 2, mt: 0.5 }}
-                        >
-                          {" "}
-                          {validationErrors.section}{" "}
-                        </Typography>
-                      )}{" "}
-                    </FormControl>{" "}
-                  </Grid>{" "}
+                    />{" " }
+                  </Grid>{" " }
                   <Grid item xs={12} sm={6}>
                     {hasCurriculumOptions ? (
                       <TextField

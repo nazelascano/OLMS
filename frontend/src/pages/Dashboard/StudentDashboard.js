@@ -196,12 +196,12 @@ const StudentDashboard = () => {
             <Stack spacing={1.25}>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                  Student Number
+                  Student ID
                 </Typography>
                 <Box display="flex" alignItems="center" gap={1.25}>
                   <Badge fontSize="small" color="action" />
                   <Typography variant="body1" fontWeight={600}>
-                    {user ? (user.studentNumber || user.studentId || '—') : '—'}
+                    {user ? (user.studentId || '—') : '—'}
                   </Typography>
                 </Box>
               </Box>

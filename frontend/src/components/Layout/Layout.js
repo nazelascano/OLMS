@@ -615,13 +615,14 @@ const Layout = () => {
 
     const handleKeyDown = (event) => {
       const now = Date.now();
+      const keyValue = typeof event.key === "string" ? event.key : "";
 
       if (now - lastKeyTimeRef.current > SCAN_RESET_MS) {
         scanBufferRef.current = "";
         scanStartTimeRef.current = now;
       }
 
-      if (event.key === "Enter") {
+      if (keyValue === "Enter") {
         const bufferedValue = scanBufferRef.current;
         scanBufferRef.current = "";
         lastKeyTimeRef.current = now;
@@ -640,7 +641,7 @@ const Layout = () => {
       }
 
       if (
-        event.key.length === 1 &&
+        keyValue.length === 1 &&
         !event.altKey &&
         !event.ctrlKey &&
         !event.metaKey
@@ -648,9 +649,9 @@ const Layout = () => {
         if (!scanBufferRef.current) {
           scanStartTimeRef.current = now;
         }
-        scanBufferRef.current += event.key;
+        scanBufferRef.current += keyValue;
         lastKeyTimeRef.current = now;
-      } else if (!IGNORED_CONTROL_KEYS.has(event.key)) {
+      } else if (keyValue && !IGNORED_CONTROL_KEYS.has(keyValue)) {
         scanBufferRef.current = "";
       }
     };
@@ -873,8 +874,8 @@ const Layout = () => {
 
       if (category === "students") {
         // If the current user is the same student, send them to their profile.
-        // For staff/admin/librarian, navigate to the user profile page (/users/:id)
-        // which is the canonical user/student profile component in the app.
+        // Staff/admin/librarian users stay within the /students route so the
+        // sidebar keeps the Students tab highlighted.
         const currentUserId = (user && (user._id || user.id || "")) + "";
         if (user && user.role === "student") {
           if (id && id === currentUserId) {
@@ -884,8 +885,8 @@ const Layout = () => {
             navigate("/unauthorized");
           }
         } else {
-          // Staff/admin/librarian: open the shared UserProfile component.
-          if (id) navigate(`/users/${id}`);
+          // Staff/admin/librarian: open the shared UserProfile component under /students.
+          if (id) navigate(`/students/${id}`);
         }
       } else if (category === "transactions") {
         // Transactions detail is staff-only. If current user is student and

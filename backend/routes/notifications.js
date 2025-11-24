@@ -1,10 +1,33 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/customAuth');
+const { getSettingsSnapshot, NOTIFICATION_DEFAULTS, getNotificationChannelState } = require('../utils/settingsCache');
 
 const router = express.Router();
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 const SYNTHETIC_READ_COLLECTION = 'notificationReads';
+
+const ensureSettingsSnapshot = async (req) => {
+  if (req.settingsSnapshot) {
+    return req.settingsSnapshot;
+  }
+  const snapshot = await getSettingsSnapshot(req.dbAdapter);
+  req.settingsSnapshot = snapshot;
+  if (!req.systemSettings) {
+    req.systemSettings = snapshot.system;
+  }
+  return snapshot;
+};
+
+const getNotificationSettings = async (req) => {
+  try {
+    const snapshot = await ensureSettingsSnapshot(req);
+    return snapshot?.notifications || NOTIFICATION_DEFAULTS;
+  } catch (error) {
+    console.error('Notification settings retrieval error:', error);
+    return NOTIFICATION_DEFAULTS;
+  }
+};
 
 const getUserIdString = (user = {}) => {
   const candidates = [user.id, user._id, user.userId];
@@ -176,8 +199,6 @@ const collectUserIdentifiers = (user) => {
     user.userId,
     user.libraryCardNumber,
     user?.library?.cardNumber,
-    user.studentId,
-    user.studentNumber,
     user.username,
     user.email,
   ]
@@ -230,7 +251,7 @@ const resolveTransactionBorrower = (transaction, userMap) => {
     transaction?.user?.id,
     transaction?.user?._id,
     transaction.borrowerId,
-    transaction.studentId,
+    transaction.borrowerLibraryCardNumber,
     transaction?.user?.userId,
     transaction?.user?.username,
     transaction?.user?.email,
@@ -288,7 +309,7 @@ const transactionBelongsToUser = (transaction, identifiers) => {
     transaction?.user?.id,
     transaction?.user?._id,
     transaction.borrowerId,
-    transaction.studentId,
+    transaction.borrowerLibraryCardNumber,
     transaction?.user?.userId,
     transaction?.user?.username,
     transaction?.user?.email,
@@ -318,6 +339,19 @@ router.get('/', verifyToken, async (req, res) => {
     const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
     const role = req.user.role || 'student';
     const userId = getUserIdString(req.user);
+    const notificationSettings = await getNotificationSettings(req);
+    const channelState = getNotificationChannelState(notificationSettings);
+    if (!channelState.hasActiveChannel) {
+      return res.json({
+        notifications: [],
+        total: 0,
+        generatedAt: new Date().toISOString(),
+      });
+    }
+    const dueRemindersEnabled = notificationSettings.dueDateReminders !== false;
+    const overdueEnabled = notificationSettings.overdueNotifications !== false;
+    const reservationEnabled = notificationSettings.reservationNotifications !== false;
+    const reminderDaysBefore = Math.max(parseInt(notificationSettings.reminderDaysBefore, 10) || 0, 0);
 
     const [transactions, books, users] = await Promise.all([
       req.dbAdapter.findInCollection('transactions', {}),
@@ -341,8 +375,6 @@ router.get('/', verifyToken, async (req, res) => {
           user.userId,
           user.libraryCardNumber,
           user?.library?.cardNumber,
-          user.studentId,
-          user.studentNumber,
           user.username,
           user.email,
         ],
@@ -352,7 +384,7 @@ router.get('/', verifyToken, async (req, res) => {
 
     const identifiers = collectUserIdentifiers(req.user);
     const now = new Date();
-    const dueSoonThreshold = new Date(now.getTime() + 3 * MS_IN_DAY);
+    const dueSoonThreshold = new Date(now.getTime() + reminderDaysBefore * MS_IN_DAY);
 
     const notifications = [];
     const registerNotification = (payload) => {
@@ -414,6 +446,9 @@ router.get('/', verifyToken, async (req, res) => {
 
       // Surface borrow requests to staff as actionable notifications
       if (status === 'requested' && role !== 'student') {
+        if (!reservationEnabled) {
+          return;
+        }
         registerNotification({
           id: `request-${baseId}`,
           type: 'request',
@@ -428,6 +463,9 @@ router.get('/', verifyToken, async (req, res) => {
       }
 
       if (dueDate < now) {
+        if (!overdueEnabled) {
+          return;
+        }
         const overdueDays = daysOverdue(dueDate, now);
         registerNotification({
           id: `overdue-${baseId}`,
@@ -450,7 +488,7 @@ router.get('/', verifyToken, async (req, res) => {
         return;
       }
 
-      if (dueDate <= dueSoonThreshold) {
+      if (dueRemindersEnabled && dueDate <= dueSoonThreshold) {
         const daysRemaining = daysUntilDue(dueDate, now);
         registerNotification({
           id: `due-soon-${baseId}`,

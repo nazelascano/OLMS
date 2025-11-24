@@ -51,7 +51,7 @@ import {
 } from "@mui/icons-material";
 import Cropper from "react-easy-crop";
 import { useAuth } from "../../contexts/AuthContext";
-import { api, usersAPI } from "../../utils/api";
+import { api, usersAPI, booksAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -165,6 +165,9 @@ const UserProfile = () => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const fileInputRef = useRef(null);
+  const [bookLookups, setBookLookups] = useState(null);
+  const [booksLoading, setBooksLoading] = useState(false);
+  const [booksError, setBooksError] = useState("");
 
   useEffect(() => {
     if (!avatarPreviewUrl) {
@@ -247,6 +250,186 @@ const UserProfile = () => {
     };
   };
 
+  const dedupeValues = (values = []) => {
+    const normalizedList = Array.isArray(values) ? values : [];
+    const seen = new Set();
+    const result = [];
+
+    normalizedList.forEach((value) => {
+      if (!value) return;
+      const trimmed = typeof value === "string" ? value.trim() : value;
+      if (!trimmed) return;
+      const key = typeof trimmed === "string" ? trimmed.toLowerCase() : trimmed;
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(trimmed);
+    });
+
+    return result;
+  };
+
+  const summarizeValues = (values = []) => {
+    const deduped = dedupeValues(values);
+    if (deduped.length === 0) return "";
+    if (deduped.length === 1) return deduped[0];
+    if (deduped.length === 2) return deduped.join(", ");
+    return `${deduped[0]}, ${deduped[1]} (+${deduped.length - 2} more)`;
+  };
+
+  const buildBookLookups = (books = []) => {
+    const byBookId = new Map();
+    const byCopyId = new Map();
+    const byIsbn = new Map();
+
+    books.forEach((book = {}) => {
+      const normalized = {
+        id: book._id || book.id || book.bookId,
+        title: book.title,
+        author: book.author,
+        isbn: book.isbn,
+      };
+
+      [book._id, book.id, book.bookId]
+        .map((value) => (value ? String(value) : ""))
+        .filter(Boolean)
+        .forEach((key) => {
+          byBookId.set(key, normalized);
+        });
+
+      if (book.isbn) {
+        byIsbn.set(String(book.isbn).toLowerCase(), normalized);
+      }
+
+      (book.copies || []).forEach((copy = {}) => {
+        if (copy.copyId) {
+          byCopyId.set(String(copy.copyId), normalized);
+        }
+      });
+    });
+
+    return { byBookId, byCopyId, byIsbn };
+  };
+
+  const loadBookLookups = useCallback(async () => {
+    if (bookLookups) {
+      return bookLookups;
+    }
+
+    try {
+      setBooksLoading(true);
+      const response = await booksAPI.getAll({ limit: -1 });
+      const list = response.data?.books || response.data || [];
+      const lookups = buildBookLookups(Array.isArray(list) ? list : []);
+      setBookLookups(lookups);
+      setBooksError("");
+      return lookups;
+    } catch (error) {
+      console.error("Failed to load book metadata", error);
+      const message =
+        error?.response?.data?.message || "Unable to load book details for transactions.";
+      setBooksError(message);
+      return null;
+    } finally {
+      setBooksLoading(false);
+    }
+  }, [bookLookups]);
+
+  const resolveBookDetailsFromTransaction = (transaction = {}, lookups = null) => {
+    const fallbackTitle =
+      transaction.bookTitle ||
+      transaction.title ||
+      transaction.book?.title ||
+      "Unknown Book";
+    const fallbackAuthor =
+      transaction.author ||
+      transaction.bookAuthor ||
+      transaction.book?.author ||
+      "";
+
+    const items = Array.isArray(transaction.items) ? transaction.items : [];
+    const lookupTitles = [];
+    const lookupAuthors = [];
+
+    const registerLookupRecord = (record) => {
+      if (!record) return;
+      if (record.title) {
+        lookupTitles.push(record.title);
+      }
+      if (record.author) {
+        lookupAuthors.push(record.author);
+      }
+    };
+
+    const tryLookupByBookId = (value) => {
+      if (!value || !lookups?.byBookId) return;
+      const record = lookups.byBookId.get(String(value));
+      registerLookupRecord(record);
+    };
+
+    const tryLookupByCopyId = (value) => {
+      if (!value || !lookups?.byCopyId) return;
+      const record = lookups.byCopyId.get(String(value));
+      registerLookupRecord(record);
+    };
+
+    const tryLookupByIsbn = (value) => {
+      if (!value || !lookups?.byIsbn) return;
+      const record = lookups.byIsbn.get(String(value).toLowerCase());
+      registerLookupRecord(record);
+    };
+
+    if (transaction.bookId) {
+      tryLookupByBookId(transaction.bookId);
+    }
+    if (transaction.isbn) {
+      tryLookupByIsbn(transaction.isbn);
+    }
+
+    items.forEach((item) => {
+      tryLookupByBookId(item?.bookId);
+      tryLookupByCopyId(item?.copyId);
+      tryLookupByIsbn(item?.isbn);
+    });
+
+    const itemDerivedTitles = items
+      .map((item) =>
+        item?.book?.title || item?.title || item?.isbn || item?.copyId || "",
+      )
+      .filter(Boolean);
+    const itemDerivedAuthors = items
+      .map((item) => item?.book?.author || item?.author || "")
+      .filter(Boolean);
+
+    const combinedTitles = [...lookupTitles, ...itemDerivedTitles];
+    const combinedAuthors = [...lookupAuthors, ...itemDerivedAuthors];
+
+    return {
+      title:
+        combinedTitles.length > 0
+          ? summarizeValues(combinedTitles)
+          : fallbackTitle,
+      author:
+        combinedAuthors.length > 0
+          ? summarizeValues(combinedAuthors)
+          : fallbackAuthor,
+    };
+  };
+
+  const normalizeBorrowingHistoryRecords = (records = [], lookups = null) => {
+    if (!Array.isArray(records)) {
+      return [];
+    }
+
+    return records.map((transaction) => {
+      const { title, author } = resolveBookDetailsFromTransaction(transaction, lookups);
+      return {
+        ...transaction,
+        bookTitle: title,
+        author,
+      };
+    });
+  };
+
   useEffect(() => {
     const initializeProfile = async () => {
       if (!user) return;
@@ -303,13 +486,16 @@ const UserProfile = () => {
         ? response.data
         : response.data?.transactions || [];
 
-      setBorrowingHistory(historyData);
+      const lookups = await loadBookLookups();
+      const normalizedHistory = normalizeBorrowingHistoryRecords(historyData, lookups);
+
+      setBorrowingHistory(normalizedHistory);
 
       if (!viewingSelf) {
-        setStats(computeStatsFromHistory(historyData));
+        setStats(computeStatsFromHistory(normalizedHistory));
       }
 
-      return historyData;
+      return normalizedHistory;
     } catch (err) {
       console.error("Error fetching borrowing history:", err);
       if (!viewingSelf) {
@@ -764,17 +950,6 @@ const UserProfile = () => {
                     />{" "}
                   </ListItem>
                 )}{" "}
-                {(profileData.studentNumber || profileData.studentId || profileData.libraryCardNumber || (profileData.library && profileData.library.cardNumber)) && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <School />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Student Number"
-                      secondary={profileData.studentNumber || profileData.studentId || profileData.libraryCardNumber || (profileData.library && profileData.library.cardNumber)}
-                    />
-                  </ListItem>
-                )}
                 {profileData.curriculum && (
                   <ListItem>
                     <ListItemText
@@ -816,7 +991,7 @@ const UserProfile = () => {
                         if (targetId) navigate(`/students/${targetId}/edit`);
                       }}
                     >
-                      Open Student Record
+                      Edit Student Record
                     </Button>
                   </Box>
                 )}
@@ -890,6 +1065,16 @@ const UserProfile = () => {
               <Typography variant="h6" gutterBottom>
                 Recent Borrowing History{" "}
               </Typography>{" "}
+              {booksLoading && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                  Resolving book titles...
+                </Typography>
+              )}
+              {booksError && (
+                <Alert severity="warning" sx={{ mb: 1 }}>
+                  {booksError}
+                </Alert>
+              )}
               <TableContainer>
                 <Table>
                   <TableHead>
@@ -907,12 +1092,13 @@ const UserProfile = () => {
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
                             {" "}
-                            {transaction.bookTitle}{" "}
+                            {transaction.bookTitle || "Unknown Book"}{" "}
                           </Typography>{" "}
-                          <Typography variant="caption" color="textSecondary">
-                            {" "}
-                            {transaction.author}{" "}
-                          </Typography>{" "}
+                          {transaction.author && (
+                            <Typography variant="caption" color="textSecondary">
+                              {transaction.author}
+                            </Typography>
+                          )}{" "}
                         </TableCell>{" "}
                         <TableCell>
                           {" "}

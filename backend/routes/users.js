@@ -1,5 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const transactionsRouter = require('./transactions');
+const enrichTransactionsWithBookMetadata = transactionsRouter.enrichTransactionsWithBookMetadata;
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -102,8 +104,6 @@ const matchesSearchTerm = (user, term) => {
         user.middleName,
         user.username,
         user.email,
-        user.studentNumber,
-        user.studentId,
         user.libraryCardNumber,
     user?.library?.cardNumber,
     user.curriculum,
@@ -121,8 +121,6 @@ const getUserIdentifiers = (user) => {
         user?.userId,
         user?.libraryCardNumber,
         user?.library?.cardNumber,
-        user?.studentId,
-        user?.studentNumber,
         user?.username,
         user?.email,
     ]
@@ -148,9 +146,6 @@ const sanitizeUserSummary = (user) => {
         username: user.username || '',
         email: user.email || '',
         role: user.role || 'student',
-    // normalize: provide both studentId and studentNumber for client compatibility
-    studentId: user.studentId || user.studentNumber || '',
-    studentNumber: user.studentNumber || user.studentId || (user.library && user.library.cardNumber) || user.libraryCardNumber || '',
     curriculum: user.curriculum || '',
         gradeLevel: user.gradeLevel || user.grade || '',
         libraryCardNumber: user.library?.cardNumber || user.libraryCardNumber || '',
@@ -328,8 +323,7 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
                 user.firstName ?.toLowerCase().includes(searchLower) ||
                 user.lastName ?.toLowerCase().includes(searchLower) ||
                 user.email ?.toLowerCase().includes(searchLower) ||
-                user.username ?.toLowerCase().includes(searchLower) ||
-                user.studentNumber ?.toLowerCase().includes(searchLower)
+                user.username ?.toLowerCase().includes(searchLower)
             );
         }
 
@@ -349,12 +343,10 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
         const safeUsers = paginatedUsers.map(user => {
             const { password, ...safeUser } = user;
             const { avatar, avatarUrl } = resolveAvatarFields(safeUser);
-            // ensure normalized studentNumber exists for clients
             return {
                 ...safeUser,
                 avatar,
-                avatarUrl,
-                studentNumber: safeUser.studentNumber || safeUser.studentId || (safeUser.library && safeUser.library.cardNumber) || safeUser.libraryCardNumber || ''
+                avatarUrl
             };
         });
 
@@ -405,6 +397,10 @@ router.get('/profile/borrowing-history', verifyToken, async(req, res) => {
         let transactions = await req.dbAdapter.findInCollection('transactions', { userId });
         transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+        if (typeof enrichTransactionsWithBookMetadata === 'function') {
+            transactions = await enrichTransactionsWithBookMetadata(transactions, req.dbAdapter);
+        }
+
         // Return array directly for frontend compatibility
         res.json(transactions);
     } catch (error) {
@@ -425,14 +421,12 @@ router.get('/:id', verifyToken, requireStaff, async(req, res) => {
         // Remove password from response
         const { password, ...safeUser } = user;
 
-        // normalize studentNumber for client compatibility
         const { avatar, avatarUrl } = resolveAvatarFields(safeUser);
 
         const normalized = {
             ...safeUser,
             avatar,
-            avatarUrl,
-            studentNumber: safeUser.studentNumber || safeUser.studentId || (safeUser.library && safeUser.library.cardNumber) || safeUser.libraryCardNumber || ''
+            avatarUrl
         };
 
         res.json(normalized);
@@ -452,7 +446,6 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             firstName,
             lastName,
             role,
-            studentNumber,
             curriculum,
             gradeLevel
         } = req.body;
@@ -476,7 +469,6 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
                     firstName: firstName || null,
                     lastName: lastName || null,
                     role: resolvedRole || null,
-                    studentNumber: studentNumber || null,
                     curriculum: curriculum || null,
                     gradeLevel: gradeLevel || null
                 }
@@ -568,6 +560,8 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user document
+        const generatedLibraryCardNumber = username || `USER-${Date.now()}`;
+
         const userData = {
             username,
             email: trimmedEmail || null,
@@ -575,7 +569,6 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
             firstName,
             lastName,
             role: resolvedRole,
-            studentNumber: studentNumber || null,
             curriculum: curriculum || null,
             gradeLevel: gradeLevel || null,
             isActive: true,
@@ -589,7 +582,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'user'), asy
                 dateOfBirth: null
             },
             library: {
-                cardNumber: studentNumber || `USER-${Date.now()}`,
+                cardNumber: generatedLibraryCardNumber,
                 membershipDate: new Date(),
                 borrowingLimit: resolvedRole === 'student' ? 5 : 10,
                 fineBalance: 0
@@ -857,7 +850,6 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
             firstName,
             lastName,
             role,
-            studentNumber,
             curriculum,
             gradeLevel,
             isActive,
@@ -932,7 +924,6 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
         if (firstName) updateData.firstName = firstName;
         if (lastName) updateData.lastName = lastName;
         if (roleProvided && req.user.id !== userId) updateData.role = resolvedRole;
-        if (studentNumber) updateData.studentNumber = studentNumber;
     if (curriculum) updateData.curriculum = curriculum;
         if (gradeLevel) updateData.gradeLevel = gradeLevel;
         if (email) updateData.email = email;

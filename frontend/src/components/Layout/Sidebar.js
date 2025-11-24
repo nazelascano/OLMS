@@ -22,6 +22,10 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import logo from "../../assets/images/logo.png";
 
+const ACTIVE_TAB_BACKGROUND = "linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%)";
+const ACTIVE_TAB_BACKGROUND_HOVER = "linear-gradient(90deg, #1D4ED8 0%, #1E40AF 100%)";
+const CONTENT_BACKGROUND = "#F8FAFC";
+
 const Sidebar = ({ onItemClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -198,20 +202,37 @@ const Sidebar = ({ onItemClick }) => {
                     onClick={() => handleNavigation(item.path)}
                     selected={active}
                     sx={{
-                      borderRadius: "6px",
                       py: 0.5,
                       px: 1,
-                      minHeight: 28,
+                      minHeight: 32,
                       transition: "all 0.2s ease",
+                      borderRadius: "10px",
+                      position: "relative",
+                      overflow: "visible",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        bottom: 0,
+                        right: -8,
+                        width: 8,
+                        borderRadius: "0 10px 10px 0",
+                        backgroundColor: CONTENT_BACKGROUND,
+                        opacity: active ? 1 : 0,
+                        transition: "opacity 0.2s ease",
+                        pointerEvents: "none",
+                      },
                       "&.Mui-selected": {
-                        backgroundColor: "#22C55E",
+                        background: ACTIVE_TAB_BACKGROUND,
                         color: "#FFFFFF",
+                        boxShadow: "0 8px 18px rgba(37, 99, 235, 0.25)",
                         "& .MuiListItemIcon-root": { color: "#FFFFFF" },
-                        "&:hover": { backgroundColor: "#16A34A" },
+                        "& .MuiTypography-root": { color: "#FFFFFF" },
+                        "&:hover": { background: ACTIVE_TAB_BACKGROUND_HOVER },
                       },
                       "&:not(.Mui-selected):hover": {
-                        backgroundColor: "#F8FAFC",
-                        "& .MuiListItemIcon-root": { color: "#305FB7" },
+                        backgroundColor: "rgba(37, 99, 235, 0.08)",
+                        "& .MuiListItemIcon-root": { color: "#2563EB" },
                       },
                     }}
                   >

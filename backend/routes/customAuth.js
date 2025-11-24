@@ -8,6 +8,7 @@ const {
   recordAuditEvent,
   setAuditContext,
 } = require('../middleware/customAuth');
+const { getSettingsSnapshot } = require('../utils/settingsCache');
 const router = express.Router();
 
 const isPlainObject = (value) =>
@@ -28,9 +29,38 @@ const mergePreferences = (base = {}, updates = {}) => {
   return result;
 };
 
+const loadSystemSettings = async (req) => {
+  try {
+    const snapshot = await getSettingsSnapshot(req.dbAdapter);
+    return snapshot.system || null;
+  } catch (error) {
+    console.error('Failed to load system settings:', error);
+    return null;
+  }
+};
+
 // Register a new user
 router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
   try {
+    const systemSettings = await loadSystemSettings(req);
+    if (systemSettings?.maintenanceMode) {
+      setAuditContext(req, {
+        success: false,
+        status: 'MaintenanceMode',
+        description: 'Registration blocked during maintenance',
+      });
+      return res.status(503).json({ message: 'Registration is unavailable during maintenance' });
+    }
+
+    if (systemSettings && systemSettings.allowRegistration === false) {
+      setAuditContext(req, {
+        success: false,
+        status: 'RegistrationDisabled',
+        description: 'Registration blocked by allowRegistration flag',
+      });
+      return res.status(403).json({ message: 'Self-registration is currently disabled' });
+    }
+
     const { 
       username, 
       email, 
@@ -38,7 +68,6 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       firstName, 
       lastName, 
       role = 'student', 
-      studentNumber, 
       curriculum, 
       gradeLevel 
     } = req.body;
@@ -90,11 +119,13 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       password: hashedPassword,
       firstName,
       lastName,
-      role,
-      studentNumber: studentNumber || null,
-  curriculum: curriculum || null,
+        role,
+      curriculum: curriculum || null,
       gradeLevel: gradeLevel || null,
       isActive: true,
+      emailVerified: systemSettings ? !systemSettings.requireEmailVerification : true,
+      emailVerifiedAt:
+        systemSettings && systemSettings.requireEmailVerification ? null : new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
       lastLoginAt: null,
@@ -223,6 +254,20 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Account is deactivated' });
     }
 
+    const systemSettings = await loadSystemSettings(req);
+    const isAdmin = (userData.role || '').toLowerCase() === 'admin';
+    if (systemSettings?.maintenanceMode && !isAdmin) {
+      await recordAuditEvent(req, {
+        action: 'LOGIN',
+        entity: 'auth',
+        success: false,
+        statusCode: 503,
+        description: 'Login blocked: system in maintenance mode',
+        user: userData,
+      });
+      return res.status(503).json({ message: 'System is currently in maintenance mode' });
+    }
+
     // Verify password
     const isPasswordValid = await verifyPassword(password, userData.password);
     if (!isPasswordValid) {
@@ -235,6 +280,19 @@ router.post('/login', async (req, res) => {
         user: userData,
       });
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const emailVerified = typeof userData.emailVerified === 'boolean' ? userData.emailVerified : true;
+    if (systemSettings?.requireEmailVerification && !emailVerified && !isAdmin) {
+      await recordAuditEvent(req, {
+        action: 'LOGIN',
+        entity: 'auth',
+        success: false,
+        statusCode: 403,
+        description: 'Login blocked: email verification required',
+        user: userData,
+      });
+      return res.status(403).json({ message: 'Please verify your email before logging in' });
     }
 
     // If the stored password was in plaintext (legacy), migrate it to a bcrypt hash now

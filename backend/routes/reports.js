@@ -254,7 +254,7 @@ router.get('/overdue/recent', async(req, res) => {
 
             return {
                 transactionId: trans.id || trans._id,
-                studentId: user?.studentId || '',
+                libraryCardNumber: user?.libraryCardNumber || user?.library?.cardNumber || '',
                 student: formatUserName(user),
                 title,
                 dueDate: trans.dueDate,
@@ -288,7 +288,7 @@ router.get('/transactions/recent', async(req, res) => {
 
                 return {
                     ...trans,
-                    studentId: user?.studentId || '',
+                    libraryCardNumber: user?.libraryCardNumber || user?.library?.cardNumber || '',
                     student: formatUserName(user),
                     title: bookDetails.title,
                     author: bookDetails.author,
@@ -925,7 +925,7 @@ router.get('/export/:type', async (req, res) => {
                     const bookDetails = resolvePrimaryBookDetails(t, books);
                     return {
                         id: t.id || t._id,
-                        studentId: user ? user.studentId : '',
+                        libraryCardNumber: user ? (user.libraryCardNumber || user.library?.cardNumber || '') : '',
                         student: formatUserName(user),
                         title: bookDetails.title,
                         author: bookDetails.author,

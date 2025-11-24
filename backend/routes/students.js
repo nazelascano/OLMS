@@ -18,6 +18,10 @@ const resolveSchoolYear = (payload = {}) => {
     return computeSchoolYearFromDate(timestamp);
 };
 
+const resolveLibraryCardNumber = (student = {}) => {
+    return student.libraryCardNumber || student.library?.cardNumber || '';
+};
+
 // Helper function to generate library card number
 const generateLibraryCardNumber = async(dbAdapter) => {
     const currentYear = new Date().getFullYear();
@@ -94,7 +98,7 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
             grade: student.grade || student.gradeLevel || 'N/A',
             section: student.section || 'N/A',
             dues: student.borrowingStats?.totalFines || 0,
-            studentId: student.studentId || student.studentNumber || 'N/A'
+                libraryCardNumber: resolveLibraryCardNumber(student) || 'N/A'
         }));
 
         const searchTerm = typeof search === 'string' ? search.toLowerCase() : '';
@@ -123,8 +127,6 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
                     student.middleName,
                     student.email,
                     student.username,
-                    student.studentId,
-                    student.studentNumber,
                     student.libraryCardNumber,
                     student.lrn,
                     student.library?.cardNumber
@@ -205,7 +207,6 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             phoneNumber: req.body.phoneNumber,
 
             // Academic Information
-            studentId: req.body.studentId,
             lrn: req.body.lrn, // Learner Reference Number
             grade: req.body.grade,
             section: req.body.section,
@@ -241,7 +242,7 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
         setAuditContext(req, {
             metadata: {
                 createRequest: {
-                    studentId: studentData.studentId || null,
+                    libraryCardNumber: studentData.libraryCardNumber || null,
                     lrn: studentData.lrn || null,
                     grade: studentData.grade || null,
                     section: studentData.section || null,
@@ -259,14 +260,14 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
         });
 
         // Validate required fields
-        if (!studentData.firstName || !studentData.lastName || !studentData.studentId || !studentData.lrn) {
+        if (!studentData.firstName || !studentData.lastName || !studentData.lrn) {
             setAuditContext(req, {
                 success: false,
                 status: 'ValidationError',
                 description: 'Create student failed: missing required fields',
             });
             return res.status(400).json({
-                message: 'Missing required fields: firstName, lastName, studentId, lrn'
+                message: 'Missing required fields: firstName, lastName, lrn'
             });
         }
 
@@ -312,13 +313,13 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
             resourceId: student._id,
             description: `Created student ${student.firstName} ${student.lastName}`,
             details: {
-                studentId: student.studentId,
+                libraryCardNumber: resolveLibraryCardNumber(student),
                 grade: student.grade,
                 section: student.section,
             },
             metadata: {
                 actorId: req.user.id,
-                libraryCardNumber: student.libraryCardNumber
+                libraryCardNumber: resolveLibraryCardNumber(student)
             },
             success: true,
             status: 'Created'
@@ -356,7 +357,7 @@ router.put('/:id', verifyToken, requireLibrarian, logAction('UPDATE', 'student')
             entityId: req.params.id,
             metadata: {
                 updateRequest: {
-                    studentId: req.params.id,
+                    studentRecordId: req.params.id,
                     fields: Object.keys(req.body || {})
                 }
             }
@@ -438,7 +439,7 @@ router.delete('/:id', verifyToken, requireLibrarian, logAction('DELETE', 'studen
             entityId: req.params.id,
             description: `Deleted student ${student.firstName} ${student.lastName}`,
             details: {
-                studentId: student.studentId,
+                libraryCardNumber: resolveLibraryCardNumber(student),
             },
             metadata: {
                 actorId: req.user.id
@@ -494,7 +495,7 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
         const missingLrnRows = students
             .map((s, idx) => ({
                 idx,
-                studentId: s?.studentId || null,
+                libraryCardNumber: s?.libraryCardNumber || null,
                 lrn: s?.lrn,
                 rowIndex: resolveRowIndex(s?.rowIndex, idx)
             }))
@@ -522,13 +523,13 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             return acc;
         }, []);
 
-        // Trim and normalize usernames (LRN) and studentIds
+        // Trim and normalize usernames (LRN) and library card numbers
         const normalized = students.map((s, idx) => ({
             idx,
             rowIndex: resolveRowIndex(s?.rowIndex, idx),
             firstName: (s.firstName || '').toString().trim(),
             lastName: (s.lastName || '').toString().trim(),
-            studentId: (s.studentId || '').toString().trim(),
+            libraryCardNumber: (s.libraryCardNumber || '').toString().trim(),
             lrn: (s.lrn || '').toString().trim(),
             email: (s.email || '').toString().trim().toLowerCase()
         }));
@@ -539,37 +540,36 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
             const rowErrors = [];
             if (!row.firstName) rowErrors.push('Missing firstName');
             if (!row.lastName) rowErrors.push('Missing lastName');
-            if (!row.studentId) rowErrors.push('Missing studentId');
             if (!row.lrn) rowErrors.push('Missing lrn'); // redundant if earlier, but keep for specificity
             if (row.email && !emailRegex.test(row.email)) rowErrors.push('Invalid email');
             if (rowErrors.length > 0) {
-                errors.push({ idx: row.idx, rowIndex: row.rowIndex, studentId: row.studentId || null, issues: rowErrors });
+                errors.push({ idx: row.idx, rowIndex: row.rowIndex, libraryCardNumber: row.libraryCardNumber || null, issues: rowErrors });
             }
         });
 
-        // Check duplicate LRNs and studentIds within payload
+        // Check duplicate LRNs and library card numbers within payload
         const lrns = normalized.map(r => r.lrn).filter(Boolean);
         const duplicateLrns = findDuplicates(lrns);
         duplicateLrns.forEach((dup) => {
             // find all indices with this dup
             normalized.forEach(r => {
                 if (r.lrn === dup) {
-                    errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['Duplicate lrn in payload'] });
+                    errors.push({ idx: r.idx, rowIndex: r.rowIndex, libraryCardNumber: r.libraryCardNumber || null, issues: ['Duplicate lrn in payload'] });
                 }
             });
         });
 
-        const studentIds = normalized.map(r => r.studentId).filter(Boolean);
-        const duplicateStudentIds = findDuplicates(studentIds);
-        duplicateStudentIds.forEach((dup) => {
+        const libraryCardNumbers = normalized.map(r => r.libraryCardNumber).filter(Boolean);
+        const duplicateLibraryCards = findDuplicates(libraryCardNumbers);
+        duplicateLibraryCards.forEach((dup) => {
             normalized.forEach(r => {
-                if (r.studentId === dup) {
-                    errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['Duplicate studentId in payload'] });
+                if (r.libraryCardNumber === dup) {
+                    errors.push({ idx: r.idx, rowIndex: r.rowIndex, libraryCardNumber: r.libraryCardNumber || null, issues: ['Duplicate libraryCardNumber in payload'] });
                 }
             });
         });
 
-        // Check duplicates against DB for usernames (lrn) and studentId using batched queries
+        // Check duplicates against DB for usernames (lrn) and library card numbers using batched queries
         const uniqueLrns = Array.from(new Set(lrns));
         if (uniqueLrns.length > 0) {
             try {
@@ -578,31 +578,31 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     const existingLrnSet = new Set(existingUsersByLrn.map(u => String(u.username)));
                     normalized.forEach(r => {
                         if (existingLrnSet.has(r.lrn)) {
-                            errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['Username (LRN) already exists in system'] });
+                            errors.push({ idx: r.idx, rowIndex: r.rowIndex, libraryCardNumber: r.libraryCardNumber || null, issues: ['Username (LRN) already exists in system'] });
                         }
                     });
                 }
             } catch (dbErr) {
                 console.error('Error checking existing usernames during bulk import validation:', dbErr);
-                errors.push({ idx: null, rowIndex: null, studentId: null, issues: ['Failed to validate existing usernames'] });
+                errors.push({ idx: null, rowIndex: null, libraryCardNumber: null, issues: ['Failed to validate existing usernames'] });
             }
         }
 
-        const uniqueStudentIds = Array.from(new Set(studentIds));
-        if (uniqueStudentIds.length > 0) {
+        const uniqueLibraryCards = Array.from(new Set(libraryCardNumbers));
+        if (uniqueLibraryCards.length > 0) {
             try {
-                const existingUsersByStudentId = await req.dbAdapter.getUsers({ studentId: { $in: uniqueStudentIds } });
-                if (existingUsersByStudentId && existingUsersByStudentId.length > 0) {
-                    const existingSidSet = new Set(existingUsersByStudentId.map(u => String(u.studentId)));
+                const existingUsersByLibraryCard = await req.dbAdapter.getUsers({ libraryCardNumber: { $in: uniqueLibraryCards } });
+                if (existingUsersByLibraryCard && existingUsersByLibraryCard.length > 0) {
+                    const existingCardSet = new Set(existingUsersByLibraryCard.map(u => String(resolveLibraryCardNumber(u))));
                     normalized.forEach(r => {
-                        if (existingSidSet.has(r.studentId)) {
-                            errors.push({ idx: r.idx, rowIndex: r.rowIndex, studentId: r.studentId || null, issues: ['studentId already exists in system'] });
+                        if (existingCardSet.has(r.libraryCardNumber)) {
+                            errors.push({ idx: r.idx, rowIndex: r.rowIndex, libraryCardNumber: r.libraryCardNumber || null, issues: ['libraryCardNumber already exists in system'] });
                         }
                     });
                 }
             } catch (dbErr) {
-                console.error('Error checking existing studentIds during bulk import validation:', dbErr);
-                errors.push({ idx: null, rowIndex: null, studentId: null, issues: ['Failed to validate existing studentIds'] });
+                console.error('Error checking existing libraryCardNumbers during bulk import validation:', dbErr);
+                errors.push({ idx: null, rowIndex: null, libraryCardNumber: null, issues: ['Failed to validate existing libraryCardNumbers'] });
             }
         }
 
@@ -656,8 +656,9 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                     continue;
                 }
 
-                // Generate library card number for each student
-                const libraryCardNumber = await generateLibraryCardNumber(req.dbAdapter);
+                // Generate library card number for each student (allow overriding via payload)
+                const providedLibraryCard = (studentData.libraryCardNumber || '').toString().trim();
+                const libraryCardNumber = providedLibraryCard || await generateLibraryCardNumber(req.dbAdapter);
                 const schoolYear = resolveSchoolYear(studentData);
 
                 // Determine username (prefer LRN) and generate default password (first letter + surname preferred)
@@ -699,7 +700,7 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
 
                 const student = await req.dbAdapter.createUser(newStudent);
                 results.successful.push({
-                    studentId: student.studentId,
+                    libraryCardNumber: resolveLibraryCardNumber(student),
                     rowIndex: resolvedRowIndex
                 });
             } catch (error) {
@@ -736,13 +737,13 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                 errors: failureCount,
                 details: [
                     ...results.successful.map(s => ({
-                        studentId: s.studentId,
+                        libraryCardNumber: s.libraryCardNumber,
                         status: 'success',
                         message: 'Imported successfully',
                         rowIndex: s.rowIndex ?? null
                     })),
                     ...results.failed.map(f => ({
-                        studentId: f.studentData?.studentId || null,
+                        libraryCardNumber: f.studentData?.libraryCardNumber || null,
                         status: 'error',
                         message: f.error,
                         issues: Array.isArray(f.issues) && f.issues.length > 0 ? f.issues : undefined,

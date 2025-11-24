@@ -238,7 +238,7 @@ const UsersList = () => {
       <Box mb={3}>
         <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
           <TextField
-            placeholder="Search users by name, email, username, or student number..."
+            placeholder="Search users by name, email, username, or student ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ flex: 1, minWidth: 300 }}
@@ -308,7 +308,7 @@ const UsersList = () => {
                 <TableCell>User</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
-                <TableCell>Student Number</TableCell>
+                <TableCell>Student ID</TableCell>
                 <TableCell>Curriculum</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Last Login</TableCell>
@@ -349,7 +349,7 @@ const UsersList = () => {
                   <TableCell>
                     <Chip label={user.role} size="small" color={getRoleColor(user.role)} />
                   </TableCell>
-                  <TableCell>{user.studentNumber || user.studentId || user.libraryCardNumber || (user.library && user.library.cardNumber) || "-"}</TableCell>
+                  <TableCell>{user.studentId || user.libraryCardNumber || (user.library && user.library.cardNumber) || "-"}</TableCell>
                   <TableCell>{user.curriculum || "-"}</TableCell>
                   <TableCell>
                     <Chip label={user.isActive ? "Active" : "Inactive"} size="small" color={getStatusColor(user.isActive)} icon={user.isActive ? <CheckCircle /> : <Block />} />

@@ -57,8 +57,6 @@ const collectUserIdentifiers = (user) => {
     user.userId,
     user.libraryCardNumber,
     user?.library?.cardNumber,
-    user.studentId,
-    user.studentNumber,
     user.username,
     user.email,
   ]
@@ -127,7 +125,7 @@ const resolveTransactionBorrower = (transaction, userMap) => {
     transaction?.user?.id,
     transaction?.user?._id,
     transaction.borrowerId,
-    transaction.studentId,
+    transaction.borrowerLibraryCardNumber,
     transaction?.user?.userId,
     transaction?.user?.username,
     transaction?.user?.email,
@@ -183,7 +181,7 @@ const transactionBelongsToUser = (transaction, identifiers) => {
     transaction?.user?.id,
     transaction?.user?._id,
     transaction.borrowerId,
-    transaction.studentId,
+    transaction.borrowerLibraryCardNumber,
     transaction?.user?.userId,
     transaction?.user?.username,
     transaction?.user?.email,
@@ -266,8 +264,6 @@ router.get('/', verifyToken, async (req, res) => {
           user.userId,
           user.libraryCardNumber,
           user?.library?.cardNumber,
-          user.studentId,
-          user.studentNumber,
           user.username,
           user.email,
         ],
@@ -324,8 +320,6 @@ router.get('/', verifyToken, async (req, res) => {
             user.middleName,
             user.username,
             user.email,
-            user.studentNumber,
-            user.studentId,
             user.curriculum,
             user.gradeLevel,
             user.phoneNumber,
@@ -367,7 +361,6 @@ router.get('/', verifyToken, async (req, res) => {
             .join(' ');
           const secondary = [
             student.library?.cardNumber || student.libraryCardNumber,
-            student.studentId || student.studentNumber,
             student.gradeLevel || student.grade,
             student.section,
           ]
@@ -403,7 +396,6 @@ router.get('/', verifyToken, async (req, res) => {
           const fullName = [directUser.firstName, directUser.lastName].filter(Boolean).join(' ');
           const secondary = [
             directUser.library?.cardNumber || directUser.libraryCardNumber,
-            directUser.studentId || directUser.studentNumber,
             directUser.gradeLevel || directUser.grade,
             directUser.section,
             directUser.email || directUser.username,

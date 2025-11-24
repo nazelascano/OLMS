@@ -638,7 +638,7 @@ const BorrowForm = () => {
                   <Typography variant="body2" color="text.secondary">
                     {[
                       authUser?.email,
-                      authUser?.studentNumber || authUser?.studentId,
+                      authUser?.studentId,
                       authUser?.libraryCardNumber,
                     ]
                       .filter(Boolean)

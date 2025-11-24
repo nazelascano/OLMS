@@ -354,9 +354,7 @@
     "resource": "student",
     "resourceId": "mh8g2irru17sd",
     "description": "Deleted student Mary1 Doe",
-    "details": {
-      "studentId": "2024003"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 27,
@@ -387,9 +385,7 @@
     "resource": "student",
     "resourceId": "mh8g2j01zkzk4",
     "description": "Deleted student Mary2 Smith",
-    "details": {
-      "studentId": "2024004"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -420,9 +416,7 @@
     "resource": "student",
     "resourceId": "mh8g2j7rhv6m1",
     "description": "Deleted student Mary3 Doe",
-    "details": {
-      "studentId": "2024005"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 11,
@@ -453,9 +447,7 @@
     "resource": "student",
     "resourceId": "mh8g2jfbdmhdx",
     "description": "Deleted student Mary4 Smith",
-    "details": {
-      "studentId": "2024006"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -486,9 +478,7 @@
     "resource": "student",
     "resourceId": "mh8g2jmv365q2",
     "description": "Deleted student Mary5 Doe",
-    "details": {
-      "studentId": "2024007"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -519,9 +509,7 @@
     "resource": "student",
     "resourceId": "mh8g2jug27y8y",
     "description": "Deleted student Mary6 Smith",
-    "details": {
-      "studentId": "2024008"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -552,9 +540,7 @@
     "resource": "student",
     "resourceId": "mh8g2k27uob3j",
     "description": "Deleted student Mary7 Doe",
-    "details": {
-      "studentId": "2024009"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 10,
@@ -585,9 +571,7 @@
     "resource": "student",
     "resourceId": "mh8g2k9qv9rf6",
     "description": "Deleted student Mary8 Smith",
-    "details": {
-      "studentId": "2024010"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 11,
@@ -618,9 +602,7 @@
     "resource": "student",
     "resourceId": "mh8g2kgsdx1vv",
     "description": "Deleted student Mary9 Doe",
-    "details": {
-      "studentId": "2024011"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -651,9 +633,7 @@
     "resource": "student",
     "resourceId": "mh8g2knr3gpft",
     "description": "Deleted student Mary10 Smith",
-    "details": {
-      "studentId": "2024012"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -684,9 +664,7 @@
     "resource": "student",
     "resourceId": "mh8g2kuwsd1hf",
     "description": "Deleted student Mary11 Doe",
-    "details": {
-      "studentId": "2024013"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -717,9 +695,7 @@
     "resource": "student",
     "resourceId": "mh8g2l1wev323",
     "description": "Deleted student Mary12 Smith",
-    "details": {
-      "studentId": "2024014"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -750,9 +726,7 @@
     "resource": "student",
     "resourceId": "mh8g2l8l0cu83",
     "description": "Deleted student Mary13 Doe",
-    "details": {
-      "studentId": "2024015"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 12,
@@ -783,9 +757,7 @@
     "resource": "student",
     "resourceId": "mh8g2lfckzity",
     "description": "Deleted student Mary14 Doe",
-    "details": {
-      "studentId": "2024016"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 13,
@@ -816,9 +788,7 @@
     "resource": "student",
     "resourceId": "mh8g2lml1sg9x",
     "description": "Deleted student Mary15 Smith",
-    "details": {
-      "studentId": "2024017"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 11,
@@ -849,9 +819,7 @@
     "resource": "student",
     "resourceId": "mh8g2lt4m8az8",
     "description": "Deleted student Mary16 Doe",
-    "details": {
-      "studentId": "2024018"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -882,9 +850,7 @@
     "resource": "student",
     "resourceId": "mh8g2m0lcbvp6",
     "description": "Deleted student Mary17 Smith",
-    "details": {
-      "studentId": "2024019"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 11,
@@ -1292,9 +1258,7 @@
     "resource": "student",
     "resourceId": "mh8mler310pou",
     "description": "Deleted student Mary17 Smith",
-    "details": {
-      "studentId": "2024019"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -1325,9 +1289,7 @@
     "resource": "student",
     "resourceId": "mh8mleo3jzr8b",
     "description": "Deleted student Mary16 Doe",
-    "details": {
-      "studentId": "2024018"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -1358,9 +1320,7 @@
     "resource": "student",
     "resourceId": "mh8mlelbdpis7",
     "description": "Deleted student Mary15 Smith",
-    "details": {
-      "studentId": "2024017"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -1391,9 +1351,7 @@
     "resource": "student",
     "resourceId": "mh8mlei2ypwy2",
     "description": "Deleted student Mary14 Doe",
-    "details": {
-      "studentId": "2024016"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 3,
@@ -1424,9 +1382,7 @@
     "resource": "student",
     "resourceId": "mh8mlefhj5ruz",
     "description": "Deleted student Mary13 Doe",
-    "details": {
-      "studentId": "2024015"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -1457,9 +1413,7 @@
     "resource": "student",
     "resourceId": "mh8mledcdhzmo",
     "description": "Deleted student Mary12 Smith",
-    "details": {
-      "studentId": "2024014"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1490,9 +1444,7 @@
     "resource": "student",
     "resourceId": "mh8mleavh8mft",
     "description": "Deleted student Mary11 Doe",
-    "details": {
-      "studentId": "2024013"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -1523,9 +1475,7 @@
     "resource": "student",
     "resourceId": "mh8mle73b11jf",
     "description": "Deleted student Mary10 Smith",
-    "details": {
-      "studentId": "2024012"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1556,9 +1506,7 @@
     "resource": "student",
     "resourceId": "mh8mle4y1u42h",
     "description": "Deleted student Mary9 Doe",
-    "details": {
-      "studentId": "2024011"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1589,9 +1537,7 @@
     "resource": "student",
     "resourceId": "mh8mle1r40cnq",
     "description": "Deleted student Mary8 Smith",
-    "details": {
-      "studentId": "2024010"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 6,
@@ -1622,9 +1568,7 @@
     "resource": "student",
     "resourceId": "mh8mldz5c2e24",
     "description": "Deleted student Mary7 Doe",
-    "details": {
-      "studentId": "2024009"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1655,9 +1599,7 @@
     "resource": "student",
     "resourceId": "mh8mldw9wq5q1",
     "description": "Deleted student Mary6 Smith",
-    "details": {
-      "studentId": "2024008"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1688,9 +1630,7 @@
     "resource": "student",
     "resourceId": "mh8mldtuhd5th",
     "description": "Deleted student Mary5 Doe",
-    "details": {
-      "studentId": "2024007"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -1721,9 +1661,7 @@
     "resource": "student",
     "resourceId": "mh8mldqoxlu44",
     "description": "Deleted student Mary4 Smith",
-    "details": {
-      "studentId": "2024006"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1754,9 +1692,7 @@
     "resource": "student",
     "resourceId": "mh8mldogsf6ym",
     "description": "Deleted student Mary3 Doe",
-    "details": {
-      "studentId": "2024005"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -1787,9 +1723,7 @@
     "resource": "student",
     "resourceId": "mh8mldm493myt",
     "description": "Deleted student Mary2 Smith",
-    "details": {
-      "studentId": "2024004"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -1820,9 +1754,7 @@
     "resource": "student",
     "resourceId": "mh8mldjcgahwh",
     "description": "Deleted student Mary1 Doe",
-    "details": {
-      "studentId": "2024003"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 3,
@@ -4644,7 +4576,6 @@
         "firstName": "Test",
         "lastName": "Student"
       },
-      "studentId": "S1761952188613",
       "grade": "Grade 7",
       "section": "Test"
     },
@@ -4652,7 +4583,6 @@
       "statusCode": 201,
       "durationMs": 253,
       "createRequest": {
-        "studentId": "S1761952188613",
         "lrn": "LRN1761952188613",
         "grade": "Grade 7",
         "section": "Test"
@@ -4746,9 +4676,7 @@
     "resource": "student",
     "resourceId": "mhfgu9y7dazo2",
     "description": "Deleted student Test Student",
-    "details": {
-      "studentId": "S1761952188613"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 19,
@@ -4779,9 +4707,7 @@
     "resource": "student",
     "resourceId": "mh8vn0etv5uk8",
     "description": "Deleted student Mary17 Smith",
-    "details": {
-      "studentId": "2024019"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -4812,9 +4738,7 @@
     "resource": "student",
     "resourceId": "mh8vn0bn8uibb",
     "description": "Deleted student Mary16 Doe",
-    "details": {
-      "studentId": "2024018"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -4845,9 +4769,7 @@
     "resource": "student",
     "resourceId": "mh8vn08p17fna",
     "description": "Deleted student Mary15 Smith",
-    "details": {
-      "studentId": "2024017"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -4878,9 +4800,7 @@
     "resource": "student",
     "resourceId": "mh8vn05ixtqi1",
     "description": "Deleted student Mary14 Doe",
-    "details": {
-      "studentId": "2024016"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -4911,9 +4831,7 @@
     "resource": "student",
     "resourceId": "mh8vn03a0tqnh",
     "description": "Deleted student Mary13 Doe",
-    "details": {
-      "studentId": "2024015"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -4944,9 +4862,7 @@
     "resource": "student",
     "resourceId": "mh8vmzzwp95wf",
     "description": "Deleted student Mary12 Smith",
-    "details": {
-      "studentId": "2024014"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -4977,9 +4893,7 @@
     "resource": "student",
     "resourceId": "mh8vmzxgpkew6",
     "description": "Deleted student Mary11 Doe",
-    "details": {
-      "studentId": "2024013"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -5010,9 +4924,7 @@
     "resource": "student",
     "resourceId": "mh8vmzuuef0ha",
     "description": "Deleted student Mary10 Smith",
-    "details": {
-      "studentId": "2024012"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -5043,9 +4955,7 @@
     "resource": "student",
     "resourceId": "mh8vmzr17jh8d",
     "description": "Deleted student Mary9 Doe",
-    "details": {
-      "studentId": "2024011"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -5076,9 +4986,7 @@
     "resource": "student",
     "resourceId": "mh8vmzoaa8k87",
     "description": "Deleted student Mary8 Smith",
-    "details": {
-      "studentId": "2024010"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -5109,9 +5017,7 @@
     "resource": "student",
     "resourceId": "mh8vmzlhq8kqa",
     "description": "Deleted student Mary7 Doe",
-    "details": {
-      "studentId": "2024009"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -5142,9 +5048,7 @@
     "resource": "student",
     "resourceId": "mh8vmzipmn9zt",
     "description": "Deleted student Mary6 Smith",
-    "details": {
-      "studentId": "2024008"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -5175,9 +5079,7 @@
     "resource": "student",
     "resourceId": "mh8vmzg6zbmsa",
     "description": "Deleted student Mary5 Doe",
-    "details": {
-      "studentId": "2024007"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -5208,9 +5110,7 @@
     "resource": "student",
     "resourceId": "mh8vmzdosn1o0",
     "description": "Deleted student Mary4 Smith",
-    "details": {
-      "studentId": "2024006"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 10,
@@ -5241,9 +5141,7 @@
     "resource": "student",
     "resourceId": "mh8vmzaup7fjg",
     "description": "Deleted student Mary3 Doe",
-    "details": {
-      "studentId": "2024005"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -5274,9 +5172,7 @@
     "resource": "student",
     "resourceId": "mh8vmz7uy7ua2",
     "description": "Deleted student Mary2 Smith",
-    "details": {
-      "studentId": "2024004"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 11,
@@ -5307,9 +5203,7 @@
     "resource": "student",
     "resourceId": "mh8vmz5chaumg",
     "description": "Deleted student Mary1 Doe",
-    "details": {
-      "studentId": "2024003"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -7515,7 +7409,6 @@
         "firstName": "Test",
         "lastName": "Student"
       },
-      "studentId": "S1761954060190",
       "grade": "Grade 7",
       "section": "Test"
     },
@@ -7523,7 +7416,6 @@
       "statusCode": 201,
       "durationMs": 106,
       "createRequest": {
-        "studentId": "S1761954060190",
         "lrn": "LRN1761954060190",
         "grade": "Grade 7",
         "section": "Test"
@@ -7622,7 +7514,6 @@
         "firstName": "Test",
         "lastName": "Student"
       },
-      "studentId": "S1761954107699",
       "grade": "Grade 7",
       "section": "Test"
     },
@@ -7630,7 +7521,6 @@
       "statusCode": 201,
       "durationMs": 103,
       "createRequest": {
-        "studentId": "S1761954107699",
         "lrn": "LRN1761954107699",
         "grade": "Grade 7",
         "section": "Test"
@@ -7725,7 +7615,6 @@
         "firstName": "Test",
         "lastName": "Student"
       },
-      "studentId": "S1761954255466",
       "grade": "Grade 7",
       "section": "Test"
     },
@@ -7733,7 +7622,6 @@
       "statusCode": 201,
       "durationMs": 87,
       "createRequest": {
-        "studentId": "S1761954255466",
         "lrn": "LRN1761954255466",
         "grade": "Grade 7",
         "section": "Test"
@@ -7802,7 +7690,6 @@
         "firstName": "Test",
         "lastName": "Student"
       },
-      "studentId": "S1761954272692",
       "grade": "Grade 7",
       "section": "Test"
     },
@@ -7810,7 +7697,6 @@
       "statusCode": 201,
       "durationMs": 118,
       "createRequest": {
-        "studentId": "S1761954272692",
         "lrn": "LRN1761954272692",
         "grade": "Grade 7",
         "section": "Test"
@@ -7991,9 +7877,7 @@
     "resource": "student",
     "resourceId": "mgvyco71noo6f",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 23,
@@ -8024,9 +7908,7 @@
     "resource": "student",
     "resourceId": "mhfh4qf086zmm",
     "description": "Deleted student Mary1 Doe",
-    "details": {
-      "studentId": "2024003"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 20,
@@ -8057,9 +7939,7 @@
     "resource": "student",
     "resourceId": "mhfh4qlvstd66",
     "description": "Deleted student Mary2 Smith",
-    "details": {
-      "studentId": "2024004"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 18,
@@ -8090,9 +7970,7 @@
     "resource": "student",
     "resourceId": "mhfh4qsu6qlcr",
     "description": "Deleted student Mary3 Doe",
-    "details": {
-      "studentId": "2024005"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 19,
@@ -8123,9 +8001,7 @@
     "resource": "student",
     "resourceId": "mhfh4r0adsywx",
     "description": "Deleted student Mary4 Smith",
-    "details": {
-      "studentId": "2024006"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 16,
@@ -8156,9 +8032,7 @@
     "resource": "student",
     "resourceId": "mhfh4r7w26fgw",
     "description": "Deleted student Mary5 Doe",
-    "details": {
-      "studentId": "2024007"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -8189,9 +8063,7 @@
     "resource": "student",
     "resourceId": "mhfh4reul6ojt",
     "description": "Deleted student Mary6 Smith",
-    "details": {
-      "studentId": "2024008"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 22,
@@ -8222,9 +8094,7 @@
     "resource": "student",
     "resourceId": "mhfh4rlumiyp9",
     "description": "Deleted student Mary7 Doe",
-    "details": {
-      "studentId": "2024009"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 20,
@@ -8255,9 +8125,7 @@
     "resource": "student",
     "resourceId": "mhfh4rsstta40",
     "description": "Deleted student Mary8 Smith",
-    "details": {
-      "studentId": "2024010"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 23,
@@ -8288,9 +8156,7 @@
     "resource": "student",
     "resourceId": "mhfh4rzcdhak0",
     "description": "Deleted student Mary9 Doe",
-    "details": {
-      "studentId": "2024011"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -8321,9 +8187,7 @@
     "resource": "student",
     "resourceId": "mhfh4s5pkxbh6",
     "description": "Deleted student Mary10 Smith",
-    "details": {
-      "studentId": "2024012"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 20,
@@ -8354,9 +8218,7 @@
     "resource": "student",
     "resourceId": "mhfh4sc8dnnx0",
     "description": "Deleted student Mary11 Doe",
-    "details": {
-      "studentId": "2024013"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 21,
@@ -8387,9 +8249,7 @@
     "resource": "student",
     "resourceId": "mhfh4sipv7a4y",
     "description": "Deleted student Mary12 Smith",
-    "details": {
-      "studentId": "2024014"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 20,
@@ -8420,9 +8280,7 @@
     "resource": "student",
     "resourceId": "mhfh4soxt3nfg",
     "description": "Deleted student Mary13 Doe",
-    "details": {
-      "studentId": "2024015"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 20,
@@ -8453,9 +8311,7 @@
     "resource": "student",
     "resourceId": "mhfh4svmbxaod",
     "description": "Deleted student Mary14 Doe",
-    "details": {
-      "studentId": "2024016"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 18,
@@ -8486,9 +8342,7 @@
     "resource": "student",
     "resourceId": "mhfh4t2d74892",
     "description": "Deleted student Mary15 Smith",
-    "details": {
-      "studentId": "2024017"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -8519,9 +8373,7 @@
     "resource": "student",
     "resourceId": "mhfh4t9e3xmr4",
     "description": "Deleted student Mary16 Doe",
-    "details": {
-      "studentId": "2024018"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 19,
@@ -8552,9 +8404,7 @@
     "resource": "student",
     "resourceId": "mhfh4tgerbnqf",
     "description": "Deleted student Mary17 Smith",
-    "details": {
-      "studentId": "2024019"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 22,
@@ -8585,9 +8435,7 @@
     "resource": "student",
     "resourceId": "mhfhydxuwlo3k",
     "description": "Deleted student Test Student",
-    "details": {
-      "studentId": "S1761954060190"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 21,
@@ -8626,7 +8474,6 @@
         "middleName",
         "email",
         "phoneNumber",
-        "studentId",
         "lrn",
         "grade",
         "section",
@@ -8649,7 +8496,6 @@
       "statusCode": 200,
       "durationMs": 14,
       "updateRequest": {
-        "studentId": "mgniuxw0uslme",
         "fields": [
           "libraryCardNumber",
           "firstName",
@@ -8657,7 +8503,6 @@
           "middleName",
           "email",
           "phoneNumber",
-          "studentId",
           "lrn",
           "grade",
           "section",
@@ -8703,9 +8548,7 @@
     "resource": "student",
     "resourceId": "mhfidhwdc8puq",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 18,
@@ -8736,9 +8579,7 @@
     "resource": "student",
     "resourceId": "mhfidjcww9nae",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -8769,9 +8610,7 @@
     "resource": "student",
     "resourceId": "mhfidlu97q0st",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 17,
@@ -8802,9 +8641,7 @@
     "resource": "student",
     "resourceId": "mhfidnhkhx65f",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 19,
@@ -8903,9 +8740,7 @@
     "resource": "student",
     "resourceId": "mhfigkmn24czj",
     "description": "Deleted student Bulk User",
-    "details": {
-      "studentId": "BULK1"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 16,
@@ -8936,9 +8771,7 @@
     "resource": "student",
     "resourceId": "mhfiz037t93qw",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 18,
@@ -8969,9 +8802,7 @@
     "resource": "student",
     "resourceId": "mhfiz1c3lkq5f",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 13,
@@ -9070,9 +8901,7 @@
     "resource": "student",
     "resourceId": "mhfizupi66fg8",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 6,
@@ -11980,7 +11809,6 @@
         "firstName": "sghj",
         "lastName": "ghjk",
         "role": "librarian",
-        "studentNumber": null,
         "curriculum": null,
         "gradeLevel": null
       }
@@ -12026,7 +11854,6 @@
         "firstName": "sdfghjkl",
         "lastName": "fghjkl;",
         "role": "librarian",
-        "studentNumber": null,
         "curriculum": null,
         "gradeLevel": null
       }
@@ -12072,7 +11899,6 @@
         "firstName": "sdfghjkl",
         "lastName": "fghjkl;",
         "role": "librarian",
-        "studentNumber": null,
         "curriculum": null,
         "gradeLevel": null
       }
@@ -12118,7 +11944,6 @@
         "firstName": "dfghjkl",
         "lastName": "fghjkl;",
         "role": "librarian",
-        "studentNumber": null,
         "curriculum": null,
         "gradeLevel": null
       }
@@ -12164,7 +11989,6 @@
         "firstName": "asdfghjk",
         "lastName": "dfghjkl",
         "role": "librarian",
-        "studentNumber": null,
         "curriculum": null,
         "gradeLevel": null
       },
@@ -12533,9 +12357,7 @@
     "resource": "student",
     "resourceId": "mhfjce8m7xbuj",
     "description": "Deleted student Mary Smith",
-    "details": {
-      "studentId": "2024002"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 29,
@@ -12566,9 +12388,7 @@
     "resource": "student",
     "resourceId": "mhfjceb60llf3",
     "description": "Deleted student Mary1 Doe",
-    "details": {
-      "studentId": "2024003"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -12599,9 +12419,7 @@
     "resource": "student",
     "resourceId": "mhfjceepoghpy",
     "description": "Deleted student Mary2 Smith",
-    "details": {
-      "studentId": "2024004"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 3,
@@ -12632,9 +12450,7 @@
     "resource": "student",
     "resourceId": "mhfjcehjfmuma",
     "description": "Deleted student Mary3 Doe",
-    "details": {
-      "studentId": "2024005"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 4,
@@ -12710,7 +12526,6 @@
         "middleName",
         "email",
         "phoneNumber",
-        "studentId",
         "lrn",
         "grade",
         "section",
@@ -12733,7 +12548,6 @@
       "statusCode": 200,
       "durationMs": 4,
       "updateRequest": {
-        "studentId": "mgniuxw0uslme",
         "fields": [
           "libraryCardNumber",
           "firstName",
@@ -12741,7 +12555,6 @@
           "middleName",
           "email",
           "phoneNumber",
-          "studentId",
           "lrn",
           "grade",
           "section",
@@ -12824,9 +12637,7 @@
     "resource": "student",
     "resourceId": "mhfjcel0zxj0f",
     "description": "Deleted student Mary4 Smith",
-    "details": {
-      "studentId": "2024006"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 12,
@@ -12857,9 +12668,7 @@
     "resource": "student",
     "resourceId": "mhfj9gn6u6bde",
     "description": "Deleted student Bulk User",
-    "details": {
-      "studentId": "BULK1"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -12890,9 +12699,7 @@
     "resource": "student",
     "resourceId": "mhfjceo5tcs7d",
     "description": "Deleted student Mary5 Doe",
-    "details": {
-      "studentId": "2024007"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -12923,9 +12730,7 @@
     "resource": "student",
     "resourceId": "mhfjceqyvstir",
     "description": "Deleted student Mary6 Smith",
-    "details": {
-      "studentId": "2024008"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -12956,9 +12761,7 @@
     "resource": "student",
     "resourceId": "mhfjcetx51ybk",
     "description": "Deleted student Mary7 Doe",
-    "details": {
-      "studentId": "2024009"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -12989,9 +12792,7 @@
     "resource": "student",
     "resourceId": "mhfjcex61g2th",
     "description": "Deleted student Mary8 Smith",
-    "details": {
-      "studentId": "2024010"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -13022,9 +12823,7 @@
     "resource": "student",
     "resourceId": "mhfjcf0gf7d9y",
     "description": "Deleted student Mary9 Doe",
-    "details": {
-      "studentId": "2024011"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 5,
@@ -13055,9 +12854,7 @@
     "resource": "student",
     "resourceId": "mhfjcf3kr20sa",
     "description": "Deleted student Mary10 Smith",
-    "details": {
-      "studentId": "2024012"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 7,
@@ -13088,9 +12885,7 @@
     "resource": "student",
     "resourceId": "mhfjcf5mnublm",
     "description": "Deleted student Mary11 Doe",
-    "details": {
-      "studentId": "2024013"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 9,
@@ -13121,9 +12916,7 @@
     "resource": "student",
     "resourceId": "mhfjcf9bft6i7",
     "description": "Deleted student Mary12 Smith",
-    "details": {
-      "studentId": "2024014"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -13154,9 +12947,7 @@
     "resource": "student",
     "resourceId": "mhfjcfbt4kxp3",
     "description": "Deleted student Mary13 Doe",
-    "details": {
-      "studentId": "2024015"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 6,
@@ -13187,9 +12978,7 @@
     "resource": "student",
     "resourceId": "mhfjcfe85z26g",
     "description": "Deleted student Mary14 Doe",
-    "details": {
-      "studentId": "2024016"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 8,
@@ -13257,9 +13046,7 @@
     "resource": "student",
     "resourceId": "mhfjcfk5pe1n5",
     "description": "Deleted student Mary16 Doe",
-    "details": {
-      "studentId": "2024018"
-    },
+    "details": {},
     "metadata": {
       "statusCode": 200,
       "durationMs": 10,
@@ -20804,5 +20591,1039 @@
     "_id": "mibkn6k499yjd",
     "createdAt": "2025-11-23T10:24:54.004Z",
     "updatedAt": "2025-11-23T10:24:54.004Z"
+  },
+  {
+    "timestamp": "2025-11-23T12:52:00.426Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T09:58:01.880Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibpwd2j117we",
+    "_id": "mibpwd2j117we",
+    "createdAt": "2025-11-23T12:52:00.427Z",
+    "updatedAt": "2025-11-23T12:52:00.427Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:04:32.977Z",
+    "action": "UPDATE",
+    "entity": "settings-library",
+    "entityId": null,
+    "resource": "settings-library",
+    "resourceId": null,
+    "description": "Updated library settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/library",
+        "body": {
+          "libraryName": "retryfu",
+          "libraryAddress": "eatsrytdyuftlytdkytd",
+          "libraryPhone": "12345678900",
+          "libraryEmail": "grhdfkhvj@hghckhgvl.hgf",
+          "website": "rsytuyiugihlo;ilytsrg.com",
+          "description": "rstuityiuryhtsdtfgkhil",
+          "operatingHours": {
+            "monday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "tuesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "wednesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "thursday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "friday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "saturday": {
+              "open": "09:00",
+              "close": "17:00",
+              "closed": true
+            },
+            "sunday": {
+              "open": "10:00",
+              "close": "16:00",
+              "closed": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 18
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/library",
+    "id": "mibqchqqy8gw8",
+    "_id": "mibqchqqy8gw8",
+    "createdAt": "2025-11-23T13:04:32.978Z",
+    "updatedAt": "2025-11-23T13:04:32.978Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:04:42.268Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T12:52:00.411Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibqcows658m3",
+    "_id": "mibqcows658m3",
+    "createdAt": "2025-11-23T13:04:42.268Z",
+    "updatedAt": "2025-11-23T13:04:42.268Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:37.079Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763903497054_ku8foq",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903497054_ku8foq",
+    "description": "Created borrow request (borrow_1763903497054_ku8foq) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 28,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 2
+      },
+      "requestId": "borrow_1763903497054_ku8foq",
+      "itemCount": 2,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibqlkzbn3cq2",
+    "_id": "mibqlkzbn3cq2",
+    "createdAt": "2025-11-23T13:11:37.079Z",
+    "updatedAt": "2025-11-23T13:11:37.079Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:37.512Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763903497505_a3zmv2",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903497505_a3zmv2",
+    "description": "Created borrow request (borrow_1763903497505_a3zmv2) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 8,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763903497505_a3zmv2",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibqllbcvpjlg",
+    "_id": "mibqllbcvpjlg",
+    "createdAt": "2025-11-23T13:11:37.512Z",
+    "updatedAt": "2025-11-23T13:11:37.512Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:37.553Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763903497505_a3zmv2",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903497505_a3zmv2",
+    "description": "Approved borrow request borrow_1763903497505_a3zmv2",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/approve/borrow_1763903497505_a3zmv2"
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 21,
+      "approvedBy": "mgnhicbwhxfy9"
+    },
+    "status": "Approved",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763903497505_a3zmv2",
+    "id": "mibqllci7rfac",
+    "_id": "mibqllci7rfac",
+    "createdAt": "2025-11-23T13:11:37.554Z",
+    "updatedAt": "2025-11-23T13:11:37.554Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:37.590Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763903497584_xnnzm9",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903497584_xnnzm9",
+    "description": "Created borrow request (borrow_1763903497584_xnnzm9) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 7,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763903497584_xnnzm9",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibqlldiodrm9",
+    "_id": "mibqlldiodrm9",
+    "createdAt": "2025-11-23T13:11:37.590Z",
+    "updatedAt": "2025-11-23T13:11:37.590Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:37.613Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1763903497584_xnnzm9",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903497584_xnnzm9",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1763903497584_xnnzm9_item_1",
+            "copyId": "nonexistent-copy",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 7
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1763903497584_xnnzm9",
+    "id": "mibqlle5yrf0d",
+    "_id": "mibqlle5yrf0d",
+    "createdAt": "2025-11-23T13:11:37.613Z",
+    "updatedAt": "2025-11-23T13:11:37.613Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:38.406Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1763903498394_ux7n1v",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903498394_ux7n1v",
+    "description": "Created borrow request (borrow_1763903498394_ux7n1v) for user mgnhicbwhxfy9",
+    "details": {
+      "requestedBy": "mgnhicbwhxfy9"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 13,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1763903498394_ux7n1v",
+      "itemCount": 1,
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "mibqlm06jo4x7",
+    "_id": "mibqlm06jo4x7",
+    "createdAt": "2025-11-23T13:11:38.406Z",
+    "updatedAt": "2025-11-23T13:11:38.406Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:11:38.432Z",
+    "action": "REJECT",
+    "entity": "transaction",
+    "entityId": "borrow_1763903498394_ux7n1v",
+    "resource": "transaction",
+    "resourceId": "borrow_1763903498394_ux7n1v",
+    "description": "Rejected borrow request borrow_1763903498394_ux7n1v",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/reject/borrow_1763903498394_ux7n1v",
+        "body": {
+          "reason": "Not available for loan"
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 8,
+      "rejectedBy": "mgnhicbwhxfy9",
+      "reason": "Not available for loan"
+    },
+    "status": "Rejected",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::ffff:127.0.0.1",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/reject/borrow_1763903498394_ux7n1v",
+    "id": "mibqlm0wala27",
+    "_id": "mibqlm0wala27",
+    "createdAt": "2025-11-23T13:11:38.432Z",
+    "updatedAt": "2025-11-23T13:11:38.432Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:13:38.425Z",
+    "action": "UPDATE",
+    "entity": "settings-library",
+    "entityId": null,
+    "resource": "settings-library",
+    "resourceId": null,
+    "description": "Updated library settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/library",
+        "body": {
+          "libraryName": "utrdddktyclt",
+          "libraryAddress": "jdiytgckhgck",
+          "libraryPhone": "75348594965",
+          "libraryEmail": "hhgkhgfkhgckhgc@jhhfjhv.com",
+          "website": "hgdkglgclhgcluh.com",
+          "description": "rstuityiuryhtsdtfgkhil",
+          "operatingHours": {
+            "monday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "tuesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "wednesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "thursday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "friday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "saturday": {
+              "open": "09:00",
+              "close": "17:00",
+              "closed": true
+            },
+            "sunday": {
+              "open": "10:00",
+              "close": "16:00",
+              "closed": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 40
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/library",
+    "id": "mibqo6m26mdws",
+    "_id": "mibqo6m26mdws",
+    "createdAt": "2025-11-23T13:13:38.426Z",
+    "updatedAt": "2025-11-23T13:13:38.426Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:13:55.762Z",
+    "action": "UPDATE",
+    "entity": "settings-library",
+    "entityId": null,
+    "resource": "settings-library",
+    "resourceId": null,
+    "description": "Updated library settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/library",
+        "body": {
+          "libraryName": "utrdddktyclt",
+          "libraryAddress": "jdiytgckhgck",
+          "libraryPhone": "75348594965",
+          "libraryEmail": "hhgkhgfkhgckhgc@jhhfjhv.com",
+          "website": "hgdkglgclhgcluh.com",
+          "description": "rstuityiuryhtsdtfgkhil",
+          "operatingHours": {
+            "monday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "tuesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "wednesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "thursday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "friday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": true
+            },
+            "saturday": {
+              "open": "09:00",
+              "close": "17:00",
+              "closed": true
+            },
+            "sunday": {
+              "open": "10:00",
+              "close": "16:00",
+              "closed": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 29
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/library",
+    "id": "mibqojzm9pqvz",
+    "_id": "mibqojzm9pqvz",
+    "createdAt": "2025-11-23T13:13:55.762Z",
+    "updatedAt": "2025-11-23T13:13:55.762Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:16:21.979Z",
+    "action": "UPDATE",
+    "entity": "settings-borrowing",
+    "entityId": null,
+    "resource": "settings-borrowing",
+    "resourceId": null,
+    "description": "Updated borrowing rules settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/borrowing-rules",
+        "body": {
+          "maxBooksPerTransaction": 0,
+          "maxBorrowDays": 0,
+          "maxRenewals": 0,
+          "finePerDay": 0,
+          "gracePeriodDays": 0,
+          "maxFineAmount": 0,
+          "reservationPeriodDays": 0,
+          "enableFines": false,
+          "annualBorrowingEnabled": true,
+          "overnightBorrowingEnabled": true,
+          "allowRenewalsWithOverdue": true
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 71
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/borrowing-rules",
+    "id": "mibqrot7qnoyx",
+    "_id": "mibqrot7qnoyx",
+    "createdAt": "2025-11-23T13:16:21.979Z",
+    "updatedAt": "2025-11-23T13:16:21.979Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:16:41.044Z",
+    "action": "UPDATE",
+    "entity": "settings-borrowing",
+    "entityId": null,
+    "resource": "settings-borrowing",
+    "resourceId": null,
+    "description": "Updated borrowing rules settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/borrowing-rules",
+        "body": {
+          "maxBooksPerTransaction": 0,
+          "maxBorrowDays": 0,
+          "maxRenewals": 0,
+          "finePerDay": 0,
+          "gracePeriodDays": 0,
+          "maxFineAmount": 0,
+          "reservationPeriodDays": 0,
+          "enableFines": false,
+          "annualBorrowingEnabled": false,
+          "overnightBorrowingEnabled": false,
+          "allowRenewalsWithOverdue": false
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 52
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/borrowing-rules",
+    "id": "mibqs3is49za7",
+    "_id": "mibqs3is49za7",
+    "createdAt": "2025-11-23T13:16:41.044Z",
+    "updatedAt": "2025-11-23T13:16:41.044Z"
+  },
+  {
+    "timestamp": "2025-11-23T13:16:58.198Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T13:04:42.257Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mibqsgrbrpj57",
+    "_id": "mibqsgrbrpj57",
+    "createdAt": "2025-11-23T13:16:58.199Z",
+    "updatedAt": "2025-11-23T13:16:58.199Z"
+  },
+  {
+    "timestamp": "2025-11-24T02:35:27.685Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-23T13:16:58.187Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "micjbbyd5hcg3",
+    "_id": "micjbbyd5hcg3",
+    "createdAt": "2025-11-24T02:35:27.685Z",
+    "updatedAt": "2025-11-24T02:35:27.685Z"
+  },
+  {
+    "timestamp": "2025-11-24T05:02:39.855Z",
+    "action": "UPDATE",
+    "entity": "settings-user-attributes",
+    "entityId": null,
+    "resource": "settings-user-attributes",
+    "resourceId": null,
+    "description": "Updated user attribute settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/user-attributes",
+        "body": {
+          "curriculum": [
+            "Computer Science",
+            "Engineering",
+            "Mathematics",
+            "Science",
+            "Arts",
+            "Business",
+            "Education",
+            "Medicine",
+            "Law",
+            "Other"
+          ],
+          "gradeLevels": [
+            "Grade 7",
+            "Grade 8",
+            "Grade 9",
+            "Grade 10",
+            "Grade 11",
+            "Grade 12"
+          ]
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 17
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/user-attributes",
+    "id": "micokmwg7dim8",
+    "_id": "micokmwg7dim8",
+    "createdAt": "2025-11-24T05:02:39.856Z",
+    "updatedAt": "2025-11-24T05:02:39.856Z"
+  },
+  {
+    "timestamp": "2025-11-24T05:09:06.531Z",
+    "action": "CREATE",
+    "entity": "student",
+    "entityId": "micosx98s2u1z",
+    "resource": "student",
+    "resourceId": "micosx98s2u1z",
+    "description": "Created student Aidelyn Manzalay",
+    "details": {
+      "profile": {
+        "firstName": "Aidelyn",
+        "lastName": "Manzalay",
+        "email": "aidelynmanzalay@gmail.com",
+        "curriculum": ""
+      },
+      "libraryCardNumber": "LIB-25-0040",
+      "grade": "Grade 12",
+      "section": "A"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 267,
+      "createRequest": {
+        "libraryCardNumber": "LIB-25-0040",
+        "lrn": "5986",
+        "grade": "Grade 12",
+        "section": "A",
+        "schoolYear": "2025-2026"
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "libraryCardNumber": "LIB-25-0040"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/students",
+    "id": "micosx9fyzv2z",
+    "_id": "micosx9fyzv2z",
+    "createdAt": "2025-11-24T05:09:06.531Z",
+    "updatedAt": "2025-11-24T05:09:06.531Z"
+  },
+  {
+    "timestamp": "2025-11-24T07:54:44.377Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-24T02:35:27.676Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "micupxcqnfbw9",
+    "_id": "micupxcqnfbw9",
+    "createdAt": "2025-11-24T07:54:44.378Z",
+    "updatedAt": "2025-11-24T07:54:44.378Z"
+  },
+  {
+    "timestamp": "2025-11-24T07:56:41.563Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-24T07:54:44.364Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "micusfrv6vvbd",
+    "_id": "micusfrv6vvbd",
+    "createdAt": "2025-11-24T07:56:41.563Z",
+    "updatedAt": "2025-11-24T07:56:41.563Z"
+  },
+  {
+    "timestamp": "2025-11-24T08:07:49.595Z",
+    "action": "UPDATE",
+    "entity": "user",
+    "entityId": "micosx98s2u1z",
+    "resource": "user",
+    "resourceId": "micosx98s2u1z",
+    "description": "Updated profile for user 5986",
+    "details": {
+      "updatedFields": [
+        "firstName",
+        "lastName",
+        "email",
+        "isActive"
+      ],
+      "role": "student",
+      "isActive": true
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 12,
+      "updateRequest": {
+        "userId": "micosx98s2u1z",
+        "fields": [
+          "username",
+          "email",
+          "firstName",
+          "lastName",
+          "curriculum",
+          "phoneNumber",
+          "address",
+          "isActive"
+        ]
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "updatedAt": "2025-11-24T08:07:49.591Z"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/users/micosx98s2u1z",
+    "id": "micv6r8bmgb26",
+    "_id": "micv6r8bmgb26",
+    "createdAt": "2025-11-24T08:07:49.595Z",
+    "updatedAt": "2025-11-24T08:07:49.595Z"
+  },
+  {
+    "timestamp": "2025-11-24T08:07:50.435Z",
+    "action": "UPDATE",
+    "entity": "user",
+    "entityId": "micosx98s2u1z",
+    "resource": "user",
+    "resourceId": "micosx98s2u1z",
+    "description": "Updated profile for user 5986",
+    "details": {
+      "updatedFields": [
+        "firstName",
+        "lastName",
+        "email",
+        "isActive"
+      ],
+      "role": "student",
+      "isActive": true
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 4,
+      "updateRequest": {
+        "userId": "micosx98s2u1z",
+        "fields": [
+          "username",
+          "email",
+          "firstName",
+          "lastName",
+          "curriculum",
+          "phoneNumber",
+          "address",
+          "isActive"
+        ]
+      },
+      "actorId": "mgnhicbwhxfy9",
+      "updatedAt": "2025-11-24T08:07:50.431Z"
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/users/micosx98s2u1z",
+    "id": "micv6rvnas0pk",
+    "_id": "micv6rvnas0pk",
+    "createdAt": "2025-11-24T08:07:50.435Z",
+    "updatedAt": "2025-11-24T08:07:50.435Z"
+  },
+  {
+    "timestamp": "2025-11-24T08:54:07.611Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-24T07:56:41.547Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "micwuarfz0oqo",
+    "_id": "micwuarfz0oqo",
+    "createdAt": "2025-11-24T08:54:07.611Z",
+    "updatedAt": "2025-11-24T08:54:07.611Z"
   }
 ]

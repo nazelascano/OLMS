@@ -191,6 +191,14 @@ function App() {
             }
           />{" "}
           <Route
+            path="students/:id"
+            element={
+              <ProtectedRoute roles={["admin", "librarian", "staff"]}>
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />{" "}
+          <Route
             path="students/:id/edit"
             element={
               <ProtectedRoute roles={["admin", "librarian", "staff"]}>

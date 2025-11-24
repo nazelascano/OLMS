@@ -217,6 +217,27 @@ const StudentsList = () => {
     }
   };
 
+  const getStudentEntityId = (studentRecord = {}) =>
+    studentRecord._id ||
+    studentRecord.id ||
+    studentRecord.uid ||
+    studentRecord.userId;
+
+  const handleNavigateToProfile = (student) => {
+    if (!student) {
+      return;
+    }
+
+    const studentId = getStudentEntityId(student);
+    if (!studentId) {
+      console.warn("Missing student identifier for profile navigation", student);
+      toast.error("Cannot open profile for this student");
+      return;
+    }
+
+    navigate(`/students/${studentId}`);
+  };
+
   const handlePrintCard = async (student) => {
     try {
       toast.loading("Generating library card...");
@@ -485,7 +506,12 @@ const StudentsList = () => {
                   "Student avatar";
 
                 return (
-                  <TableRow key={student._id || student.id || student.uid || student.studentId} hover>
+                  <TableRow
+                    key={student._id || student.id || student.uid || student.studentId}
+                    hover
+                    onDoubleClick={() => handleNavigateToProfile(student)}
+                    sx={{ cursor: "pointer" }}
+                  >
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">
                         {student.grade}
@@ -587,6 +613,7 @@ const StudentsList = () => {
                       <IconButton
                         size="small"
                         onClick={(e) => handleOpenMenu(e, student)}
+                        onDoubleClick={(event) => event.stopPropagation()}
                         aria-controls={menuAnchorEl ? "student-action-menu" : undefined}
                         aria-haspopup="true"
                         aria-expanded={Boolean(menuAnchorEl)}
