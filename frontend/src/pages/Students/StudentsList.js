@@ -52,6 +52,8 @@ import {
 } from "../../utils/userAttributes";
 import { PageLoading } from "../../components/Loading";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
+import MobileScanButton from "../../components/MobileScanButton";
+import MobileScanDialog from "../../components/MobileScanDialog";
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -73,6 +75,8 @@ const StudentsList = () => {
   const [attributeError, setAttributeError] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchScannerOpen, setSearchScannerOpen] = useState(false);
+  const searchInputId = "students-search-input";
 
   // Menu state for per-row actions (three-dot vertical menu)
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -358,6 +362,7 @@ const StudentsList = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ flex: 1, minWidth: 300 }}
+            inputProps={{ id: searchInputId }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -365,6 +370,10 @@ const StudentsList = () => {
                 </InputAdornment>
               ),
             }}
+          />
+          <MobileScanButton
+            label="Scan to Search"
+            onClick={() => setSearchScannerOpen(true)}
           />
           {/* Compact filter icon that opens a pop-up menu containing Grade and Section filters */}
           <IconButton
@@ -742,6 +751,14 @@ const StudentsList = () => {
           />
         </TableContainer>
       )}
+      <MobileScanDialog
+        open={searchScannerOpen}
+        onClose={() => setSearchScannerOpen(false)}
+        onDetected={(value) => setSearchTerm(value || "")}
+        title="Scan to Search Students"
+        elementId="students-search-qr"
+        targetSelector={`#${searchInputId}`}
+      />
   {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}

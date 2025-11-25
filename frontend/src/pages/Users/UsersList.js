@@ -48,6 +48,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { api, usersAPI } from "../../utils/api";
 import { resolveEntityAvatar } from "../../utils/media";
 import toast from "react-hot-toast";
+import MobileScanButton from "../../components/MobileScanButton";
+import MobileScanDialog from "../../components/MobileScanDialog";
 
 const UsersList = () => {
   const navigate = useNavigate();
@@ -61,6 +63,8 @@ const UsersList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [searchScannerOpen, setSearchScannerOpen] = useState(false);
+  const searchInputId = "users-search-input";
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -242,6 +246,7 @@ const UsersList = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ flex: 1, minWidth: 300 }}
+            inputProps={{ id: searchInputId }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -249,6 +254,11 @@ const UsersList = () => {
                 </InputAdornment>
               ),
             }}
+          />
+
+          <MobileScanButton
+            label="Scan to Search"
+            onClick={() => setSearchScannerOpen(true)}
           />
 
           {/* Filter icon + menu (compact) */}
@@ -382,6 +392,15 @@ const UsersList = () => {
           />
         </TableContainer>
       )}
+
+        <MobileScanDialog
+          open={searchScannerOpen}
+          onClose={() => setSearchScannerOpen(false)}
+          onDetected={(value) => setSearchTerm(value || "")}
+          title="Scan to Search Users"
+          elementId="users-search-qr"
+          targetSelector={`#${searchInputId}`}
+        />
 
       {/* Action Menu */}
       <Menu

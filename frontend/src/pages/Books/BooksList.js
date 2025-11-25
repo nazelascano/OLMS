@@ -40,6 +40,8 @@ import { api, booksAPI, downloadFile } from "../../utils/api";
 import toast from "react-hot-toast";
 import BookImportDialog from "./BookImportDialog";
 import { PageLoading } from "../../components/Loading";
+import MobileScanButton from "../../components/MobileScanButton";
+import MobileScanDialog from "../../components/MobileScanDialog";
 
 const sanitizeFilename = (value, fallback) => {
   if (!value) {
@@ -88,6 +90,8 @@ const BooksList = () => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [downloadingBookId, setDownloadingBookId] = useState(null);
+  const [searchScannerOpen, setSearchScannerOpen] = useState(false);
+  const searchInputId = "books-search-input";
 
   // Compact filter menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
@@ -305,7 +309,13 @@ const BooksList = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ flex: 1, minWidth: 300 }}
+            inputProps={{ id: searchInputId }}
             InputProps={{ startAdornment: (<InputAdornment position="start"><Search /></InputAdornment>) }}
+          />
+
+          <MobileScanButton
+            label="Scan to Search"
+            onClick={() => setSearchScannerOpen(true)}
           />
 
           <IconButton aria-label="Open filters" onClick={handleOpenFilters} size="small" sx={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
@@ -486,6 +496,15 @@ const BooksList = () => {
           <Add />
         </Fab>
       )}
+
+      <MobileScanDialog
+        open={searchScannerOpen}
+        onClose={() => setSearchScannerOpen(false)}
+        onDetected={(value) => setSearchTerm(value || "")}
+        title="Scan to Search Books"
+        elementId="books-search-qr"
+        targetSelector={`#${searchInputId}`}
+      />
 
       <BookImportDialog
         open={importDialogOpen}

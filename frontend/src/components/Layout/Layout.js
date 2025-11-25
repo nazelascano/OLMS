@@ -42,6 +42,8 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { api, searchAPI, notificationsAPI } from "../../utils/api";
 import Sidebar from "./Sidebar";
+import MobileScanButton from "../MobileScanButton";
+import MobileScanDialog from "../MobileScanDialog";
 import { SCAN_EVENT, dispatchScanEvent } from "../../utils/scanEvents";
 
 const SEARCH_SECTION_LABELS = {
@@ -403,6 +405,8 @@ const IGNORED_CONTROL_KEYS = new Set([
   "F12",
 ]);
 
+const GLOBAL_SEARCH_INPUT_ID = "global-search-input";
+
 const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
@@ -418,6 +422,7 @@ const Layout = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [searchScannerOpen, setSearchScannerOpen] = useState(false);
   const searchInputRef = useRef(null);
   const lastPointerRef = useRef({ x: 0, y: 0 });
   const lastFocusedInputRef = useRef(null);
@@ -857,6 +862,20 @@ const Layout = () => {
         break;
       default:
         break;
+    }
+  };
+
+  const openSearchScanner = () => setSearchScannerOpen(true);
+  const closeSearchScanner = () => setSearchScannerOpen(false);
+
+  const handleSearchScanDetected = (value) => {
+    const nextValue = value == null ? "" : String(value);
+    setSearchValue(nextValue);
+    setSearchOpen(true);
+    setFocusedIndex(-1);
+    setSearchError("");
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
     }
   };
 
@@ -1390,6 +1409,7 @@ const Layout = () => {
                   onFocus={handleSearchFocus}
                   onKeyDown={handleSearchKeyDown}
                   inputRef={searchInputRef}
+                  inputProps={{ id: GLOBAL_SEARCH_INPUT_ID }}
                   autoComplete="off"
                   InputProps={{
                     startAdornment: (
@@ -1402,6 +1422,10 @@ const Layout = () => {
                     ...commonSearchSx,
                     mt: 1,
                   }}
+                />
+                <MobileScanButton
+                  label="Scan to Search"
+                  onClick={openSearchScanner}
                 />
               </>
             ) : (
@@ -1442,6 +1466,7 @@ const Layout = () => {
                     onFocus={handleSearchFocus}
                     onKeyDown={handleSearchKeyDown}
                     inputRef={searchInputRef}
+                    inputProps={{ id: GLOBAL_SEARCH_INPUT_ID }}
                     autoComplete="off"
                     InputProps={{
                       startAdornment: (
@@ -1828,6 +1853,14 @@ const Layout = () => {
             </Fade>
           )}
         </Popper>
+        <MobileScanDialog
+          open={searchScannerOpen}
+          onClose={closeSearchScanner}
+          onDetected={handleSearchScanDetected}
+          title="Scan to Search"
+          elementId="global-search-qr"
+          targetSelector={`#${GLOBAL_SEARCH_INPUT_ID}`}
+        />
         {/* Live region for screen reader announcements */}
         <div
           aria-live="polite"

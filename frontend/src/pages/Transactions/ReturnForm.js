@@ -39,6 +39,7 @@ import {
   Warning,
   QrCodeScanner,
 } from "@mui/icons-material";
+import MobileScanButton from "../../components/MobileScanButton";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -449,6 +450,12 @@ const ReturnForm = () => {
               >
                 {loading ? "Searching..." : "Search"}
               </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <MobileScanButton
+                label="Open QR Scanner"
+                onClick={() => setScannerOpen(true)}
+              />
             </Grid>
           </Grid>
         </Paper>

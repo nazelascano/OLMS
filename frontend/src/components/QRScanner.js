@@ -7,7 +7,14 @@ import { dispatchScanEvent } from '../utils/scanEvents';
 // - elementId (optional) - DOM id for the scanner container
 // - onDetected(value) - called when a QR code is read
 // - onClose() - called when component unmounts or when user cancels
-const QRScanner = ({ elementId = 'qr-scanner', onDetected, onClose, qrbox = 250, fps = 10 }) => {
+const QRScanner = ({
+  elementId = 'qr-scanner',
+  onDetected,
+  onClose,
+  qrbox = 250,
+  fps = 10,
+  targetSelector,
+}) => {
   const mountedRef = useRef(false);
   useEffect(() => {
     mountedRef.current = true;
@@ -29,6 +36,7 @@ const QRScanner = ({ elementId = 'qr-scanner', onDetected, onClose, qrbox = 250,
             dispatchScanEvent(decodedText, {
               source: 'qr-scanner',
               elementId,
+              targetSelector,
               rect: rect
                 ? {
                     left: rect.left,

@@ -325,22 +325,24 @@ const BookForm = () => {
       newErrors.copies = "At least one copy is required";
     }
 
-    const seenCopyIds = new Set();
-    formData.copies.forEach((copy, index) => {
-      const trimmedCopyId = (copy.copyId || "").trim();
-      if (!trimmedCopyId) {
-        newErrors[`copy_${index}_id`] = "Copy ID is required";
-        return;
-      }
+    if (isEditing) {
+      const seenCopyIds = new Set();
+      formData.copies.forEach((copy, index) => {
+        const trimmedCopyId = (copy.copyId || "").trim();
+        if (!trimmedCopyId) {
+          newErrors[`copy_${index}_id`] = "Copy ID is required";
+          return;
+        }
 
-      const normalizedCopyId = trimmedCopyId.toUpperCase();
-      if (seenCopyIds.has(normalizedCopyId)) {
-        newErrors[`copy_${index}_id`] = "Duplicate copy ID";
-        return;
-      }
+        const normalizedCopyId = trimmedCopyId.toUpperCase();
+        if (seenCopyIds.has(normalizedCopyId)) {
+          newErrors[`copy_${index}_id`] = "Duplicate copy ID";
+          return;
+        }
 
-      seenCopyIds.add(normalizedCopyId);
-    });
+        seenCopyIds.add(normalizedCopyId);
+      });
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -356,11 +358,18 @@ const BookForm = () => {
 
     setLoading(true);
     try {
-      const sanitizedCopies = formData.copies.map((copy) => ({
-        copyId: copy.copyId.trim(),
-        status: copy.status,
-        location: copy.location,
-      }));
+      const sanitizedCopies = formData.copies.map((copy) => {
+        const payload = {
+          status: copy.status,
+          location: copy.location,
+        };
+
+        if (isEditing && copy.copyId) {
+          payload.copyId = copy.copyId.trim();
+        }
+
+        return payload;
+      });
 
       const parsedPages = formData.pages ? parseInt(formData.pages, 10) : undefined;
 
@@ -489,7 +498,7 @@ const BookForm = () => {
         <IconButton onClick={() => navigate("/books")} sx={{ mr: 2 }}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 }}>
+        <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0, color:"white" }}>
           {isEditing ? "Edit Book" : "Add New Book"}
         </Typography>
       </Box>
@@ -663,6 +672,11 @@ const BookForm = () => {
                     Add Copy{" "}
                   </Button>{" "}
                 </Box>
+                {!isEditing && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Copy IDs are generated automatically once the book is saved.
+                  </Alert>
+                )}
                 {errors.copies && (
                   <Typography
                     variant="caption"
@@ -676,18 +690,29 @@ const BookForm = () => {
                   <Paper key={index} sx={{ p: 2, mb: 2 }}>
                     <Grid container spacing={2} alignItems="center">
                       <Grid item xs={12} md={4}>
-                        <TextField
-                          fullWidth
-                          label="Copy ID"
-                          value={copy.copyId}
-                          onChange={(e) =>
-                            handleCopyChange(index, "copyId", e.target.value)
-                          }
-                          error={Boolean(errors[`copy_${index}_id`])}
-                          helperText={errors[`copy_${index}_id`]}
-                          required
-                          size="small"
-                        />
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            label="Copy ID"
+                            value={copy.copyId}
+                            onChange={(e) =>
+                              handleCopyChange(index, "copyId", e.target.value)
+                            }
+                            error={Boolean(errors[`copy_${index}_id`])}
+                            helperText={errors[`copy_${index}_id`]}
+                            required
+                            size="small"
+                          />
+                        ) : (
+                          <TextField
+                            fullWidth
+                            label="Copy ID"
+                            value="Auto-generated"
+                            disabled
+                            helperText="Assigned automatically after save"
+                            size="small"
+                          />
+                        )}
                       </Grid>{" "}
                       <Grid item xs={12} md={3}>
                         <FormControl fullWidth size="small">

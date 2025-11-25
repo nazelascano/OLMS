@@ -28,7 +28,8 @@ import {
   Typography,
 } from "@mui/material";
 import QRScanner from "../../components/QRScanner";
-import { ArrowBack, Assignment, Book, Remove, Search } from "@mui/icons-material";
+import MobileScanButton from "../../components/MobileScanButton";
+import { ArrowBack, Assignment, Book, Remove, Search, QrCodeScanner } from "@mui/icons-material";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
@@ -987,6 +988,28 @@ const BorrowForm = () => {
                 />
               )}
             />
+
+            {!isStudentMode && (
+              <>
+                <Box
+                  mt={2}
+                  display={{ xs: "none", sm: "flex" }}
+                  justifyContent="flex-end"
+                >
+                  <Button
+                    variant="outlined"
+                    startIcon={<QrCodeScanner />}
+                    onClick={() => setScannerOpen(true)}
+                  >
+                    Scan Copy QR
+                  </Button>
+                </Box>
+                <MobileScanButton
+                  label="Scan Copy QR"
+                  onClick={() => setScannerOpen(true)}
+                />
+              </>
+            )}
 
             {!isStudentMode && (
               <Dialog

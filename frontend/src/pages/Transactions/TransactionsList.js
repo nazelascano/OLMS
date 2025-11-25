@@ -52,6 +52,8 @@ import {
   QrCodeScanner,
 } from "@mui/icons-material";
 import QRScanner from "../../components/QRScanner";
+import MobileScanButton from "../../components/MobileScanButton";
+import MobileScanDialog from "../../components/MobileScanDialog";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
@@ -65,6 +67,8 @@ const TransactionsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchScannerOpen, setSearchScannerOpen] = useState(false);
+  const searchInputId = "transactions-search-input";
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [page, setPage] = useState(0);
@@ -914,76 +918,81 @@ const TransactionsList = () => {
       </Grid>
       {/* Search and Filters */}
       <Box mb={3}>
-              <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
-                <TextField
-                  placeholder="Search books by title, author, or ISBN..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  sx={{ flex: 1, minWidth: 300 }}
-                  InputProps={{
-                    startAdornment: (
-                  <Search sx={{ mr: 1, color: "text.secondary" }} />
-                ),
-              }}
-            />
+        <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+          <TextField
+            placeholder="Search books by title, author, or ISBN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ flex: 1, minWidth: 300 }}
+            inputProps={{ id: searchInputId }}
+            InputProps={{
+              startAdornment: (
+                <Search sx={{ mr: 1, color: "text.secondary" }} />
+              ),
+            }}
+          />
+          <MobileScanButton
+            label="Scan to Search"
+            onClick={() => setSearchScannerOpen(true)}
+          />
           <IconButton
-                aria-label="Open filters"
-                onClick={openFilters}
-                size="small"
-                sx={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}
+            aria-label="Open filters"
+            onClick={openFilters}
+            size="small"
+            sx={{ border: "1px solid #E2E8F0", backgroundColor: "#F8FAFC" }}
+          >
+            <FilterList />
+          </IconButton>
+        </Box>
+        <Menu
+          anchorEl={filterAnchorEl}
+          open={filtersOpen}
+          onClose={closeFilters}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          PaperProps={{ sx: { p: 2, minWidth: 220 } }}
+        >
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Status"
               >
-                <FilterList />
-              </IconButton>
-            <Menu
-              anchorEl={filterAnchorEl}
-              open={filtersOpen}
-              onClose={closeFilters}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-              PaperProps={{ sx: { p: 2, minWidth: 220 } }}
-            >
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    label="Status"
-                  >
-                    <MenuItem value="all">All Status</MenuItem>
-                    <MenuItem value="requested">Requested</MenuItem>
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="returned">Returned</MenuItem>
-                    <MenuItem value="overdue">Overdue</MenuItem>
-                    <MenuItem value="renewed">Renewed</MenuItem>
-                    <MenuItem value="lost">Lost</MenuItem>
-                  </Select>
-                </FormControl>
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="requested">Requested</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="returned">Returned</MenuItem>
+                <MenuItem value="overdue">Overdue</MenuItem>
+                <MenuItem value="renewed">Renewed</MenuItem>
+                <MenuItem value="lost">Lost</MenuItem>
+              </Select>
+            </FormControl>
 
-                <FormControl fullWidth size="small">
-                  <InputLabel>Type</InputLabel>
-                  <Select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    label="Type"
-                  >
-                    <MenuItem value="all">All Types</MenuItem>
-                    <MenuItem value="regular">Regular</MenuItem>
-                    <MenuItem value="annual">Annual</MenuItem>
-                    <MenuItem value="reserved">Reserved</MenuItem>
-                  </Select>
-                </FormControl>
-                <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
-                  <Button size="small" onClick={() => { setStatusFilter("all"); setTypeFilter("all"); closeFilters(); }}>
-                    Clear
-                  </Button>
-                  <Button size="small" variant="contained" onClick={closeFilters}>
-                    Apply
-                  </Button>
-                </Box>
-              </Box>
-            </Menu>
+            <FormControl fullWidth size="small">
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                label="Type"
+              >
+                <MenuItem value="all">All Types</MenuItem>
+                <MenuItem value="regular">Regular</MenuItem>
+                <MenuItem value="annual">Annual</MenuItem>
+                <MenuItem value="reserved">Reserved</MenuItem>
+              </Select>
+            </FormControl>
+            <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+              <Button size="small" onClick={() => { setStatusFilter("all"); setTypeFilter("all"); closeFilters(); }}>
+                Clear
+              </Button>
+              <Button size="small" variant="contained" onClick={closeFilters}>
+                Apply
+              </Button>
+            </Box>
           </Box>
+        </Menu>
       </Box>
       {/* Transactions Table */}
       <Paper>
@@ -1177,16 +1186,21 @@ const TransactionsList = () => {
               fullWidth
               margin="dense"
               autoFocus
+              inputRef={copyIdInputRef}
             />
             <Button
               variant="outlined"
               size="small"
               onClick={() => setScannerOpen(true)}
-              sx={{ height: 40 }}
+              sx={{ height: 40, display: { xs: "none", sm: "inline-flex" } }}
             >
               Scan QR
             </Button>
           </Box>
+          <MobileScanButton
+            label="Scan Copy QR"
+            onClick={() => setScannerOpen(true)}
+          />
           {returnError && (
             <Typography color="error" variant="caption" display="block" sx={{ mt: 1 }}>
               {returnError}
@@ -1391,6 +1405,15 @@ const TransactionsList = () => {
             <Button onClick={closeAssignScannerDialog}>Close</Button>
           </DialogActions>
         </Dialog>
+
+        <MobileScanDialog
+          open={searchScannerOpen}
+          onClose={() => setSearchScannerOpen(false)}
+          onDetected={(value) => setSearchTerm(value || "")}
+          title="Scan to Search Transactions"
+          elementId="transactions-search-qr"
+          targetSelector={`#${searchInputId}`}
+        />
 
       {/* Scanner dialog */}
       <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="xs" fullWidth>

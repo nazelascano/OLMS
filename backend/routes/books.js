@@ -1,6 +1,7 @@
 const express = require('express');
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const QRCode = require('qrcode');
+const { ObjectId } = require('mongodb');
 const { verifyToken, requireStaff, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
 const router = express.Router();
 
@@ -134,6 +135,94 @@ const sanitizeFileName = (value, fallback = 'labels') => {
         .replace(/\s+/g, '_')
         .replace(/[^a-zA-Z0-9_\-]/g, '')
         .slice(0, 80) || fallback;
+};
+
+const normalizeIdentifierValue = (value) => {
+    if (value === undefined || value === null) {
+        return '';
+    }
+    return String(value).trim();
+};
+
+const getAdapterType = (req) => {
+    if (!req?.dbAdapter || typeof req.dbAdapter.getType !== 'function') {
+        return null;
+    }
+    try {
+        return req.dbAdapter.getType();
+    } catch (error) {
+        return null;
+    }
+};
+
+const buildBookLookupFilters = (identifier, adapterType) => {
+    const normalized = normalizeIdentifierValue(identifier);
+    if (!normalized) {
+        return [];
+    }
+
+    const filters = [];
+    const seen = new Set();
+    const addFilter = (filter) => {
+        if (!filter) return;
+        const signature = JSON.stringify(filter);
+        if (seen.has(signature)) {
+            return;
+        }
+        seen.add(signature);
+        filters.push(filter);
+    };
+
+    if (adapterType === 'mongo' && ObjectId.isValid(normalized)) {
+        addFilter({ _id: new ObjectId(normalized) });
+    }
+
+    ['id', '_id', 'bookId', 'documentId'].forEach((key) => addFilter({ [key]: normalized }));
+
+    return filters;
+};
+
+const findBookByIdentifier = async (req, identifier) => {
+    const adapterType = getAdapterType(req);
+    const filters = buildBookLookupFilters(identifier, adapterType);
+    if (filters.length === 0) {
+        return null;
+    }
+
+    // Sequential lookup keeps compatibility with offline adapter that lacks $or support.
+    for (const filter of filters) {
+        try {
+            const book = await req.dbAdapter.findOneInCollection('books', filter);
+            if (book) {
+                return book;
+            }
+        } catch (error) {
+            console.warn(`Book lookup failed for filter ${JSON.stringify(filter)}`, error.message);
+        }
+    }
+
+    return null;
+};
+
+const resolveBookPersistenceFilter = (req, book) => {
+    if (!book) {
+        return null;
+    }
+
+    const adapterType = getAdapterType(req);
+    if (book.id) {
+        return { id: book.id };
+    }
+    if (book._id) {
+        if (adapterType === 'mongo' && ObjectId.isValid(book._id)) {
+            return { _id: new ObjectId(book._id) };
+        }
+        return { _id: book._id };
+    }
+    if (book.bookId) {
+        return { bookId: book.bookId };
+    }
+    return null;
 };
 
 const wrapTextLines = (text, maxCharsPerLine, maxLines) => {
@@ -730,17 +819,17 @@ router.get('/categories', verifyToken, async(req, res) => {
 
 router.get('/:id', verifyToken, async(req, res) => {
     try {
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) {
             setAuditContext(req, {
                 success: false,
                 status: 'Failed',
-                description: `Update book failed: book ${req.params.id} not found`,
+                description: `Get book failed: book ${req.params.id} not found`,
             });
             return res.status(404).json({ message: 'Book not found' });
         }
-    book.copiesCount = book.copies?.length || 0;
-    book.availableCopiesCount = book.copies?.filter(c => c.status === 'available').length || 0;
+        book.copiesCount = book.copies?.length || 0;
+        book.availableCopiesCount = book.copies?.filter(c => c.status === 'available').length || 0;
         res.json(book);
     } catch (error) {
         console.error('Get book error:', error);
@@ -1028,7 +1117,7 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
             }
         });
 
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) {
             setAuditContext(req, {
                 success: false,
@@ -1036,6 +1125,12 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
                 description: `Update book failed: book ${req.params.id} not found`,
             });
             return res.status(404).json({ message: 'Book not found' });
+        }
+
+        const persistenceFilter = resolveBookPersistenceFilter(req, book);
+        if (!persistenceFilter) {
+            console.error('Unable to resolve persistence filter for book update', req.params.id);
+            return res.status(500).json({ message: 'Failed to update book' });
         }
 
         if (Object.prototype.hasOwnProperty.call(payload, 'isbn') && payload.isbn !== book.isbn) {
@@ -1188,7 +1283,7 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
             return res.status(400).json({ message: 'No valid fields provided for update' });
         }
 
-        await req.dbAdapter.updateInCollection('books', { id: req.params.id }, updateData);
+        await req.dbAdapter.updateInCollection('books', persistenceFilter, updateData);
 
         const auditDetails = {
             updatedFields: updatedFields.filter((field) => field !== 'copies'),
@@ -1198,7 +1293,7 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
         }
 
         setAuditContext(req, {
-            entityId: req.params.id,
+            entityId: book.id || book._id || req.params.id,
             description: `Updated book ${book.title || req.params.id}`,
             details: auditDetails,
             metadata: {
@@ -1226,7 +1321,7 @@ router.delete('/:id', verifyToken, requireLibrarian, logAction('DELETE', 'book')
         setAuditContext(req, {
             entityId: req.params.id
         });
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) {
             setAuditContext(req, {
                 success: false,
@@ -1247,10 +1342,16 @@ router.delete('/:id', verifyToken, requireLibrarian, logAction('DELETE', 'book')
             });
             return res.status(400).json({ message: 'Cannot delete book with borrowed copies' });
         }
-        await req.dbAdapter.deleteFromCollection('books', { id: req.params.id });
+        const persistenceFilter = resolveBookPersistenceFilter(req, book);
+        if (!persistenceFilter) {
+            console.error('Unable to resolve persistence filter for book delete', req.params.id);
+            return res.status(500).json({ message: 'Failed to delete book' });
+        }
+
+        await req.dbAdapter.deleteFromCollection('books', persistenceFilter);
 
         setAuditContext(req, {
-            entityId: req.params.id,
+            entityId: book.id || book._id || req.params.id,
             description: `Deleted book ${book.title || req.params.id}`,
             details: {
                 isbn: book.isbn,
@@ -1289,7 +1390,7 @@ router.post('/:id/copies', verifyToken, requireStaff, logAction('ADD_COPIES', 'b
                 }
             }
         });
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) {
             setAuditContext(req, {
                 success: false,
@@ -1306,10 +1407,21 @@ router.post('/:id/copies', verifyToken, requireStaff, logAction('ADD_COPIES', 'b
             copyIds.push(copyId);
         }
         const updatedCopies = [...(book.copies || []), ...newCopies];
-        await req.dbAdapter.updateInCollection('books', { id: req.params.id }, { copies: updatedCopies, totalCopies: updatedCopies.length, availableCopies: updatedCopies.filter(c => c.status === 'available').length, updatedAt: new Date() });
+        const persistenceFilter = resolveBookPersistenceFilter(req, book);
+        if (!persistenceFilter) {
+            console.error('Unable to resolve persistence filter for add copies', req.params.id);
+            return res.status(500).json({ message: 'Failed to add book copies' });
+        }
+
+        await req.dbAdapter.updateInCollection('books', persistenceFilter, {
+            copies: updatedCopies,
+            totalCopies: updatedCopies.length,
+            availableCopies: updatedCopies.filter(c => c.status === 'available').length,
+            updatedAt: new Date()
+        });
 
         setAuditContext(req, {
-            entityId: req.params.id,
+            entityId: book.id || book._id || req.params.id,
             description: `Added ${numberOfCopies} copies to ${book.title || req.params.id}`,
             details: {
                 copyIds,
@@ -1337,7 +1449,7 @@ router.post('/:id/copies', verifyToken, requireStaff, logAction('ADD_COPIES', 'b
 
 router.get('/:id/copies/barcodes', verifyToken, requireStaff, logAction('GENERATE_BARCODES', 'book'), async(req, res) => {
     try {
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) {
             setAuditContext(req, {
                 success: false,
@@ -1415,7 +1527,7 @@ router.get('/:id/copies/barcodes', verifyToken, requireStaff, logAction('GENERAT
         });
 
         setAuditContext(req, {
-            entityId: req.params.id,
+            entityId: book.id || book._id || req.params.id,
             description: `Generated ${requestedCopyIds.length} barcode labels for ${book.title || req.params.id}`,
             success: true,
             status: 'Generated',
@@ -1445,7 +1557,7 @@ router.get('/:id/copies/barcodes', verifyToken, requireStaff, logAction('GENERAT
 
 router.get('/:id/copies', verifyToken, async(req, res) => {
     try {
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) return res.status(404).json({ message: 'Book not found' });
         res.json(book.copies || []);
     } catch (error) {
@@ -1456,7 +1568,7 @@ router.get('/:id/copies', verifyToken, async(req, res) => {
 
 router.get('/:id/history', verifyToken, async(req, res) => {
     try {
-        const book = await req.dbAdapter.findOneInCollection('books', { id: req.params.id });
+        const book = await findBookByIdentifier(req, req.params.id);
         if (!book) {
             return res.status(404).json({ message: 'Book not found' });
         }
@@ -1575,9 +1687,15 @@ router.patch('/copies/:copyId', verifyToken, requireStaff, logAction('UPDATE_COP
         updatedCopies[targetCopyIndex].updatedAt = new Date();
         updatedCopies[targetCopyIndex].updatedBy = req.user.id;
         const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
-        await req.dbAdapter.updateInCollection('books', { id: targetBook.id }, { copies: updatedCopies, availableCopies, updatedAt: new Date() });
+        const persistenceFilter = resolveBookPersistenceFilter(req, targetBook);
+        if (!persistenceFilter) {
+            console.error('Unable to resolve persistence filter for copy update', targetBook?.id || targetBook?._id || 'unknown');
+            return res.status(500).json({ message: 'Failed to update book copy' });
+        }
+
+        await req.dbAdapter.updateInCollection('books', persistenceFilter, { copies: updatedCopies, availableCopies, updatedAt: new Date() });
         setAuditContext(req, {
-            entityId: targetBook.id,
+            entityId: targetBook.id || targetBook._id,
             description: `Updated copy ${req.params.copyId} for ${targetBook.title || targetBook.id}`,
             details: {
                 status: status || updatedCopies[targetCopyIndex].status,
