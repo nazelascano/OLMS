@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -13,10 +13,18 @@ import {
 import { Visibility, VisibilityOff, Person, Lock } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import logo from "../../assets/images/logo.png";
+import loginBg from "../../assets/images/login_bg.jpg";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login, loginLoading } = useAuth();
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsOpen(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -82,20 +90,29 @@ const LoginPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
+        minWidth: "100vw",
+        width: "100vw",
+        height: "100vh",
         display: "flex",
         alignItems: "stretch",
-        backgroundColor: { xs: "#305FB7", md: "#FFFFFF" },
+        justifyContent: "stretch",
+        backgroundColor: { xs: "#305FB7", md: "#f5f5f5" },
         position: "relative",
         overflow: "hidden",
+        perspective: '2000px',
       }}
     >
       <Grid
         container
         sx={{
           minHeight: "100vh",
+          minWidth: "100vw",
+          width: "100vw",
+          height: "100vh",
           position: "relative",
           flexDirection: { xs: "column", md: "row" },
           zIndex: 1,
+          transformStyle: 'preserve-3d',
         }}
       >
         {" "}
@@ -105,7 +122,7 @@ const LoginPage = () => {
           xs={12}
           md={6}
           sx={{
-            background: "linear-gradient(135deg, #305FB7 0%, #4F7BC9 100%)",
+            background: "linear-gradient(90deg, #305FB7 0%, #305FB7 80%, #022a75ff 100%)",
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             alignItems: "center",
@@ -114,6 +131,12 @@ const LoginPage = () => {
             color: "white",
             position: "relative",
             zIndex: 1,
+            borderRadius: '10px 0 0 10px',
+            boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+            transformOrigin: 'right center',
+            transform: { xs: 'none', md: isOpen ? 'rotateY(0deg)' : 'rotateY(90deg)' },
+            transition: { xs: 'none', md: 'transform 3.2s cubic-bezier(0.77,0,0.175,1)' },
+            transformStyle: 'preserve-3d',
           }}
         >
           {/* School Logo */}{" "}
@@ -148,7 +171,14 @@ const LoginPage = () => {
           xs={12}
           md={6}
           sx={{
-            backgroundColor: { xs: "transparent", md: "#FFFFFF" },
+            backgroundColor: { xs: "transparent", md: "#FFFFFF00" },
+            backgroundImage: {
+              xs: 'none',
+              md: `linear-gradient(90deg, rgba(53, 53, 53, 1) 0%, rgba(236, 236, 236, 0) 20%, rgba(255, 255, 255, 0) 100%), url(${loginBg})`
+            },
+            backgroundSize: { xs: 'auto', md: 'cover' },
+            backgroundPosition: { xs: 'center', md: 'center' },
+            backgroundRepeat: 'no-repeat',
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -156,17 +186,23 @@ const LoginPage = () => {
             position: "relative",
             flexDirection: "column",
             gap: { xs: 2.5, md: 0 },
+            borderRadius: '0 10px 10px 0',
+            transformOrigin: 'left center',
+            transform: { xs: 'none', md: isOpen ? 'rotateY(0deg)' : 'rotateY(-90deg)' },
+            transition: { xs: 'none', md: 'transform 3.2s cubic-bezier(0.77,0,0.175,1)' },
+            transformStyle: 'preserve-3d',
+            overflow: 'hidden',
             "&::before": {
               content: '""',
               position: "absolute",
               top: 0,
-              left: "-50px",
-              width: "100px",
-              height: "100%",
-              background: "#FFFFFF",
-              borderTopLeftRadius: "50px",
-              borderBottomLeftRadius: "50px",
-              zIndex: 2,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              /* Removed blur */
+              background: 'rgba(255,255,255,0.25)',
+              zIndex: 1,
+              pointerEvents: 'none',
               display: { xs: "none", md: "block" },
             },
           }}
@@ -203,18 +239,18 @@ const LoginPage = () => {
           </Box>
           <Box
             sx={{
-              width: "100%",
-              maxWidth: { xs: 360, sm: 400 },
-              padding: { xs: 3, sm: 3, md: 2 },
-              backgroundColor: { xs: "#FFFFFF", md: "transparent" },
-              borderRadius: { xs: 3, md: 0 },
-              boxShadow: {
-                xs: "0 12px 24px rgba(15, 23, 42, 0.16)",
-                md: "none",
-              },
-              mx: { xs: "auto", md: 0 },
+              width: { xs: '100%', md: '370px' },
+              maxWidth: { xs: '100%', md: '370px' },
+              padding: { xs: 3, sm: 3, md: 4 },
+              background: `white`,
+              boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18), 0 0 24px 0 rgba(180,180,180,0.10) inset',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(48,95,183,0.18)',
+              mx: { xs: 0, md: 0 },
               position: "relative",
-              zIndex: 3,
+              zIndex: 2,
+              /* Move form down on md+ screens */
+              mt: { xs: 0, md: 20 },
             }}
           >
             {/* Header */}{" "}
@@ -256,7 +292,7 @@ const LoginPage = () => {
                   aria-invalid={Boolean(error && !formData.username)}
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      backgroundColor: "#E8EAF0",
+                      backgroundColor: "transparent !important",
                       borderRadius: "8px",
                       height: "42px",
                       "& fieldset": {
@@ -275,6 +311,9 @@ const LoginPage = () => {
                       color: "#333333",
                       fontSize: "0.9rem",
                       fontWeight: 500,
+                    },
+                    "& input": {
+                      backgroundColor: "transparent !important",
                     },
                   }}
                   InputProps={{
@@ -316,7 +355,7 @@ const LoginPage = () => {
                   aria-invalid={Boolean(error && !formData.password)}
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      backgroundColor: "#E8EAF0",
+                      backgroundColor: "transparent !important",
                       borderRadius: "8px",
                       height: "42px",
                       "& fieldset": {
@@ -335,6 +374,9 @@ const LoginPage = () => {
                       color: "#333333",
                       fontSize: "0.9rem",
                       fontWeight: 500,
+                    },
+                    "& input": {
+                      backgroundColor: "transparent !important",
                     },
                   }}
                   InputProps={{
@@ -395,7 +437,7 @@ const LoginPage = () => {
                     color: "#22C55E",
                     borderColor: "#22C55E",
                     borderWidth: "2px",
-                    backgroundColor: "transparent",
+                    backgroundColor: "white",
                     minWidth: "100px",
                     "&:hover": {
                       backgroundColor: "rgba(34, 197, 94, 0.04)",

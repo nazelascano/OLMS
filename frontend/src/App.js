@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import customTheme from "./theme/customTheme";
 import { useAuth } from "./contexts/AuthContext";
 import Loading from "./components/Loading";
+import SplashScreen from "./components/SplashScreen";
 
 // Layout Components
 import Layout from "./components/Layout/Layout";
@@ -56,8 +57,19 @@ import UnauthorizedPage from "./pages/Error/UnauthorizedPage";
 function App() {
   const { user, loading } = useAuth();
 
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (loading) {
     return <Loading type="fullscreen" message="Loading application..." />;
+  }
+
+  if (showSplash) {
+    return <SplashScreen />;
   }
 
   // Redirect to appropriate dashboard based on role

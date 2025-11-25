@@ -1,3 +1,19 @@
+/* Ensure MUI TextField backgrounds remain transparent even when autofilled or filled */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    background-color: transparent !important;
+    -webkit-text-fill-color: #333 !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+input.MuiOutlinedInput-input,
+input.MuiInputBase-input {
+    background-color: transparent !important;
+}
 * {
     margin: 0;
     padding: 0;
