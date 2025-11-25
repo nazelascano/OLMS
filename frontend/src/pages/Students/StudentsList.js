@@ -45,7 +45,11 @@ import { studentsAPI, settingsAPI } from "../../utils/api";
 import { resolveEntityAvatar } from "../../utils/media";
 import toast from "react-hot-toast";
 import StudentImportDialog from "./StudentImportDialog";
-import { ensureUserAttributes } from "../../utils/userAttributes";
+import {
+  ensureUserAttributes,
+  collectAllSections,
+  getSectionsForGrade,
+} from "../../utils/userAttributes";
 import { PageLoading } from "../../components/Loading";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 
@@ -84,8 +88,15 @@ const StudentsList = () => {
     setMenuStudent(null);
   };
 
-  const sections = ["A", "B", "C", "D", "E"];
   const gradeOptions = userAttributes.gradeLevels;
+  const gradeStructure = userAttributes.gradeStructure || [];
+  const allSections = collectAllSections(gradeStructure);
+  const availableSections = gradeFilter
+    ? (() => {
+        const gradeSpecific = getSectionsForGrade(gradeStructure, gradeFilter);
+        return gradeSpecific.length > 0 ? gradeSpecific : allSections;
+      })()
+    : allSections;
   const hasGradeOptions = gradeOptions.length > 0;
   // Filter menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
@@ -103,6 +114,15 @@ const StudentsList = () => {
       return gradeOptions.includes(previous) ? previous : "";
     });
   }, [gradeOptions]);
+
+  useEffect(() => {
+    setSectionFilter((previous) => {
+      if (!previous) {
+        return previous;
+      }
+      return availableSections.includes(previous) ? previous : "";
+    });
+  }, [availableSections]);
 
   useEffect(() => {
     let isMounted = true;
@@ -394,13 +414,20 @@ const StudentsList = () => {
                   value={sectionFilter}
                   onChange={(e) => setSectionFilter(e.target.value)}
                   label="Section"
+                  disabled={availableSections.length === 0}
                 >
                   <MenuItem value=""> All Sections </MenuItem>
-                  {sections.map((section) => (
-                    <MenuItem key={section} value={section}>
-                      Section {section}
+                  {availableSections.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      No sections configured
                     </MenuItem>
-                  ))}
+                  ) : (
+                    availableSections.map((section) => (
+                      <MenuItem key={section} value={section}>
+                        Section {section}
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
 

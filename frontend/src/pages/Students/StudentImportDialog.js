@@ -25,10 +25,12 @@ import {
 import { CloudUpload, GetApp, Check, Error, Close } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { studentsAPI, settingsAPI } from "../../utils/api";
-import { ensureUserAttributes } from "../../utils/userAttributes";
+import {
+  ensureUserAttributes,
+  getSectionsForGrade,
+  collectAllSections,
+} from "../../utils/userAttributes";
 import { downloadPDF } from "../../utils/pdfGenerator";
-
-const SECTION_OPTIONS = ["A", "B", "C", "D", "E"];
 
 const sanitizeLibraryCardNumber = (value = "") =>
   value.toString().trim().toUpperCase();
@@ -56,6 +58,12 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [autoPrintCards, setAutoPrintCards] = useState(true);
 
   const gradeOptions = userAttributes.gradeLevels || [];
+  const gradeStructure = userAttributes.gradeStructure || [];
+  const allSectionOptions = collectAllSections(gradeStructure);
+  const resolveSectionOptions = (gradeName) => {
+    const options = getSectionsForGrade(gradeStructure, gradeName);
+    return options.length > 0 ? options : allSectionOptions;
+  };
 
   useEffect(() => {
     if (!open) {
@@ -153,8 +161,11 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const downloadTemplate = () => {
     const sampleGradePrimary = gradeOptions[0] || "Grade 9";
     const sampleGradeSecondary = gradeOptions[1] || gradeOptions[0] || "Grade 10";
-    const sampleSectionPrimary = SECTION_OPTIONS[0];
-    const sampleSectionSecondary = SECTION_OPTIONS[1] || SECTION_OPTIONS[0];
+    const primarySections = resolveSectionOptions(sampleGradePrimary);
+    const secondarySections = resolveSectionOptions(sampleGradeSecondary);
+    const sampleSectionPrimary = primarySections[0] || "A";
+    const sampleSectionSecondary =
+      secondarySections[0] || primarySections[1] || sampleSectionPrimary || "B";
 
     const template = `firstName,lastName,middleName,email,phoneNumber,libraryCardNumber,lrn,grade,section,barangay,municipality,province,fullAddress,parentGuardianName,parentPhone
 John,Doe,Santos,john.doe@student.example.edu,09123456789,LIB-25-0101,123456789012,${sampleGradePrimary},${sampleSectionPrimary},Barangay 1,Quezon City,Metro Manila,"123 Main St Barangay 1 Quezon City",Jane Doe,09987654321
@@ -231,11 +242,13 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,,123456789013,${sampl
       errors.push("Invalid grade (must match the configured list)");
     }
 
+    const allowedSections = resolveSectionOptions(normalizedGrade);
     if (
       normalizedSection &&
-      !SECTION_OPTIONS.some((section) => section.toLowerCase() === normalizedSection.toLowerCase())
+      allowedSections.length > 0 &&
+      !allowedSections.some((section) => section.toLowerCase() === normalizedSection.toLowerCase())
     ) {
-      errors.push("Invalid section (must be A-E)");
+      errors.push("Invalid section for the selected grade");
     }
 
     return errors;

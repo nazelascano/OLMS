@@ -26,7 +26,11 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, studentsAPI, settingsAPI } from "../../utils/api";
-import { ensureUserAttributes } from "../../utils/userAttributes";
+import {
+  ensureUserAttributes,
+  getSectionsForGrade,
+  collectAllSections,
+} from "../../utils/userAttributes";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 import {
@@ -102,9 +106,25 @@ const StudentForm = () => {
   const [attributeError, setAttributeError] = useState("");
 
   const gradeOptions = userAttributes.gradeLevels;
+  const gradeStructure = useMemo(
+    () => userAttributes.gradeStructure || [],
+    [userAttributes.gradeStructure],
+  );
   const curriculumOptions = userAttributes.curriculum;
   const hasGradeOptions = gradeOptions.length > 0;
   const hasCurriculumOptions = curriculumOptions.length > 0;
+  const allSectionOptions = useMemo(
+    () => collectAllSections(gradeStructure),
+    [gradeStructure],
+  );
+  const sectionOptions = useMemo(() => {
+    const gradeSpecific = getSectionsForGrade(gradeStructure, formData.grade);
+    if (gradeSpecific.length > 0) {
+      return gradeSpecific;
+    }
+    return allSectionOptions;
+  }, [gradeStructure, formData.grade, allSectionOptions]);
+  const hasSectionOptions = sectionOptions.length > 0;
   const [provinceOptions, setProvinceOptions] = useState([]);
   const [municipalityOptions, setMunicipalityOptions] = useState([]);
   const [barangayOptions, setBarangayOptions] = useState([]);
@@ -202,9 +222,27 @@ const StudentForm = () => {
         updates.curriculum = "";
       }
 
+      const activeGrade =
+        updates.grade !== undefined ? updates.grade : prev.grade;
+      const gradeSpecificSections = getSectionsForGrade(
+        gradeStructure,
+        activeGrade,
+      );
+      const allowedSections =
+        gradeSpecificSections.length > 0
+          ? gradeSpecificSections
+          : allSectionOptions;
+      if (
+        prev.section &&
+        allowedSections.length > 0 &&
+        !allowedSections.includes(prev.section)
+      ) {
+        updates.section = "";
+      }
+
       return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
     });
-  }, [gradeOptions, curriculumOptions]);
+  }, [gradeOptions, curriculumOptions, gradeStructure, allSectionOptions]);
 
   useEffect(() => {
     let isMounted = true;
@@ -366,10 +404,22 @@ const StudentForm = () => {
         sanitizedValue = sanitizeLrnInput(value);
       }
     }
-    setFormData((prev) => ({
-      ...prev,
-      [name]: isCheckbox ? checked : sanitizedValue,
-    }));
+
+    const nextValue = isCheckbox ? checked : sanitizedValue;
+
+    setFormData((prev) => {
+      if (name === "grade" && prev.grade !== nextValue) {
+        return {
+          ...prev,
+          grade: nextValue,
+          section: "",
+        };
+      }
+      return {
+        ...prev,
+        [name]: nextValue,
+      };
+    });
 
     // Clear validation error when user starts typing
     if (validationErrors[name]) {
@@ -572,6 +622,17 @@ const StudentForm = () => {
     }
     if (!formData.grade) errors.grade = "Grade is required";
     if (!formData.section) errors.section = "Section is required";
+    const validationSections = (() => {
+      const gradeSpecific = getSectionsForGrade(gradeStructure, formData.grade);
+      return gradeSpecific.length > 0 ? gradeSpecific : allSectionOptions;
+    })();
+    if (
+      formData.section &&
+      validationSections.length > 0 &&
+      !validationSections.includes(formData.section)
+    ) {
+      errors.section = "Section must match the configured list";
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
@@ -769,7 +830,7 @@ const StudentForm = () => {
                       </Alert>
                     )}{" "}
                   </Grid>
-                  {/* Row 1: LRN and Grade */}{" "}
+                  {/* Row 1: LRN and Curriculum */}{" " }
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
@@ -784,6 +845,38 @@ const StudentForm = () => {
                       required
                     />
                   </Grid>{" "}
+                  <Grid item xs={12} sm={6}>
+                    {hasCurriculumOptions ? (
+                      <TextField
+                        select
+                        fullWidth
+                        label="Curriculum"
+                        name="curriculum"
+                        value={formData.curriculum}
+                        onChange={handleChange}
+                        error={!!validationErrors.curriculum}
+                        helperText={validationErrors.curriculum}
+                      >
+                        {curriculumOptions.map((curriculum) => (
+                          <MenuItem key={curriculum} value={curriculum}>
+                            {curriculum}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    ) : (
+                      <TextField
+                        fullWidth
+                        label="Curriculum"
+                        name="curriculum"
+                        value={formData.curriculum}
+                        onChange={handleChange}
+                        error={!!validationErrors.curriculum}
+                        helperText={validationErrors.curriculum}
+                        placeholder="Enter curriculum"
+                      />
+                    )}
+                  </Grid>
+                  {/* Row 2: Grade and Section inputs */}{" " }
                   <Grid item xs={12} sm={6}>
                       {hasGradeOptions ? (
                         <TextField
@@ -817,51 +910,37 @@ const StudentForm = () => {
                         />
                       )}
                   </Grid>
-                  {/* Row 2: Section input */}{" " }
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
+                      select
                       label="Section"
                       name="section"
                       value={formData.section}
                       onChange={handleChange}
                       error={!!validationErrors.section}
-                      helperText={validationErrors.section}
-                      placeholder="Enter section"
+                      helperText={
+                        validationErrors.section ||
+                        (hasSectionOptions
+                          ? ""
+                          : "No sections configured in settings")
+                      }
                       required
-                    />{" " }
-                  </Grid>{" " }
-                  <Grid item xs={12} sm={6}>
-                    {hasCurriculumOptions ? (
-                      <TextField
-                        select
-                        fullWidth
-                        label="Curriculum"
-                        name="curriculum"
-                        value={formData.curriculum}
-                        onChange={handleChange}
-                        error={!!validationErrors.curriculum}
-                        helperText={validationErrors.curriculum}
-                      >
-                        {curriculumOptions.map((curriculum) => (
-                          <MenuItem key={curriculum} value={curriculum}>
-                            {curriculum}
+                      disabled={!hasSectionOptions}
+                    >
+                      {hasSectionOptions ? (
+                        sectionOptions.map((section) => (
+                          <MenuItem key={section} value={section}>
+                            {section}
                           </MenuItem>
-                        ))}
-                      </TextField>
-                    ) : (
-                      <TextField
-                        fullWidth
-                        label="Curriculum"
-                        name="curriculum"
-                        value={formData.curriculum}
-                        onChange={handleChange}
-                        error={!!validationErrors.curriculum}
-                        helperText={validationErrors.curriculum}
-                        placeholder="Enter curriculum"
-                      />
-                    )}
-                  </Grid>{" "}
+                        ))
+                      ) : (
+                        <MenuItem value="" disabled>
+                          No sections available
+                        </MenuItem>
+                      )}
+                    </TextField>{" " }
+                  </Grid>{" " }
                 </Grid>{" "}
               </CardContent>{" "}
             </Card>{" "}

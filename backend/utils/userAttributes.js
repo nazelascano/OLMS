@@ -25,6 +25,11 @@ const DEFAULT_GRADE_LEVELS = [
   'Graduate'
 ];
 
+const DEFAULT_GRADE_STRUCTURE = DEFAULT_GRADE_LEVELS.map((grade) => ({
+  grade,
+  sections: []
+}));
+
 const normalizeStringList = (input, fallback = []) => {
   const source = Array.isArray(input) ? input : [];
   const normalized = source
@@ -59,9 +64,55 @@ const toSlug = (value, fallback) => {
   return slug || fallback;
 };
 
+const normalizeGradeStructure = (input, fallback = DEFAULT_GRADE_STRUCTURE, { useFallbackWhenEmpty = true } = {}) => {
+  const source = Array.isArray(input) ? input : [];
+  const normalized = [];
+  const seenGrades = new Set();
+
+  source.forEach((entry) => {
+    let gradeName = '';
+    let sections = [];
+
+    if (typeof entry === 'string') {
+      gradeName = entry.trim();
+    } else if (entry && typeof entry === 'object') {
+      gradeName = typeof entry.grade === 'string' ? entry.grade.trim() : '';
+      if (!gradeName && typeof entry.name === 'string') {
+        gradeName = entry.name.trim();
+      }
+      if (Array.isArray(entry.sections)) {
+        sections = entry.sections;
+      } else if (Array.isArray(entry.sectionList)) {
+        sections = entry.sectionList;
+      }
+    }
+
+    if (!gradeName || seenGrades.has(gradeName.toLowerCase())) {
+      return;
+    }
+
+    normalized.push({
+      grade: gradeName,
+      sections: normalizeStringList(sections, [])
+    });
+    seenGrades.add(gradeName.toLowerCase());
+  });
+
+  if (normalized.length === 0) {
+    if (useFallbackWhenEmpty && Array.isArray(fallback) && fallback.length > 0) {
+      return fallback.map((entry) => ({ ...entry }));
+    }
+    return [];
+  }
+
+  return normalized;
+};
+
 module.exports = {
   DEFAULT_CURRICULA,
   DEFAULT_GRADE_LEVELS,
+  DEFAULT_GRADE_STRUCTURE,
   normalizeStringList,
+  normalizeGradeStructure,
   toSlug
 };

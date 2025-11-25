@@ -44,6 +44,7 @@ import { api, settingsAPI } from "../../utils/api";
 import {
   ensureUserAttributes,
   normalizeStringList,
+  normalizeGradeStructure,
 } from "../../utils/userAttributes";
 
 const TabPanel = ({ children, value, index }) => {
@@ -296,6 +297,7 @@ const SettingsPage = () => {
   );
   const [newCurriculum, setNewCurriculum] = useState("");
   const [newGradeLevel, setNewGradeLevel] = useState("");
+  const [sectionDrafts, setSectionDrafts] = useState({});
 
   useEffect(() => {
     fetchAllSettings();
@@ -374,9 +376,15 @@ const SettingsPage = () => {
   };
 
   const handleUserAttributesSave = () => {
+    const normalizedStructure = normalizeGradeStructure(
+      userAttributes.gradeStructure || [],
+      [],
+      { useFallbackWhenEmpty: false }
+    );
     const sanitized = {
       curriculum: normalizeStringList(userAttributes.curriculum),
-      gradeLevels: normalizeStringList(userAttributes.gradeLevels),
+      gradeLevels: normalizedStructure.map((entry) => entry.grade),
+      gradeStructure: normalizedStructure,
     };
 
     saveSettings("user-attributes", sanitized);
@@ -424,22 +432,113 @@ const SettingsPage = () => {
     if (!value) return;
 
     setUserAttributes((prev) => {
-      if (prev.gradeLevels.some((item) => item.toLowerCase() === value.toLowerCase())) {
+      const structure = Array.isArray(prev.gradeStructure) ? prev.gradeStructure : [];
+      if (structure.some((entry) => entry.grade?.toLowerCase() === value.toLowerCase())) {
         return prev;
       }
+      const nextStructure = normalizeGradeStructure(
+        [
+          ...structure,
+          { grade: value, sections: [] },
+        ],
+        [],
+        { useFallbackWhenEmpty: false }
+      );
       return {
         ...prev,
-        gradeLevels: [...prev.gradeLevels, value],
+        gradeStructure: nextStructure,
+        gradeLevels: nextStructure.map((entry) => entry.grade),
       };
     });
     setNewGradeLevel("");
   };
 
   const handleRemoveGradeLevel = (value) => {
-    setUserAttributes((prev) => ({
+    setUserAttributes((prev) => {
+      const structure = Array.isArray(prev.gradeStructure) ? prev.gradeStructure : [];
+      const nextStructure = normalizeGradeStructure(
+        structure.filter((entry) => entry.grade !== value),
+        [],
+        { useFallbackWhenEmpty: false }
+      );
+      return {
+        ...prev,
+        gradeStructure: nextStructure,
+        gradeLevels: nextStructure.map((entry) => entry.grade),
+      };
+    });
+    setSectionDrafts((prev) => {
+      if (!prev[value]) {
+        return prev;
+      }
+      const nextDrafts = { ...prev };
+      delete nextDrafts[value];
+      return nextDrafts;
+    });
+  };
+
+  const handleSectionDraftChange = (grade, value) => {
+    setSectionDrafts((prev) => ({
       ...prev,
-      gradeLevels: prev.gradeLevels.filter((item) => item !== value),
+      [grade]: value,
     }));
+  };
+
+  const handleAddSection = (grade) => {
+    if (!grade) {
+      return;
+    }
+    const value = (sectionDrafts[grade] || "").trim();
+    if (!value) {
+      return;
+    }
+
+    setUserAttributes((prev) => {
+      const structure = Array.isArray(prev.gradeStructure) ? prev.gradeStructure : [];
+      const nextStructure = structure.map((entry) => {
+        if (entry.grade !== grade) {
+          return entry;
+        }
+        if (entry.sections.some((section) => section.toLowerCase() === value.toLowerCase())) {
+          return entry;
+        }
+        return {
+          ...entry,
+          sections: [...entry.sections, value],
+        };
+      });
+      return {
+        ...prev,
+        gradeStructure: nextStructure,
+      };
+    });
+
+    setSectionDrafts((prev) => ({
+      ...prev,
+      [grade]: "",
+    }));
+  };
+
+  const handleRemoveSection = (grade, section) => {
+    if (!grade) {
+      return;
+    }
+    setUserAttributes((prev) => {
+      const structure = Array.isArray(prev.gradeStructure) ? prev.gradeStructure : [];
+      const nextStructure = structure.map((entry) => {
+        if (entry.grade !== grade) {
+          return entry;
+        }
+        return {
+          ...entry,
+          sections: entry.sections.filter((item) => item !== section),
+        };
+      });
+      return {
+        ...prev,
+        gradeStructure: nextStructure,
+      };
+    });
   };
 
   const handleDeleteCategory = async (categoryId) => {
@@ -1463,21 +1562,67 @@ const SettingsPage = () => {
                         Add
                       </Button>
                     </Stack>
-                    {userAttributes.gradeLevels.length === 0 ? (
+                    {(!userAttributes.gradeStructure || userAttributes.gradeStructure.length === 0) ? (
                       <Typography color="text.secondary">
-                        No grade levels configured. Add at least one option.
+                        No grade levels configured. Add a grade, then list sections for each grade.
                       </Typography>
                     ) : (
-                      <Stack direction="row" flexWrap="wrap" spacing={1}>
-                        {userAttributes.gradeLevels.map((gradeLevel) => (
-                          <Chip
-                            key={gradeLevel}
-                            label={gradeLevel}
-                            onDelete={() => handleRemoveGradeLevel(gradeLevel)}
-                            sx={{ mb: 1 }}
-                            color="secondary"
-                            variant="outlined"
-                          />
+                      <Stack spacing={2}>
+                        {userAttributes.gradeStructure.map((entry) => (
+                          <Paper key={entry.grade} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                              <Typography variant="subtitle1">{entry.grade}</Typography>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleRemoveGradeLevel(entry.grade)}
+                                aria-label={`Remove ${entry.grade}`}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Stack>
+                            {entry.sections.length === 0 ? (
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                No sections yet. Add at least one section for this grade.
+                              </Typography>
+                            ) : (
+                              <Stack direction="row" flexWrap="wrap" spacing={1} sx={{ mt: 1 }}>
+                                {entry.sections.map((section) => (
+                                  <Chip
+                                    key={`${entry.grade}-${section}`}
+                                    label={`Section ${section}`}
+                                    onDelete={() => handleRemoveSection(entry.grade, section)}
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{ mb: 1 }}
+                                  />
+                                ))}
+                              </Stack>
+                            )}
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label={`Add section for ${entry.grade}`}
+                                value={sectionDrafts[entry.grade] || ""}
+                                onChange={(event) => handleSectionDraftChange(entry.grade, event.target.value)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter") {
+                                    event.preventDefault();
+                                    handleAddSection(entry.grade);
+                                  }
+                                }}
+                              />
+                              <Button
+                                variant="outlined"
+                                startIcon={<Add />}
+                                onClick={() => handleAddSection(entry.grade)}
+                                disabled={!((sectionDrafts[entry.grade] || "").trim())}
+                              >
+                                Add Section
+                              </Button>
+                            </Stack>
+                          </Paper>
                         ))}
                       </Stack>
                     )}

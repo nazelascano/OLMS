@@ -4,7 +4,9 @@ const { invalidateSettingsCache } = require('../utils/settingsCache');
 const {
     DEFAULT_CURRICULA,
     DEFAULT_GRADE_LEVELS,
-    normalizeStringList
+    DEFAULT_GRADE_STRUCTURE,
+    normalizeStringList,
+    normalizeGradeStructure
 } = require('../utils/userAttributes');
 const router = express.Router();
 
@@ -220,17 +222,30 @@ router.get('/notifications', verifyToken, requireLibrarian, async(req, res) => {
 
 router.get('/user-attributes', verifyToken, requireLibrarian, async(req, res) => {
     try {
-        const [curriculaSetting, gradeLevelsSetting] = await Promise.all([
+        const [curriculaSetting, gradeLevelsSetting, gradeStructureSetting] = await Promise.all([
             req.dbAdapter.findOneInCollection('settings', { id: 'USER_CURRICULA' }),
-            req.dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_LEVELS' })
+            req.dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_LEVELS' }),
+            req.dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_STRUCTURE' })
         ]);
 
         const curriculumOptions = normalizeStringList(curriculaSetting?.value, DEFAULT_CURRICULA);
-        const gradeLevels = normalizeStringList(gradeLevelsSetting?.value, DEFAULT_GRADE_LEVELS);
+        const rawStructureSource = Array.isArray(gradeStructureSetting?.value)
+            ? gradeStructureSetting.value
+            : Array.isArray(gradeLevelsSetting?.value)
+                ? gradeLevelsSetting.value
+                : DEFAULT_GRADE_STRUCTURE;
+
+        const gradeStructure = normalizeGradeStructure(rawStructureSource, DEFAULT_GRADE_STRUCTURE);
+        const gradeLevelFallback = gradeStructure.map((entry) => entry.grade);
+        const gradeLevels = normalizeStringList(
+            Array.isArray(gradeLevelsSetting?.value) ? gradeLevelsSetting.value : gradeLevelFallback,
+            gradeLevelFallback.length > 0 ? gradeLevelFallback : DEFAULT_GRADE_LEVELS
+        );
 
         res.json({
             curriculum: curriculumOptions,
-            gradeLevels
+            gradeLevels,
+            gradeStructure
         });
     } catch (error) {
         console.error('Get user attributes settings error:', error);
@@ -427,11 +442,21 @@ router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 's
     try {
         const {
             curriculum = [],
-            gradeLevels = []
+            gradeLevels = [],
+            gradeStructure = []
         } = req.body || {};
 
         const normalizedCurriculum = normalizeStringList(curriculum, DEFAULT_CURRICULA);
-        const normalizedGradeLevels = normalizeStringList(gradeLevels, DEFAULT_GRADE_LEVELS);
+        const normalizedGradeStructure = normalizeGradeStructure(
+            Array.isArray(gradeStructure) && gradeStructure.length > 0 ? gradeStructure : gradeLevels,
+            DEFAULT_GRADE_STRUCTURE,
+            { useFallbackWhenEmpty: false }
+        );
+        const structureGradeNames = normalizedGradeStructure.map((entry) => entry.grade);
+        const normalizedGradeLevels = normalizeStringList(
+            gradeLevels && gradeLevels.length > 0 ? gradeLevels : structureGradeNames,
+            structureGradeNames.length > 0 ? structureGradeNames : DEFAULT_GRADE_LEVELS
+        );
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, [
             {
@@ -447,6 +472,13 @@ router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 's
                 type: 'array',
                 category: USER_CATEGORY,
                 description: 'Configured grade level options for users and students'
+            },
+            {
+                id: 'USER_GRADE_STRUCTURE',
+                value: normalizedGradeStructure,
+                type: 'array',
+                category: USER_CATEGORY,
+                description: 'Configured grade levels with section options'
             }
         ]);
         invalidateSettingsCache();
