@@ -22,7 +22,7 @@ const LoginPage = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsOpen(true), 500);
+    const timer = setTimeout(() => setIsOpen(true), 100);
     return () => clearTimeout(timer);
   }, []);
 

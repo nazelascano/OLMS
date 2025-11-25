@@ -50,23 +50,83 @@ const deriveStudentLibraryId = (student = {}) => {
 const drawCardFront = async (doc, student) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 5;
+  const margin = 3;
 
-  // Title centered at top
+  // 3. Library ID box (centered)
+  // Library ID label and number to the right of the photo box
+  // Use the same photoSize, photoX, photoY as the photo box below
+  let photoSize = 25;
+  let photoX = margin;
+  let photoY = (pageHeight / 2 - photoSize / 2) + 5;
+  const idX = photoX + photoSize + 3 ; // 3mm gap after photo
+  const idY = photoY + photoSize - 10 ;
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(120,120,120);
+  doc.text('LIBRARY ID', idX, idY, {align:'left'});
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0,0,0);
+  doc.text(student.libraryCardNumber || '', idX, idY + 7, {align:'left'});
+
+  
+
+  // 2. Logo, school name, and address (top right)
+  try {
+    const logoImg = await import('../assets/images/logo.png');
+    const logoW = 14, logoH = 14;
+    const logoX = pageWidth - margin - logoW;
+    const logoY = margin;
+    doc.addImage(logoImg.default || logoImg, 'PNG', logoX, logoY, logoW, logoH);
+    // School name and address to the left of logo
+    const textRight = logoX - 2;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0,0,0);
+    doc.text('Odiongan National High School', textRight, logoY + 6, {align:'right'});
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80,80,80);
+    doc.text('Dapawan, Odiongan, Romblon', textRight, logoY + 11, {align:'right'});
+  } catch (e) {
+    // Fallback: just text
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0,0,0,0);
+    doc.text('Odiongan National High School', pageWidth - margin, margin + 6, {align:'right'});
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80,80,80);
+    doc.text('Dapawan, Odiongan, Romblon', pageWidth - margin, margin + 11, {align:'right'});
+  }
+  // (removed unused centerX)
+  // ...existing code...
+
+  // 5. Name in red bar (bottom)
+  const barH = 8;
+  doc.setFillColor(0, 102, 204); // blue color
+  doc.rect(0, pageHeight-barH, pageWidth, barH, 'F');
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Odiongan National High School ', pageWidth / 2, margin + 2, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.text('Dapawan, Odiongan, Romblon', pageWidth / 2, margin + 6, { align: 'center' });
-  doc.setFontSize(10);
-  doc.text('Library Card', pageWidth / 2, margin + 12, { align: 'center' });
+  doc.setTextColor(255,255,255);
+  const fullName = `${student.firstName || ''} ${student.middleName || ''} ${student.lastName || ''}`.trim() || 'Name Surname';
+  doc.text(fullName, margin+2, pageHeight-barH/3, {align:'left'});
+
+  // 6. QR code (bottom right)
+  const qrSizeMm = 15;
+  const qrX = pageWidth - margin - qrSizeMm;
+  const qrY = pageHeight - qrSizeMm - 2;
+  try {
+    const qrData = (student.libraryCardNumber || '');
+    const dataUrl = await QRCode.toDataURL(String(qrData));
+    doc.addImage(dataUrl, 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+  } catch (err) {
+    // ignore QR errors
+  }
+  doc.setTextColor(0);
   
   // Define photo area (left)
   // Make the photo slightly smaller so there's room for the info block between photo and QR
-  const photoSize = 25; // square photo in mm
-  const photoX = margin;
-  const photoY = (pageHeight / 2 - photoSize / 2) + 5;
   doc.setDrawColor(0);
   doc.setLineWidth(0.5);
   doc.rect(photoX, photoY, photoSize, photoSize);
@@ -79,43 +139,7 @@ const drawCardFront = async (doc, student) => {
   doc.setFont('helvetica', 'bold');
   
 
-  // Right side: info area (to the right of photo)
-  const gapBetween = 2;
-  const infoX = photoX + photoSize + gapBetween;
-  const infoY = photoY;
-  // QR size and computed available width for the info block
-  const qrSizeMm = 20;
-  const qrX = pageWidth - margin - qrSizeMm;
-  const infoMaxWidth = qrX - infoX - (gapBetween * 2); // small padding
-
-  // Name label and bolded name (allow wrapping)
-  doc.setFont('helvetica', 'bold');
-  const fullName = `${student.firstName || ''} ${student.middleName || ''} ${student.lastName || ''}`.trim() || 'N/A';
-  const nameLines = doc.splitTextToSize(fullName, infoMaxWidth);
-  doc.setFontSize(12);
-  doc.text(nameLines, infoX, infoY + 5);
-
-  // Grade & Section
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  const gradeText = `${student.grade || 'N/A'}${student.section ? ' - ' + student.section : ''}`;
-  doc.text(gradeText, infoX, infoY + 20);
-
-  // QR code on the rightmost area, align top with the name area
-  const qrY = pageHeight / 2 - qrSizeMm / 2;
-  try {
-    const qrData = (student.libraryCardNumber || 'N/A');
-    const dataUrl = await QRCode.toDataURL(String(qrData));
-    doc.addImage(dataUrl, 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
-  } catch (err) {
-    console.warn('QR generation failed', err);
-  }
-  // no divider line — keep the front clean
-  
-  // Library card number 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text(student.libraryCardNumber || '', qrX , qrY + qrSizeMm + 3);
+  // (removed duplicate old layout code)
 };
 
 const drawCardBack = (doc) => {

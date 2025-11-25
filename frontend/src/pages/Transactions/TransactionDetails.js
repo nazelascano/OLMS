@@ -255,13 +255,13 @@ const TransactionDetails = () => {
       return (
         <Box>
           {result.returnedItems !== undefined && (
-            <Typography variant="body2">Returned items: {String(result.returnedItems)}</Typography>
+            <Typography variant="body2">{`Returned ${result.returnedItems} item${result.returnedItems === 1 ? '' : 's'}.`}</Typography>
           )}
           {result.fineAmount !== undefined && (
-            <Typography variant="body2">Fine: {formatCurrency(result.fineAmount)}</Typography>
+            <Typography variant="body2">{`A fine of ${formatCurrency(result.fineAmount)} was applied.`}</Typography>
           )}
           {result.daysOverdue !== undefined && (
-            <Typography variant="body2">Days overdue: {String(result.daysOverdue)}</Typography>
+            <Typography variant="body2">{`The item was overdue by ${result.daysOverdue} day${result.daysOverdue === 1 ? '' : 's'}.`}</Typography>
           )}
         </Box>
       );
@@ -273,8 +273,8 @@ const TransactionDetails = () => {
       const borrowerIdValue = b.id || data.borrowerId || null;
       return (
         <Box>
-          {b.name && <Typography variant="body2">Borrower: {b.name}</Typography>}
-          {borrowerIdValue && <Typography variant="body2">Borrower ID: {borrowerIdValue}</Typography>}
+          {b.name && <Typography variant="body2">{`Borrower: ${b.name}`}</Typography>}
+          {borrowerIdValue && <Typography variant="body2">{`Borrower ID: ${borrowerIdValue}`}</Typography>}
         </Box>
       );
     }
@@ -286,14 +286,14 @@ const TransactionDetails = () => {
       return (
         <Box>
           {transactionIdValue && (
-            <Typography variant="body2">Transaction: {transactionIdValue}</Typography>
+            <Typography variant="body2">{`Related Transaction: #${transactionIdValue}`}</Typography>
           )}
           {Array.isArray(t.items) && t.items.length > 0 && (
             <Box>
-              <Typography variant="body2">Items:</Typography>
+              <Typography variant="body2">Involved Items:</Typography>
               {t.items.map((it, i) => (
                 <Typography variant="caption" key={i} display="block">
-                  {`• ${it.copyId || it.copy || it.bookId || ''} ${it.isbn ? `(${it.isbn})` : ''}`}
+                  {`• Copy/Book: ${it.copyId || it.copy || it.bookId || ''}${it.isbn ? ` (ISBN: ${it.isbn})` : ''}`}
                 </Typography>
               ))}
             </Box>
@@ -306,21 +306,53 @@ const TransactionDetails = () => {
     if (data.copyId || data.bookId || data.isbn) {
       return (
         <Box>
-          {data.bookId && <Typography variant="body2">Book ID: {data.bookId}</Typography>}
-          {data.copyId && <Typography variant="body2">Copy ID: {data.copyId}</Typography>}
-          {data.isbn && <Typography variant="body2">ISBN: {data.isbn}</Typography>}
+          {data.bookId && <Typography variant="body2">{`Book ID: ${data.bookId}`}</Typography>}
+          {data.copyId && <Typography variant="body2">{`Copy ID: ${data.copyId}`}</Typography>}
+          {data.isbn && <Typography variant="body2">{`ISBN: ${data.isbn}`}</Typography>}
         </Box>
       );
     }
 
-    // Fallback: pretty JSON
-    try {
+    // Fallback: show the raw data as a clean key-value list
+    return (
+      <Box sx={{ background: '#f6f8fa', borderRadius: 2, p: 1 }}>
+        <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic', mb: 0.5 }}>
+          Details:
+        </Typography>
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {Object.entries(data).map(([key, value]) => (
+            <li key={key} style={{ marginBottom: 2 }}>
+              <strong style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1')}</strong>: {formatDetailValue(value)}
+            </li>
+          ))}
+        </ul>
+      </Box>
+    );
+  // Helper to format values for display in details list
+  function formatDetailValue(value) {
+    if (value === null || value === undefined) return 'N/A';
+    if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        return value.length === 0
+          ? 'None'
+          : value.map((v, i) => <span key={i}>{formatDetailValue(v)}{i < value.length - 1 ? ', ' : ''}</span>);
+      }
+      // For objects, show as a nested list if not empty
+      const entries = Object.entries(value);
+      if (entries.length === 0) return 'None';
       return (
-        <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify(data, null, 2)}</pre>
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {entries.map(([k, v]) => (
+            <li key={k} style={{ marginBottom: 2 }}>
+              <strong style={{ textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</strong>: {formatDetailValue(v)}
+            </li>
+          ))}
+        </ul>
       );
-    } catch (err) {
-      return <Typography variant="body2">{String(data)}</Typography>;
     }
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+  }
   };
 
   const canManageTransaction =
@@ -371,7 +403,7 @@ const TransactionDetails = () => {
           >
             <ArrowBack />
           </IconButton>{" "}
-          <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 }}>
+          <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0, color:'white'}}>
             Transaction Details{" "}
           </Typography>{" "}
           <Box>
@@ -602,7 +634,7 @@ const TransactionDetails = () => {
                         <TableCell>Date</TableCell>
                         <TableCell>Action</TableCell>
                         <TableCell>Details</TableCell>
-                        <TableCell>Staff</TableCell>
+                        <TableCell>Processed By</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -610,7 +642,7 @@ const TransactionDetails = () => {
                         <TableRow key={index}>
                           <TableCell>{new Date(entry.timestamp).toLocaleString()}</TableCell>
                           <TableCell>
-                            <Chip label={entry.action} size="small" variant="outlined" />
+                            <Chip label={formatActionLabel(entry.action)} size="small" variant="outlined" />
                           </TableCell>
                           <TableCell>{renderDetails(entry)}</TableCell>
                           <TableCell>{entry.staffName || 'System'}</TableCell>
@@ -839,5 +871,30 @@ const TransactionDetails = () => {
     </LocalizationProvider>
   );
 };
+
+
+// Helper to format action labels more formally
+function formatActionLabel(action) {
+  if (!action) return '';
+  switch (action) {
+    case 'create':
+      return 'Transaction Created';
+    case 'approve':
+      return 'Approved';
+    case 'reject':
+      return 'Rejected';
+    case 'return':
+      return 'Returned';
+    case 'renew':
+      return 'Renewed';
+    case 'update':
+      return 'Updated';
+    case 'fine':
+      return 'Fine Issued';
+    default:
+      // Capitalize first letter
+      return action.charAt(0).toUpperCase() + action.slice(1);
+  }
+}
 
 export default TransactionDetails;
