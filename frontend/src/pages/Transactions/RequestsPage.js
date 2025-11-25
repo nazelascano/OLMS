@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Checkbox,
@@ -9,14 +10,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  InputLabel,
+  Divider,
+  IconButton,
+  InputAdornment,
   List,
   ListItem,
   ListItemText,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -25,12 +25,14 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
-  Divider,
 } from '@mui/material';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import QRScanner from '../../components/QRScanner';
 
 const RequestsPage = () => {
   useAuth();
@@ -49,6 +51,7 @@ const RequestsPage = () => {
   const [approveLoading, setApproveLoading] = useState(false);
   const [approveSubmitting, setApproveSubmitting] = useState(false);
   const [approveError, setApproveError] = useState('');
+  const [scannerConfig, setScannerConfig] = useState({ open: false, targetKey: null, label: '' });
 
   const approveTransaction = (txId, payload) => api.post(`/transactions/approve/${txId}`, payload);
 
@@ -201,8 +204,33 @@ const RequestsPage = () => {
   };
 
   const handleAssignmentChange = (itemKey, copyId) => {
-    setApproveAssignments((prev) => ({ ...prev, [itemKey]: copyId }));
+    const normalized = (copyId || '').toString().trim();
+    setApproveAssignments((prev) => ({ ...prev, [itemKey]: normalized }));
     setApproveError('');
+  };
+
+  const openScannerForItem = (itemKey, label) => {
+    if (!itemKey) return;
+    setScannerConfig({ open: true, targetKey: itemKey, label: label || 'Copy ID' });
+  };
+
+  const closeScannerDialog = () => {
+    setScannerConfig({ open: false, targetKey: null, label: '' });
+  };
+
+  const handleScannerDetected = (value) => {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) {
+      toast.error('QR code did not contain a copy ID');
+      return;
+    }
+    if (!scannerConfig.targetKey) {
+      toast.error('No target field selected for scanning');
+      return;
+    }
+    setApproveAssignments((prev) => ({ ...prev, [scannerConfig.targetKey]: trimmed }));
+    toast.success('Copy ID captured');
+    closeScannerDialog();
   };
 
   const closeApproveDialog = () => {
@@ -459,12 +487,6 @@ const RequestsPage = () => {
                   .filter(Boolean)
                   .join(' • ');
 
-                const isOptionTaken = (copyId) => {
-                  const mapKey = String(copyId).toLowerCase();
-                  const owner = takenCopyMap[mapKey];
-                  return owner && owner !== key;
-                };
-
                 return (
                   <React.Fragment key={key}>
                     <ListItem disableGutters sx={{ flexDirection: 'column', alignItems: 'stretch', py: 1 }}>
@@ -475,30 +497,78 @@ const RequestsPage = () => {
                           Copy already assigned: {item.copyId}
                         </Typography>
                       ) : hasBookDetails && availableCopies.length > 0 ? (
-                        <FormControl fullWidth size="small" sx={{ mt: 1 }}>
-                          <InputLabel id={`copy-select-${key}`}>Available Copy</InputLabel>
-                          <Select
-                            labelId={`copy-select-${key}`}
-                            label="Available Copy"
-                            value={assignedCopyId}
-                            onChange={(event) => handleAssignmentChange(key, event.target.value)}
+                        <Box sx={{ width: '100%', mt: 1 }}>
+                          <Autocomplete
+                            freeSolo
+                            disableClearable
+                            autoHighlight
+                            options={availableCopies
+                              .filter((copy) => {
+                                const owner = takenCopyMap[String(copy.copyId).toLowerCase()];
+                                return !owner || owner === key;
+                              })
+                              .map((copy) => copy.copyId)
+                              .filter(Boolean)}
+                            value={assignedCopyId || ''}
+                            onChange={(event, newValue) => handleAssignmentChange(key, newValue || '')}
+                            onInputChange={(event, newInputValue, reason) => {
+                              if (reason === 'input') {
+                                handleAssignmentChange(key, newInputValue || '');
+                              }
+                            }}
                             disabled={approveSubmitting}
-                          >
-                            <MenuItem value="">
-                              <em>Select copy</em>
-                            </MenuItem>
-                            {availableCopies.map((copy) => (
-                              <MenuItem
-                                key={copy.copyId}
-                                value={copy.copyId}
-                                disabled={isOptionTaken(copy.copyId)}
-                              >
-                                {copy.copyId}
-                                {copy.location ? ` • ${copy.location}` : ''}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                            renderOption={(props, option) => {
+                              const copyMeta = availableCopies.find((copy) => copy.copyId === option);
+                              return (
+                                <li {...props} key={option}>
+                                  <Box display="flex" flexDirection="column">
+                                    <Typography variant="body2">{option}</Typography>
+                                    {copyMeta?.location && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        Location: {copyMeta.location}
+                                      </Typography>
+                                    )}
+                                    {copyMeta?.condition && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        Condition: {copyMeta.condition}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </li>
+                              );
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Copy ID"
+                                placeholder="Search or scan copy ID"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <>
+                                      <InputAdornment position="end">
+                                        <Tooltip title="Scan QR code">
+                                          <span>
+                                            <IconButton
+                                              size="small"
+                                              onClick={() => openScannerForItem(key, title)}
+                                              disabled={approveSubmitting}
+                                            >
+                                              <QrCodeScannerIcon fontSize="small" />
+                                            </IconButton>
+                                          </span>
+                                        </Tooltip>
+                                      </InputAdornment>
+                                      {params.InputProps.endAdornment}
+                                    </>
+                                  ),
+                                }}
+                                helperText="Type to search available copies or scan a QR label"
+                                size="small"
+                              />
+                            )}
+                          />
+                        </Box>
                       ) : (
                         <Alert severity={hasBookDetails ? 'warning' : 'error'} sx={{ mt: 1 }}>
                           {hasBookDetails
@@ -525,6 +595,29 @@ const RequestsPage = () => {
           >
             {approveSubmitting ? 'Assigning…' : 'Assign Copies'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={scannerConfig.open}
+        onClose={closeScannerDialog}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Scan Copy ID</DialogTitle>
+        <DialogContent>
+          {scannerConfig.open && (
+            <QRScanner
+              elementId="requests-approval-qr"
+              onDetected={handleScannerDetected}
+            />
+          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Position the QR label for {scannerConfig.label || 'this item'} inside the frame.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeScannerDialog}>Close</Button>
         </DialogActions>
       </Dialog>
 

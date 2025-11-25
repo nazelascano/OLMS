@@ -177,9 +177,13 @@ const buildNotificationSettings = (rawValue) => {
 
 const getNotificationChannelState = (settings = NOTIFICATION_DEFAULTS) => {
   const normalized = settings || NOTIFICATION_DEFAULTS;
+  const inAppEnabled = true; // In-app notifications are always available inside OLMS
   const emailEnabled = normalized.emailNotifications !== false;
   const smsEnabled = normalized.smsNotifications === true;
   const channels = [];
+  if (inAppEnabled) {
+    channels.push('in-app');
+  }
   if (emailEnabled) {
     channels.push('email');
   }
@@ -187,10 +191,11 @@ const getNotificationChannelState = (settings = NOTIFICATION_DEFAULTS) => {
     channels.push('sms');
   }
   return {
+    inAppEnabled,
     emailEnabled,
     smsEnabled,
     channels,
-    hasActiveChannel: channels.length > 0,
+    hasActiveChannel: inAppEnabled || emailEnabled || smsEnabled,
   };
 };
 

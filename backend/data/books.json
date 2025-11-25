@@ -488,7 +488,7 @@
     "coverImage": "",
     "status": "active",
     "totalCopies": 21,
-    "availableCopies": 21,
+    "availableCopies": 20,
     "copies": [
       {
         "copyId": "978-0201616224-MGSOUS0A-HFOK",
@@ -502,12 +502,13 @@
       },
       {
         "copyId": "978-0201616224-MGSOUS0A-G2OJ",
-        "status": "available",
+        "status": "borrowed",
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-16T00:35:27.178Z",
-        "updatedAt": "2025-10-16T00:35:27.178Z",
-        "createdBy": "mgnhicbwhxfy9"
+        "updatedAt": "2025-11-25T01:17:30.485Z",
+        "createdBy": "mgnhicbwhxfy9",
+        "updatedBy": "mgnhicbwhxfy9"
       },
       {
         "copyId": "978-0201616224-MGSOUS0A-KHMY",
@@ -682,7 +683,7 @@
       }
     ],
     "createdAt": "2025-10-16T00:35:27.178Z",
-    "updatedAt": "2025-11-12T05:10:18.216Z",
+    "updatedAt": "2025-11-25T01:17:30.488Z",
     "createdBy": "mgnhicbwhxfy9",
     "_id": "mgsous0bcn99t",
     "updatedBy": "mgnhicbwhxfy9"
@@ -714,7 +715,7 @@
         "copyId": "APPROVE-COPY-1",
         "status": "borrowed",
         "location": "Main",
-        "updatedAt": "2025-11-23T13:11:37.537Z",
+        "updatedAt": "2025-11-25T01:30:47.490Z",
         "updatedBy": "mgnhicbwhxfy9"
       },
       {
@@ -726,7 +727,7 @@
     "availableCopies": 1,
     "_id": "mhfkvgnso61c7",
     "createdAt": "2025-11-01T01:02:42.712Z",
-    "updatedAt": "2025-11-23T13:11:37.539Z"
+    "updatedAt": "2025-11-25T01:30:47.491Z"
   },
   {
     "id": "book-approve-test",
@@ -1424,5 +1425,105 @@
     "_id": "mibqllzdxtgn4",
     "createdAt": "2025-11-23T13:11:38.377Z",
     "updatedAt": "2025-11-23T13:11:38.377Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mid5oziemvyzn",
+    "createdAt": "2025-11-24T13:01:56.294Z",
+    "updatedAt": "2025-11-24T13:01:56.294Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mid5ozryavylx",
+    "createdAt": "2025-11-24T13:01:56.638Z",
+    "updatedAt": "2025-11-24T13:01:56.638Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "midw3h53dxfa6",
+    "createdAt": "2025-11-25T01:21:02.343Z",
+    "updatedAt": "2025-11-25T01:21:02.343Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "midwg0m4a0ysv",
+    "createdAt": "2025-11-25T01:30:47.452Z",
+    "updatedAt": "2025-11-25T01:30:47.452Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "midwg0w4x63nd",
+    "createdAt": "2025-11-25T01:30:47.812Z",
+    "updatedAt": "2025-11-25T01:30:47.812Z"
   }
 ]

@@ -20,15 +20,15 @@
       "fineBalance": 0
     },
     "borrowingStats": {
-      "totalBorrowed": 13,
-      "currentlyBorrowed": 12,
+      "totalBorrowed": 16,
+      "currentlyBorrowed": 15,
       "totalFines": 0,
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-11-24T10:23:44.025Z",
-    "lastLoginAt": "2025-11-24T08:54:06.990Z",
-    "lastActivityAt": "2025-11-24T10:23:44.024Z",
+    "updatedAt": "2025-11-25T01:30:47.501Z",
+    "lastLoginAt": "2025-11-25T01:13:50.697Z",
+    "lastActivityAt": "2025-11-25T01:19:44.165Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -228,14 +228,14 @@
     "role": "student",
     "isActive": true,
     "borrowingStats": {
-      "totalBorrowed": 0,
-      "currentlyBorrowed": 0,
+      "totalBorrowed": 1,
+      "currentlyBorrowed": 1,
       "totalFines": 0,
       "totalReturned": 0
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-11-14T05:49:08.944Z",
+    "updatedAt": "2025-11-25T01:17:30.507Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
     "lastLoginAt": "2025-11-14T05:47:38.933Z",
