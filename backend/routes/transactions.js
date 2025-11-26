@@ -1566,6 +1566,11 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
         const borrowWindowDays = resolveBorrowWindowDays(transactionType, borrowingSettings);
         const borrowDate = new Date();
         const dueDate = calculateDueDate(borrowDate, borrowWindowDays);
+        
+        // Calculate reservation expiration date
+        const reservationPeriodDays = Number(borrowingSettings.reservationPeriodDays) || 3;
+        const reservationExpiresAt = new Date(borrowDate);
+        reservationExpiresAt.setDate(reservationExpiresAt.getDate() + reservationPeriodDays);
 
         // Update transaction
         const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
@@ -1573,6 +1578,7 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             status: 'borrowed',
             borrowDate,
             dueDate,
+            reservationExpiresAt,
             updatedAt: new Date(),
             updatedBy: req.user.id,
             items: items.map(it => ({ ...it, status: 'borrowed' }))
@@ -1602,15 +1608,21 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                     const dueDateValue = dueDate instanceof Date ? dueDate : new Date(dueDate);
                     const dueDateIso = Number.isNaN(dueDateValue.getTime()) ? null : dueDateValue.toISOString();
                     const friendlyDueDate = dueDateIso ? dueDateIso.split('T')[0] : 'the scheduled due date';
+                    
+                    const reservationExpiresValue = reservationExpiresAt instanceof Date ? reservationExpiresAt : new Date(reservationExpiresAt);
+                    const reservationExpiresIso = Number.isNaN(reservationExpiresValue.getTime()) ? null : reservationExpiresValue.toISOString();
+                    const friendlyPickupDate = reservationExpiresIso ? reservationExpiresIso.split('T')[0] : 'the pickup deadline';
+                    
                     await req.dbAdapter.insertIntoCollection('notifications', {
                         title: 'Borrow request approved',
-                        message: `Your borrow request ${transaction.id || transaction._id} has been approved. Items are due on ${friendlyDueDate}.`,
+                        message: `Your borrow request ${transaction.id || transaction._id} has been approved. Please pick up your items by ${friendlyPickupDate}. Items are due on ${friendlyDueDate}.`,
                         type: 'request-approved',
                         transactionId: transaction.id || transaction._id,
                         recipients: borrowerRecipients,
                         meta: {
                             transactionId: transaction.id || transaction._id,
                             dueDate: dueDateIso,
+                            reservationExpiresAt: reservationExpiresIso,
                             itemCount: items.length,
                             status: 'borrowed'
                         },
@@ -1939,8 +1951,120 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
     }
 });
 
-router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transaction'), async(req, res) => {
+router.post('/expire-reservations', verifyToken, requireStaff, logAction('EXPIRE_RESERVATIONS', 'transaction'), async (req, res) => {
     try {
+        const now = new Date();
+        
+        // Find all borrowed transactions with expired reservations
+        const expiredReservations = await req.dbAdapter.findInCollection('transactions', {
+            status: 'borrowed',
+            reservationExpiresAt: { $lt: now }
+        });
+
+        if (expiredReservations.length === 0) {
+            return res.json({ message: 'No expired reservations found', expiredCount: 0 });
+        }
+
+        let expiredCount = 0;
+        const results = [];
+
+        for (const transaction of expiredReservations) {
+            try {
+                // Check if transaction is still active (not returned)
+                const hasActiveItems = (transaction.items || []).some(item => item.status !== 'returned');
+                if (!hasActiveItems) {
+                    continue; // Skip already returned transactions
+                }
+
+                // Update transaction status to indicate expired reservation
+                const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
+                await req.dbAdapter.updateInCollection('transactions', txQuery, {
+                    status: 'reservation-expired',
+                    reservationExpiredAt: now,
+                    updatedAt: now,
+                    notes: (transaction.notes || '') + ' [Reservation expired]'
+                });
+
+                // Make copies available again
+                const allBooks = await req.dbAdapter.findInCollection('books', {});
+                for (const item of transaction.items || []) {
+                    if (item.status !== 'returned') {
+                        // Find the book and update the copy status back to available
+                        for (const book of allBooks) {
+                            const copy = book.copies?.find(c => c.copyId === item.copyId);
+                            if (copy && copy.status === 'borrowed') {
+                                const updatedCopies = book.copies.map(c => 
+                                    c.copyId === item.copyId ? { ...c, status: 'available', updatedAt: now } : c
+                                );
+                                const bookQuery = book.id ? { id: book.id } : { _id: book._id };
+                                await req.dbAdapter.updateInCollection('books', bookQuery, {
+                                    copies: updatedCopies,
+                                    availableCopies: updatedCopies.filter(c => c.status === 'available').length,
+                                    updatedAt: now
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Update user borrowing stats
+                let user = await req.dbAdapter.findOneInCollection('users', { id: transaction.userId });
+                if (!user) user = await req.dbAdapter.findOneInCollection('users', { _id: transaction.userId });
+                if (user) {
+                    const stats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
+                    const activeItems = (transaction.items || []).filter(item => item.status !== 'returned').length;
+                    const updatedStats = {
+                        ...stats,
+                        currentlyBorrowed: Math.max(0, (stats.currentlyBorrowed || 0) - activeItems)
+                    };
+                    const userQuery = user.id ? { id: user.id } : { _id: user._id };
+                    await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: now });
+                }
+
+                expiredCount++;
+                results.push({
+                    transactionId: transaction.id || transaction._id,
+                    userId: transaction.userId,
+                    itemCount: (transaction.items || []).filter(item => item.status !== 'returned').length
+                });
+
+            } catch (error) {
+                console.error(`Failed to expire reservation for transaction ${transaction.id || transaction._id}:`, error);
+            }
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Completed',
+            description: `Expired ${expiredCount} reservations`,
+            metadata: {
+                expiredCount,
+                actorId: req.user.id
+            },
+            details: {
+                results
+            }
+        });
+
+        res.json({ 
+            message: `Expired ${expiredCount} reservations`, 
+            expiredCount,
+            results 
+        });
+    } catch (error) {
+        console.error('Expire reservations error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: `Expire reservations failed: ${error.message}`,
+            details: { error: error.message }
+        });
+        res.status(500).json({ message: 'Failed to expire reservations' });
+    }
+});
+
+router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transaction'), async(req, res) => {
         const transactionId = req.params.id;
         const { extensionDays = 14 } = req.body;
         setAuditContext(req, {

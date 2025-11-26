@@ -16,39 +16,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration (keep same defaults as server.js)
-const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001'];
-const envOrigins = [process.env.FRONTEND_URL, process.env.CORS_ALLOWED_ORIGINS]
-  .filter(Boolean)
-  .flatMap(origins => origins.split(',').map(origin => origin.trim()))
-  .filter(Boolean);
-const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
-
-const staticOriginPatterns = [/\.vercel\.app$/];
-const envOriginPatternValues = (process.env.CORS_ALLOWED_ORIGIN_PATTERNS || '')
-  .split(',')
-  .map(pattern => pattern.trim())
-  .filter(Boolean);
-const allowedOriginPatterns = [
-  ...staticOriginPatterns,
-  ...envOriginPatternValues.map(pattern => {
-    try {
-      return new RegExp(pattern);
-    } catch (error) {
-      console.warn(`Invalid CORS origin pattern: ${pattern}`, error.message);
-      return null;
-    }
-  }).filter(Boolean)
-];
-
+// CORS configuration (simplified)
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    const isAllowedByList = allowedOrigins.includes('*') || allowedOrigins.includes(origin);
-    const isAllowedByPattern = allowedOriginPatterns.some(pattern => pattern.test(origin));
-    if (isAllowedByList || isAllowedByPattern) return callback(null, true);
-    return callback(new Error(`Origin ${origin} not allowed by CORS`));
-  },
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }));
 

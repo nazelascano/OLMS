@@ -43,7 +43,7 @@ import MobileScanButton from "../../components/MobileScanButton";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { api } from "../../utils/api";
+import { api, settingsAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import QRScanner from "../../components/QRScanner";
@@ -313,10 +313,14 @@ const ReturnForm = () => {
             copyId: returnItem.copyId
           }];
 
+          const libraryResponse = await settingsAPI.getByCategory('library');
+          const librarySettings = libraryResponse.data || {};
+
           const receiptPDF = await generateTransactionReceipt(
             transactionData,
             studentData,
-            booksData
+            booksData,
+            librarySettings
           );
           downloadPDF(receiptPDF, `return_receipt_${returnItem.transactionId}_${Date.now()}.pdf`);
         }

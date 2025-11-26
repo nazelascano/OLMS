@@ -47,10 +47,14 @@ const deriveStudentLibraryId = (student = {}) => {
 // (no longer using a wrapper for splitTextToSize; use doc.splitTextToSize directly)
 
 // Draw front side of the library card on the given doc at the current page
-const drawCardFront = async (doc, student) => {
+const drawCardFront = async (doc, student, librarySettings = {}) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 3;
+
+  // Use library settings with fallbacks
+  const libraryName = librarySettings.libraryName || 'Odiongan National High School';
+  const libraryAddress = librarySettings.libraryAddress || 'Dapawan, Odiongan, Romblon';
 
   // 3. Library ID box (centered)
   // Library ID label and number to the right of the photo box
@@ -83,21 +87,21 @@ const drawCardFront = async (doc, student) => {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0,0,0);
-    doc.text('Odiongan National High School', textRight, logoY + 6, {align:'right'});
+    doc.text(libraryName, textRight, logoY + 6, {align:'right'});
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(80,80,80);
-    doc.text('Dapawan, Odiongan, Romblon', textRight, logoY + 11, {align:'right'});
+    doc.text(libraryAddress, textRight, logoY + 11, {align:'right'});
   } catch (e) {
     // Fallback: just text
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0,0,0,0);
-    doc.text('Odiongan National High School', pageWidth - margin, margin + 6, {align:'right'});
+    doc.text(libraryName, pageWidth - margin, margin + 6, {align:'right'});
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(80,80,80);
-    doc.text('Dapawan, Odiongan, Romblon', pageWidth - margin, margin + 11, {align:'right'});
+    doc.text(libraryAddress, pageWidth - margin, margin + 11, {align:'right'});
   }
   // (removed unused centerX)
   // ...existing code...
@@ -192,28 +196,28 @@ const drawCardBack = (doc) => {
   doc.text('Librarian: ______________________', footerX, footerY3);
 };
 
-export const generateLibraryCard = async (studentData = {}) => {
+export const generateLibraryCard = async (studentData = {}, librarySettings = {}) => {
   // Use ID card dimensions (mm) and landscape orientation
   const doc = createDoc({ orientation: 'landscape', format: [85.6, 54] });
-  await drawCardFront(doc, studentData);
+  await drawCardFront(doc, studentData, librarySettings);
   doc.addPage();
   drawCardBack(doc);
   return doc;
 };
 
 // Generate a single PDF containing many cards (front + back pages per student)
-export const generateLibraryCardsPDF = async (students = []) => {
+export const generateLibraryCardsPDF = async (students = [], librarySettings = {}) => {
   const firstDoc = createDoc({ orientation: 'landscape', format: [85.6, 54] });
   let doc = firstDoc;
   for (let i = 0; i < students.length; i += 1) {
     const s = students[i] || {};
     if (i === 0) {
-      await drawCardFront(doc, s);
+      await drawCardFront(doc, s, librarySettings);
       doc.addPage();
       drawCardBack(doc);
     } else {
       doc.addPage();
-      await drawCardFront(doc, s);
+      await drawCardFront(doc, s, librarySettings);
       doc.addPage();
       drawCardBack(doc);
     }
@@ -222,7 +226,7 @@ export const generateLibraryCardsPDF = async (students = []) => {
 };
 
 
-export const generateTransactionReceipt = async (transactionData = {}, studentData = {}, booksData = []) => {
+export const generateTransactionReceipt = async (transactionData = {}, studentData = {}, booksData = [], librarySettings = {}) => {
   const doc = createDoc({ format: 'letter', orientation: 'portrait'});
   const pageWidth = doc.internal.pageSize.getWidth();
   const lineSpacing = 2;
@@ -232,13 +236,18 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
   const addressLine = headerLine + lineSpacing;
   const textLine1 = addressLine + lineSpacing + 3;
   const textLine2 = textLine1 + lineSpacing + 3;
+
+  // Use library settings with fallbacks
+  const libraryName = librarySettings.libraryName || 'Odiongan National High School';
+  const libraryAddress = librarySettings.libraryAddress || 'Dapawan, Odiongan, Romblon';
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Odiongan National High School', centerText, headerLine, { align: 'center' });
+  doc.text(libraryName, centerText, headerLine, { align: 'center' });
   
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text('Dapawan, Odiongan, Romblon', centerText, addressLine, { align: 'center' });
+  doc.text(libraryAddress, centerText, addressLine, { align: 'center' });
 
   
   doc.setFontSize(10);

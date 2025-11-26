@@ -682,7 +682,11 @@ const StudentForm = () => {
 
         // Generate and download library card
         try {
-          const libraryCardPDF = await generateLibraryCard(response.data.student || studentData);
+          // Fetch library settings for the card
+          const libraryResponse = await settingsAPI.getByCategory('library');
+          const librarySettings = libraryResponse.data || {};
+          
+          const libraryCardPDF = await generateLibraryCard(response.data.student || studentData, librarySettings);
           downloadPDF(libraryCardPDF, `library_card_${studentData.libraryCardNumber}.pdf`);
           toast.success("Library card generated and downloaded");
         } catch (cardError) {

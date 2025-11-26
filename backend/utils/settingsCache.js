@@ -1,15 +1,5 @@
 const DEFAULT_CACHE_TTL_MS = parseInt(process.env.SETTINGS_CACHE_TTL_MS, 10) || 5000;
 
-const DEFAULT_OPERATING_HOURS = {
-  monday: { open: '08:00', close: '18:00', closed: false },
-  tuesday: { open: '08:00', close: '18:00', closed: false },
-  wednesday: { open: '08:00', close: '18:00', closed: false },
-  thursday: { open: '08:00', close: '18:00', closed: false },
-  friday: { open: '08:00', close: '18:00', closed: false },
-  saturday: { open: '09:00', close: '17:00', closed: false },
-  sunday: { open: '10:00', close: '16:00', closed: true },
-};
-
 const BORROWING_DEFAULTS = {
   maxBooksPerTransaction: 10,
   maxBorrowDays: 14,
@@ -83,20 +73,7 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const mergeOperatingHours = (incoming = {}) => {
-  const merged = {};
-  Object.entries(DEFAULT_OPERATING_HOURS).forEach(([day, defaults]) => {
-    const source = incoming[day] || {};
-    merged[day] = {
-      open: typeof source.open === 'string' ? source.open : defaults.open,
-      close: typeof source.close === 'string' ? source.close : defaults.close,
-      closed: typeof source.closed === 'boolean' ? source.closed : defaults.closed,
-    };
-  });
-  return merged;
-};
-
-const mapSettingsRecords = (records = []) => {
+const mapSettingsRecords = (records) => {
   return records.reduce((acc, record) => {
     if (record && record.id) {
       acc[record.id] = record.value;
@@ -112,7 +89,6 @@ const buildLibraryProfile = (settingsMap) => ({
   libraryEmail: settingsMap.LIBRARY_EMAIL || '',
   website: settingsMap.LIBRARY_WEBSITE || '',
   description: settingsMap.LIBRARY_DESCRIPTION || '',
-  operatingHours: mergeOperatingHours(settingsMap.OPERATING_HOURS),
 });
 
 const buildBorrowingSettings = (settingsMap) => ({

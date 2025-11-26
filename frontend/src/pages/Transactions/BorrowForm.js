@@ -30,7 +30,7 @@ import {
 import QRScanner from "../../components/QRScanner";
 import MobileScanButton from "../../components/MobileScanButton";
 import { ArrowBack, Assignment, Book, Remove, Search, QrCodeScanner } from "@mui/icons-material";
-import { api } from "../../utils/api";
+import { api, settingsAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
@@ -558,10 +558,14 @@ const BorrowForm = () => {
             fineAmount: 0,
           };
 
+          const libraryResponse = await settingsAPI.getByCategory('library');
+          const librarySettings = libraryResponse.data || {};
+
           const receiptPDF = await generateTransactionReceipt(
             transactionData,
             selectedBorrower,
             selectedBooks,
+            librarySettings,
           );
           downloadPDF(
             receiptPDF,

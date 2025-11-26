@@ -459,7 +459,9 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,,123456789013,${sampl
             const pdfModule = await import(
               /* webpackChunkName: "pdf-generator" */ "../../utils/pdfGenerator"
             );
-            const multiPDF = await pdfModule.generateLibraryCardsPDF(importedStudents);
+            const libraryResponse = await settingsAPI.getByCategory('library');
+            const librarySettings = libraryResponse.data || {};
+            const multiPDF = await pdfModule.generateLibraryCardsPDF(importedStudents, librarySettings);
             const filename = `library_cards_import_${Date.now()}.pdf`;
             downloadPDF(multiPDF, filename);
             toast.dismiss(loadingId);

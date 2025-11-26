@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff, Person, Lock } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../utils/api";
 import logo from "../../assets/images/logo.png";
 import loginBg from "../../assets/images/login_bg.jpg";
 
@@ -20,10 +21,32 @@ const LoginPage = () => {
   const { login, loginLoading } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [libraryInfo, setLibraryInfo] = useState({
+    libraryName: '',
+    libraryAddress: '',
+    libraryPhone: '',
+    libraryEmail: '',
+    website: '',
+    description: ''
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => setIsOpen(true), 100);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchLibraryInfo = async () => {
+      try {
+        const response = await api.get("/settings/library");
+        setLibraryInfo(response.data);
+      } catch (error) {
+        console.error("Failed to fetch library info:", error);
+        // Keep default empty values
+      }
+    };
+
+    fetchLibraryInfo();
   }, []);
 
   const [formData, setFormData] = useState({
@@ -164,6 +187,39 @@ const LoginPage = () => {
           >
             The School of Choice{" "}
           </Typography>{" "}
+          {/* Library Info */}
+          <Box sx={{ mt: 4, textAlign: 'center', maxWidth: 320 }}>
+            {libraryInfo.libraryName && (
+              <Typography variant="h6" sx={{ color: 'white', mb: 1, fontWeight: 600 }}>
+                {libraryInfo.libraryName}
+              </Typography>
+            )}
+            {libraryInfo.libraryAddress && (
+              <Typography variant="body2" sx={{ color: 'white', mb: 1, opacity: 0.9 }}>
+                {libraryInfo.libraryAddress}
+              </Typography>
+            )}
+            {libraryInfo.libraryPhone && (
+              <Typography variant="body2" sx={{ color: 'white', mb: 1, opacity: 0.9 }}>
+                Phone: {libraryInfo.libraryPhone}
+              </Typography>
+            )}
+            {libraryInfo.libraryEmail && (
+              <Typography variant="body2" sx={{ color: 'white', mb: 1, opacity: 0.9 }}>
+                Email: {libraryInfo.libraryEmail}
+              </Typography>
+            )}
+            {libraryInfo.website && (
+              <Typography variant="body2" sx={{ color: 'white', mb: 1, opacity: 0.9 }}>
+                Website: {libraryInfo.website}
+              </Typography>
+            )}
+            {libraryInfo.description && (
+              <Typography variant="body2" sx={{ color: 'white', mt: 2, opacity: 0.8, fontStyle: 'italic' }}>
+                {libraryInfo.description}
+              </Typography>
+            )}
+          </Box>
         </Grid>
         {/* Right Side - White Background with Login Form */}{" "}
         <Grid

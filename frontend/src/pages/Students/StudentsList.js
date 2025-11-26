@@ -265,7 +265,9 @@ const StudentsList = () => {
   const handlePrintCard = async (student) => {
     try {
       toast.loading("Generating library card...");
-      const libraryCardPDF = await generateLibraryCard(student);
+      const libraryResponse = await settingsAPI.getByCategory('library');
+      const librarySettings = libraryResponse.data || {};
+      const libraryCardPDF = await generateLibraryCard(student, librarySettings);
       downloadPDF(libraryCardPDF, `library_card_${student.libraryCardNumber}.pdf`);
       toast.dismiss();
       toast.success("Library card generated successfully!");

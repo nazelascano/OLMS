@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 5001;
 // but for startup we create a dedicated adapter instance here to connect and initialize.
 const dbAdapter = new DatabaseAdapter();
 
-app.listen(PORT, async() => {
+const server = app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
 
     try {

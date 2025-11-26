@@ -55,7 +55,7 @@ import QRScanner from "../../components/QRScanner";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/api";
+import { api, settingsAPI } from "../../utils/api";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 
@@ -435,10 +435,14 @@ const TransactionsList = () => {
             },
           ];
 
+      const libraryResponse = await settingsAPI.getByCategory('library');
+      const librarySettings = libraryResponse.data || {};
+
       const transactionPDF = await generateTransactionReceipt(
         transactionData,
         borrowerProfile,
-        booksData
+        booksData,
+        librarySettings
       );
 
       const filenameId = transactionData?.id || transactionData?._id || transactionId;

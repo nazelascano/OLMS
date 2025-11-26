@@ -15,28 +15,6 @@ const LEGACY_LIBRARY_CATEGORIES = [LIBRARY_CATEGORY, 'receipt'];
 const SYSTEM_CATEGORY = 'system';
 const NOTIFICATION_CATEGORY = 'notifications';
 const USER_CATEGORY = 'user';
-const DEFAULT_OPERATING_HOURS = {
-    monday: { open: '08:00', close: '18:00', closed: false },
-    tuesday: { open: '08:00', close: '18:00', closed: false },
-    wednesday: { open: '08:00', close: '18:00', closed: false },
-    thursday: { open: '08:00', close: '18:00', closed: false },
-    friday: { open: '08:00', close: '18:00', closed: false },
-    saturday: { open: '09:00', close: '17:00', closed: false },
-    sunday: { open: '10:00', close: '16:00', closed: true }
-};
-
-const mergeOperatingHours = (incoming = {}) => {
-    const merged = {};
-    Object.entries(DEFAULT_OPERATING_HOURS).forEach(([day, defaults]) => {
-        const source = incoming[day] || {};
-        merged[day] = {
-            open: typeof source.open === 'string' ? source.open : defaults.open,
-            close: typeof source.close === 'string' ? source.close : defaults.close,
-            closed: typeof source.closed === 'boolean' ? source.closed : defaults.closed
-        };
-    });
-    return merged;
-};
 
 const toBoolean = (value, fallback = false) => {
     if (typeof value === 'boolean') {
@@ -124,7 +102,7 @@ router.get('/', verifyToken, requireAdmin, async(req, res) => {
 });
 
 // Get settings by category (specific routes for frontend)
-router.get('/library', verifyToken, requireLibrarian, async(req, res) => {
+router.get('/library', async(req, res) => {
     try {
         const [librarySettings, legacyReceiptSettings] = await Promise.all(
             LEGACY_LIBRARY_CATEGORIES.map((category) =>
@@ -146,7 +124,6 @@ router.get('/library', verifyToken, requireLibrarian, async(req, res) => {
             libraryEmail: index.LIBRARY_EMAIL || '',
             website: index.LIBRARY_WEBSITE || '',
             description: index.LIBRARY_DESCRIPTION || '',
-            operatingHours: mergeOperatingHours(index.OPERATING_HOURS)
         };
 
         res.json(response);
@@ -297,10 +274,7 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
             libraryEmail = '',
             website = '',
             description = '',
-            operatingHours
         } = req.body || {};
-
-        const mergedHours = mergeOperatingHours(operatingHours);
 
         const updates = [
             { id: 'LIBRARY_NAME', value: libraryName, type: 'string', category: LIBRARY_CATEGORY },
@@ -309,7 +283,6 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
             { id: 'LIBRARY_EMAIL', value: libraryEmail, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_WEBSITE', value: website, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_DESCRIPTION', value: description, type: 'string', category: LIBRARY_CATEGORY },
-            { id: 'OPERATING_HOURS', value: mergedHours, type: 'object', category: LIBRARY_CATEGORY }
         ];
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, updates);

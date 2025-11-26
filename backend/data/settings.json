@@ -1,120 +1,72 @@
 [
   {
-    "id": "OPERATING_HOURS",
-    "value": {
-      "monday": {
-        "open": "08:00",
-        "close": "18:00",
-        "closed": false
-      },
-      "tuesday": {
-        "open": "08:00",
-        "close": "18:00",
-        "closed": false
-      },
-      "wednesday": {
-        "open": "08:00",
-        "close": "18:00",
-        "closed": false
-      },
-      "thursday": {
-        "open": "08:00",
-        "close": "18:00",
-        "closed": false
-      },
-      "friday": {
-        "open": "08:00",
-        "close": "18:00",
-        "closed": true
-      },
-      "saturday": {
-        "open": "09:00",
-        "close": "17:00",
-        "closed": true
-      },
-      "sunday": {
-        "open": "10:00",
-        "close": "16:00",
-        "closed": true
-      }
-    },
-    "type": "object",
-    "category": "library",
-    "description": "",
-    "createdAt": "2025-11-14T08:19:05.511Z",
-    "updatedAt": "2025-11-23T13:13:55.757Z",
-    "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mgnhicbwhxfy9",
-    "_id": "mhyl6q45cwqvp"
-  },
-  {
     "id": "LIBRARY_DESCRIPTION",
-    "value": "rstuityiuryhtsdtfgkhil",
+    "value": "Library Portal of ONHS",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:04:32.962Z",
-    "updatedAt": "2025-11-23T13:13:55.754Z",
+    "updatedAt": "2025-11-26T08:09:06.779Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqchqec9nul"
   },
   {
     "id": "LIBRARY_NAME",
-    "value": "utrdddktyclt",
+    "value": "ONHS LRC",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.385Z",
-    "updatedAt": "2025-11-23T13:13:55.734Z",
+    "updatedAt": "2025-11-26T08:09:06.765Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6kzg3l5j"
   },
   {
     "id": "LIBRARY_ADDRESS",
-    "value": "jdiytgckhgck",
+    "value": "Brgy. Liwanag, Odiongan, Romblon",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.391Z",
-    "updatedAt": "2025-11-23T13:13:55.738Z",
+    "updatedAt": "2025-11-26T08:09:06.768Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l4oogud"
   },
   {
     "id": "LIBRARY_PHONE",
-    "value": "75348594965",
+    "value": "09123456789",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.396Z",
-    "updatedAt": "2025-11-23T13:13:55.741Z",
+    "updatedAt": "2025-11-26T08:09:06.771Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l94ztt2"
   },
   {
     "id": "LIBRARY_EMAIL",
-    "value": "hhgkhgfkhgckhgc@jhhfjhv.com",
+    "value": "onhs-olms@example.com",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.400Z",
-    "updatedAt": "2025-11-23T13:13:55.746Z",
+    "updatedAt": "2025-11-26T08:09:06.774Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ld6m03t"
   },
   {
     "id": "LIBRARY_WEBSITE",
-    "value": "hgdkglgclhgcluh.com",
+    "value": "(Temporary)https://olms-blush.vercel.app",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.405Z",
-    "updatedAt": "2025-11-23T13:13:55.750Z",
+    "updatedAt": "2025-11-26T08:09:06.777Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ljoql14"

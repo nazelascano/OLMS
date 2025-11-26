@@ -23360,5 +23360,240 @@
     "_id": "miei3pcmxux8n",
     "createdAt": "2025-11-25T11:37:04.534Z",
     "updatedAt": "2025-11-25T11:37:04.534Z"
+  },
+  {
+    "timestamp": "2025-11-26T03:20:01.326Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-25T11:37:04.476Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miffsca7swnul",
+    "_id": "miffsca7swnul",
+    "createdAt": "2025-11-26T03:20:01.327Z",
+    "updatedAt": "2025-11-26T03:20:01.327Z"
+  },
+  {
+    "timestamp": "2025-11-26T08:00:15.744Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-26T03:20:01.279Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mifpsqdewtv05",
+    "_id": "mifpsqdewtv05",
+    "createdAt": "2025-11-26T08:00:15.746Z",
+    "updatedAt": "2025-11-26T08:00:15.746Z"
+  },
+  {
+    "timestamp": "2025-11-26T08:06:53.202Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-26T08:00:15.703Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mifq191u8nrfc",
+    "_id": "mifq191u8nrfc",
+    "createdAt": "2025-11-26T08:06:53.202Z",
+    "updatedAt": "2025-11-26T08:06:53.202Z"
+  },
+  {
+    "timestamp": "2025-11-26T08:09:06.784Z",
+    "action": "UPDATE",
+    "entity": "settings-library",
+    "entityId": null,
+    "resource": "settings-library",
+    "resourceId": null,
+    "description": "Updated library settings",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/settings/library",
+        "body": {
+          "libraryName": "ONHS LRC",
+          "libraryAddress": "Brgy. Liwanag, Odiongan, Romblon",
+          "libraryPhone": "09123456789",
+          "libraryEmail": "onhs-olms@example.com",
+          "website": "(Temporary)https://olms-blush.vercel.app",
+          "description": "Library Portal of ONHS",
+          "operatingHours": {
+            "monday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "tuesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "wednesday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "thursday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "friday": {
+              "open": "08:00",
+              "close": "18:00",
+              "closed": false
+            },
+            "saturday": {
+              "open": "09:00",
+              "close": "17:00",
+              "closed": false
+            },
+            "sunday": {
+              "open": "10:00",
+              "close": "16:00",
+              "closed": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 22
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/settings/library",
+    "id": "mifq444gfqtki",
+    "_id": "mifq444gfqtki",
+    "createdAt": "2025-11-26T08:09:06.784Z",
+    "updatedAt": "2025-11-26T08:09:06.784Z"
+  },
+  {
+    "timestamp": "2025-11-26T08:10:37.524Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-26T08:06:53.166Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mifq62503uocy",
+    "_id": "mifq62503uocy",
+    "createdAt": "2025-11-26T08:10:37.524Z",
+    "updatedAt": "2025-11-26T08:10:37.524Z"
+  },
+  {
+    "timestamp": "2025-11-26T08:14:57.957Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-11-26T08:10:37.521Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "mifqbn39izxba",
+    "_id": "mifqbn39izxba",
+    "createdAt": "2025-11-26T08:14:57.957Z",
+    "updatedAt": "2025-11-26T08:14:57.957Z"
   }
 ]

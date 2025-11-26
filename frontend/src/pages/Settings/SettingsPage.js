@@ -73,29 +73,6 @@ const normalizeBoolean = (value, fallback) => {
 const sanitizePhoneInput = (value = "") =>
   String(value ?? "").replace(/\D/g, "").slice(0, 11);
 
-const createDefaultOperatingHours = () => ({
-  monday: { open: "08:00", close: "18:00", closed: false },
-  tuesday: { open: "08:00", close: "18:00", closed: false },
-  wednesday: { open: "08:00", close: "18:00", closed: false },
-  thursday: { open: "08:00", close: "18:00", closed: false },
-  friday: { open: "08:00", close: "18:00", closed: false },
-  saturday: { open: "09:00", close: "17:00", closed: false },
-  sunday: { open: "10:00", close: "16:00", closed: true },
-});
-
-const mergeOperatingHours = (input = {}) => {
-  const defaults = createDefaultOperatingHours();
-  return Object.keys(defaults).reduce((result, day) => {
-    const entry = input[day] || {};
-    result[day] = {
-      open: typeof entry.open === "string" ? entry.open : defaults[day].open,
-      close: typeof entry.close === "string" ? entry.close : defaults[day].close,
-      closed: typeof entry.closed === "boolean" ? entry.closed : defaults[day].closed,
-    };
-    return result;
-  }, {});
-};
-
 const createDefaultLibrarySettings = () => ({
   libraryName: "",
   libraryAddress: "",
@@ -103,7 +80,6 @@ const createDefaultLibrarySettings = () => ({
   libraryEmail: "",
   website: "",
   description: "",
-  operatingHours: createDefaultOperatingHours(),
 });
 
 const mergeLibrarySettings = (data = {}) => ({
@@ -113,7 +89,6 @@ const mergeLibrarySettings = (data = {}) => ({
   libraryEmail: data.libraryEmail || "",
   website: data.website || "",
   description: data.description || "",
-  operatingHours: mergeOperatingHours(data.operatingHours),
 });
 
 const createDefaultBorrowingRules = () => ({
@@ -753,101 +728,6 @@ const SettingsPage = () => {
                         })
                       }
                     />
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12}>
-              <Card elevation={1}>
-                <CardHeader
-                  title="Operating Hours"
-                  subheader="Toggle availability and adjust daily hours"
-                />
-                <CardContent>
-                  <Stack spacing={2}>
-                    {Object.entries(librarySettings.operatingHours).map(
-                      ([day, hours]) => (
-                        <Paper
-                          key={day}
-                          variant="outlined"
-                          sx={{ p: 2, borderRadius: 2 }}
-                        >
-                          <Stack
-                            direction={{ xs: "column", sm: "row" }}
-                            spacing={2}
-                            alignItems={{ xs: "flex-start", sm: "center" }}
-                          >
-                            <Typography
-                              variant="subtitle1"
-                              sx={{ textTransform: "capitalize", minWidth: 96 }}
-                            >
-                              {day}
-                            </Typography>
-                            <FormControlLabel
-                              control={
-                                <Switch
-                                  checked={!hours.closed}
-                                  onChange={(e) =>
-                                    setLibrarySettings({
-                                      ...librarySettings,
-                                      operatingHours: {
-                                        ...librarySettings.operatingHours,
-                                        [day]: {
-                                          ...hours,
-                                          closed: !e.target.checked,
-                                        },
-                                      },
-                                    })
-                                  }
-                                />
-                              }
-                              label="Open"
-                              sx={{ mr: { sm: 2 } }}
-                            />
-                            {!hours.closed && (
-                              <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                spacing={2}
-                                sx={{ width: "100%" }}
-                              >
-                                <TextField
-                                  type="time"
-                                  size="small"
-                                  fullWidth
-                                  label="Opens"
-                                  value={hours.open}
-                                  onChange={(e) =>
-                                    setLibrarySettings({
-                                      ...librarySettings,
-                                      operatingHours: {
-                                        ...librarySettings.operatingHours,
-                                        [day]: { ...hours, open: e.target.value },
-                                      },
-                                    })
-                                  }
-                                />
-                                <TextField
-                                  type="time"
-                                  size="small"
-                                  fullWidth
-                                  label="Closes"
-                                  value={hours.close}
-                                  onChange={(e) =>
-                                    setLibrarySettings({
-                                      ...librarySettings,
-                                      operatingHours: {
-                                        ...librarySettings.operatingHours,
-                                        [day]: { ...hours, close: e.target.value },
-                                      },
-                                    })
-                                  }
-                                />
-                              </Stack>
-                            )}
-                          </Stack>
-                        </Paper>
-                      ),
-                    )}
                   </Stack>
                 </CardContent>
               </Card>
