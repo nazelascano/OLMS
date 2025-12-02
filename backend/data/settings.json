@@ -78,7 +78,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.910Z",
-    "updatedAt": "2025-11-23T13:16:40.994Z",
+    "updatedAt": "2025-11-26T12:54:40.340Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrorc3m9xi"
@@ -90,7 +90,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.915Z",
-    "updatedAt": "2025-11-23T13:16:40.998Z",
+    "updatedAt": "2025-11-26T12:54:40.361Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrorggln7f"
@@ -102,7 +102,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.935Z",
-    "updatedAt": "2025-11-23T13:16:41.003Z",
+    "updatedAt": "2025-11-26T12:54:40.365Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqros09xnt8"
@@ -114,7 +114,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.940Z",
-    "updatedAt": "2025-11-23T13:16:41.008Z",
+    "updatedAt": "2025-11-26T12:54:40.370Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqros5bldud"
@@ -126,7 +126,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.946Z",
-    "updatedAt": "2025-11-23T13:16:41.013Z",
+    "updatedAt": "2025-11-26T12:54:40.374Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrosbq7kps"
@@ -138,7 +138,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.950Z",
-    "updatedAt": "2025-11-23T13:16:41.017Z",
+    "updatedAt": "2025-11-26T12:54:40.379Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrosfh64gu"
@@ -150,7 +150,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.954Z",
-    "updatedAt": "2025-11-23T13:16:41.022Z",
+    "updatedAt": "2025-11-26T12:54:40.384Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrosjwqh9n"
@@ -162,19 +162,19 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.958Z",
-    "updatedAt": "2025-11-23T13:16:41.026Z",
+    "updatedAt": "2025-11-26T12:54:40.389Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrosnr4xu3"
   },
   {
     "id": "ANNUAL_BORROWING_ENABLED",
-    "value": false,
+    "value": true,
     "type": "boolean",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.963Z",
-    "updatedAt": "2025-11-23T13:16:41.030Z",
+    "updatedAt": "2025-11-26T12:54:40.394Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrossekbzp"
@@ -186,7 +186,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.967Z",
-    "updatedAt": "2025-11-23T13:16:41.035Z",
+    "updatedAt": "2025-11-26T12:54:40.399Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrosw573hd"
@@ -198,7 +198,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.971Z",
-    "updatedAt": "2025-11-23T13:16:41.039Z",
+    "updatedAt": "2025-11-26T12:54:40.404Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqrot035pev"

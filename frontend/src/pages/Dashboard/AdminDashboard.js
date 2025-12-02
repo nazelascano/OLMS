@@ -13,6 +13,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { reportsAPI } from "../../utils/api";
 import {
   LineChart,
@@ -25,6 +26,7 @@ import {
 import { PageLoading } from "../../components/Loading";
 
 const AdminDashboard = () => {
+  const theme = useTheme();
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [overdueBooks, setOverdueBooks] = useState([]);
@@ -198,7 +200,7 @@ const AdminDashboard = () => {
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      backgroundColor: "#22C55E",
+                      backgroundColor: (theme) => theme.palette.success.main,
                     }}
                   />{" "}
                   <Typography
@@ -245,7 +247,7 @@ const AdminDashboard = () => {
                     <Line
                       type="monotone"
                       dataKey="borrowed"
-                      stroke="#22C55E"
+                      stroke={theme.palette.success.main}
                       strokeWidth={2}
                       dot={false}
                     />

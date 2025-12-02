@@ -52,15 +52,6 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       return res.status(503).json({ message: 'Registration is unavailable during maintenance' });
     }
 
-    if (systemSettings && systemSettings.allowRegistration === false) {
-      setAuditContext(req, {
-        success: false,
-        status: 'RegistrationDisabled',
-        description: 'Registration blocked by allowRegistration flag',
-      });
-      return res.status(403).json({ message: 'Self-registration is currently disabled' });
-    }
-
     const { 
       username, 
       email, 
@@ -85,6 +76,17 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       });
     }
 
+    // Validate password length
+    const minLength = systemSettings?.passwordMinLength || 8;
+    if (password.length < minLength) {
+      setAuditContext(req, {
+        success: false,
+        status: 'Failed',
+        description: `Registration failed: password too short (minimum ${minLength} characters)`,
+      });
+      return res.status(400).json({ message: `Password must be at least ${minLength} characters long` });
+    }
+
     // Check if username already exists
     const existingUsers = await req.dbAdapter.getUsers({ username });
     if (existingUsers.length > 0) {
@@ -97,16 +99,21 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // Check if email already exists
-    const existingEmails = await req.dbAdapter.getUsers({ email });
-    if (existingEmails.length > 0) {
-      setAuditContext(req, {
-        success: false,
-        status: 'Failed',
-        description: `Registration failed: email ${email} already exists`,
-        details: { email },
-      });
-      return res.status(400).json({ message: 'Email already exists' });
+    // Validate grade level if provided
+    if (gradeLevel) {
+      const gradeStructureSetting = await req.dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_STRUCTURE' });
+      if (gradeStructureSetting && gradeStructureSetting.value) {
+        const structure = gradeStructureSetting.value;
+        if (!Array.isArray(structure) || !structure.some(entry => entry.grade === gradeLevel)) {
+          setAuditContext(req, {
+            success: false,
+            status: 'Failed',
+            description: 'Registration failed: invalid grade level',
+            details: { gradeLevel },
+          });
+          return res.status(400).json({ message: 'Invalid grade level' });
+        }
+      }
     }
 
     // Hash password
@@ -123,9 +130,6 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
       curriculum: curriculum || null,
       gradeLevel: gradeLevel || null,
       isActive: true,
-      emailVerified: systemSettings ? !systemSettings.requireEmailVerification : true,
-      emailVerifiedAt:
-        systemSettings && systemSettings.requireEmailVerification ? null : new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
       lastLoginAt: null,
@@ -159,7 +163,8 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
     });
 
     // Generate token
-    const token = generateToken(newUser);
+    const expiresIn = systemSettings?.sessionTimeoutMinutes ? `${systemSettings.sessionTimeoutMinutes}m` : JWT_EXPIRES_IN;
+    const token = generateToken(newUser, expiresIn);
 
     // Remove password from response
     const { password: _, ...userResponse } = newUser;
@@ -254,6 +259,19 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Account is deactivated' });
     }
 
+    // Check if account is locked due to failed attempts
+    if (userData.lockedUntil && userData.lockedUntil > new Date()) {
+      await recordAuditEvent(req, {
+        action: 'LOGIN',
+        entity: 'auth',
+        success: false,
+        statusCode: 429,
+        description: `Login failed: account ${userData.username} is locked`,
+        user: userData,
+      });
+      return res.status(429).json({ message: 'Account locked due to too many failed attempts' });
+    }
+
     const systemSettings = await loadSystemSettings(req);
     const isAdmin = (userData.role || '').toLowerCase() === 'admin';
     if (systemSettings?.maintenanceMode && !isAdmin) {
@@ -271,6 +289,19 @@ router.post('/login', async (req, res) => {
     // Verify password
     const isPasswordValid = await verifyPassword(password, userData.password);
     if (!isPasswordValid) {
+      // Increment failed attempts
+      const maxAttempts = systemSettings?.maxLoginAttempts || 5;
+      const currentAttempts = (userData.failedLoginAttempts || 0) + 1;
+      const lockDurationMinutes = 15; // Lock for 15 minutes after max attempts
+      let lockedUntil = null;
+      if (currentAttempts >= maxAttempts) {
+        lockedUntil = new Date(Date.now() + lockDurationMinutes * 60 * 1000);
+      }
+      await req.dbAdapter.updateUser(userData._id, {
+        failedLoginAttempts: currentAttempts,
+        lastFailedLoginAt: new Date(),
+        lockedUntil
+      });
       await recordAuditEvent(req, {
         action: 'LOGIN',
         entity: 'auth',
@@ -282,18 +313,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const emailVerified = typeof userData.emailVerified === 'boolean' ? userData.emailVerified : true;
-    if (systemSettings?.requireEmailVerification && !emailVerified && !isAdmin) {
-      await recordAuditEvent(req, {
-        action: 'LOGIN',
-        entity: 'auth',
-        success: false,
-        statusCode: 403,
-        description: 'Login blocked: email verification required',
-        user: userData,
-      });
-      return res.status(403).json({ message: 'Please verify your email before logging in' });
-    }
+    // Email verification is no longer required for login
 
     // If the stored password was in plaintext (legacy), migrate it to a bcrypt hash now
     try {
@@ -312,11 +332,14 @@ router.post('/login', async (req, res) => {
 
     // Update last login
     await req.dbAdapter.updateUser(userData._id, {
-      lastLoginAt: new Date()
+      lastLoginAt: new Date(),
+      failedLoginAttempts: 0, // Reset on successful login
+      lockedUntil: null
     });
 
     // Generate token
-    const token = generateToken(userData);
+    const expiresIn = systemSettings?.sessionTimeoutMinutes ? `${systemSettings.sessionTimeoutMinutes}m` : JWT_EXPIRES_IN;
+    const token = generateToken(userData, expiresIn);
 
     // Remove password from response
     const { password: _, ...userResponse } = userData;
@@ -397,6 +420,18 @@ router.post('/change-password', verifyToken, logAction('CHANGE_PASSWORD', 'auth'
         description: 'Change password failed: missing required fields',
       });
       return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    // Validate new password length
+    const systemSettings = await loadSystemSettings(req);
+    const minLength = systemSettings?.passwordMinLength || 8;
+    if (newPassword.length < minLength) {
+      setAuditContext(req, {
+        success: false,
+        status: 'Failed',
+        description: `Change password failed: new password too short (minimum ${minLength} characters)`,
+      });
+      return res.status(400).json({ message: `New password must be at least ${minLength} characters long` });
     }
 
     // Get current user data

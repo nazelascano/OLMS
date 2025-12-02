@@ -143,6 +143,11 @@ const recordAuditEvent = async (req, payload = {}) => {
     return null;
   }
 
+  // Check if audit logging is enabled
+  if (req.systemSettings && req.systemSettings.auditLogging === false) {
+    return null;
+  }
+
   try {
     const normalizedUser = buildUserContext(
       payload.user ||

@@ -650,7 +650,7 @@ const BookCopies = () => {
           </Grid>{" "}
         </DialogContent>{" "}
         <DialogActions>
-          <Button onClick={() => setCopyDialog(false)}> Cancel </Button>{" "}
+          <Button variant="outlined" onClick={() => setCopyDialog(false)}> Cancel </Button>{" "}
           <Button
             onClick={editingCopy ? handleUpdateCopy : handleAddCopy}
             variant="contained"
@@ -675,7 +675,7 @@ const BookCopies = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setScannerOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </Box>

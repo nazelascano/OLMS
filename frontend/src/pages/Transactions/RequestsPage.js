@@ -627,7 +627,7 @@ const RequestsPage = () => {
           <TextField fullWidth label="Reason" multiline minRows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
           <Button variant="contained" color="error" onClick={handleReject}>Reject</Button>
         </DialogActions>
       </Dialog>

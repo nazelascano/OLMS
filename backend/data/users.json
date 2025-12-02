@@ -26,9 +26,9 @@
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-11-26T08:16:18.283Z",
-    "lastLoginAt": "2025-11-26T08:14:57.914Z",
-    "lastActivityAt": "2025-11-26T08:16:18.273Z",
+    "updatedAt": "2025-12-02T12:49:14.784Z",
+    "lastLoginAt": "2025-12-02T11:57:27.310Z",
+    "lastActivityAt": "2025-12-02T12:49:14.783Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -36,7 +36,10 @@
       "size": 5574,
       "uploadedAt": "2025-11-09T02:31:12.563Z"
     },
-    "avatarUrl": "/uploads/avatars/avatar-1762655472557-1723603.png"
+    "avatarUrl": "/uploads/avatars/avatar-1762655472557-1723603.png",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "updatedBy": "mgnhicbwhxfy9"
   },
   {
     "libraryCardNumber": "LIB-25-0001",
@@ -70,7 +73,7 @@
     "password": "$2b$10$aHwwcdlhGetHuibADO8LPeZYX9i9orVvTpqMP91FqwezO.HZYyEPq",
     "_id": "mgniuxw0uslme",
     "createdAt": "2025-10-12T09:48:46.260Z",
-    "updatedAt": "2025-11-03T11:46:14.291Z",
+    "updatedAt": "2025-11-26T12:34:15.795Z",
     "lastLoginAt": "2025-10-12T09:49:31.891Z",
     "lastActivityAt": "2025-10-12T09:49:52.776Z",
     "mustChangePassword": true,
@@ -105,7 +108,7 @@
     },
     "_id": "mhfjcfgjt9dw4",
     "createdAt": "2025-11-01T00:19:55.075Z",
-    "updatedAt": "2025-11-03T05:19:04.571Z",
+    "updatedAt": "2025-11-26T12:34:15.798Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026"
   },
@@ -137,7 +140,7 @@
     },
     "_id": "mhfjcfnfxed3u",
     "createdAt": "2025-11-01T00:19:55.323Z",
-    "updatedAt": "2025-11-03T05:17:22.926Z",
+    "updatedAt": "2025-11-26T12:34:15.801Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026"
   },
@@ -152,7 +155,7 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-11-03T03:39:53.477Z",
-    "updatedAt": "2025-11-03T03:47:04.229Z",
+    "updatedAt": "2025-11-26T12:34:15.804Z",
     "createdBy": "mgnhicbwhxfy9",
     "lastLoginAt": "2025-11-03T03:40:06.897Z",
     "profile": {
@@ -203,7 +206,7 @@
     },
     "_id": "mhiohn4smj18h",
     "createdAt": "2025-11-03T05:07:14.908Z",
-    "updatedAt": "2025-11-03T05:17:22.901Z",
+    "updatedAt": "2025-11-26T12:34:15.805Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026"
   },
@@ -235,7 +238,7 @@
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-11-25T01:17:30.507Z",
+    "updatedAt": "2025-11-26T12:34:15.807Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
     "lastLoginAt": "2025-11-14T05:47:38.933Z",
@@ -269,7 +272,7 @@
     },
     "_id": "mhiohnb9aoa7d",
     "createdAt": "2025-11-03T05:07:15.141Z",
-    "updatedAt": "2025-11-03T05:12:50.433Z",
+    "updatedAt": "2025-11-26T12:34:15.809Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026"
   },
@@ -301,7 +304,7 @@
     },
     "_id": "mhiohndzonq3v",
     "createdAt": "2025-11-03T05:07:15.239Z",
-    "updatedAt": "2025-11-03T05:12:39.179Z",
+    "updatedAt": "2025-11-26T12:34:15.811Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026"
   },
@@ -335,7 +338,7 @@
     },
     "_id": "mhj20x96z2wmy",
     "createdAt": "2025-11-03T11:26:09.498Z",
-    "updatedAt": "2025-11-03T11:26:09.498Z"
+    "updatedAt": "2025-11-26T12:34:15.813Z"
   },
   {
     "firstName": "Blake",
@@ -367,7 +370,7 @@
     },
     "_id": "mhj20xgfikibi",
     "createdAt": "2025-11-03T11:26:09.759Z",
-    "updatedAt": "2025-11-03T11:26:09.759Z"
+    "updatedAt": "2025-11-26T12:34:15.815Z"
   },
   {
     "firstName": "Jochen",
@@ -399,7 +402,7 @@
     },
     "_id": "mhj2qt4uu4og8",
     "createdAt": "2025-11-03T11:46:17.216Z",
-    "updatedAt": "2025-11-03T11:46:17.216Z"
+    "updatedAt": "2025-11-26T12:34:15.816Z"
   },
   {
     "firstName": "Lester",
@@ -431,7 +434,7 @@
     },
     "_id": "mhj2qtcs1de24",
     "createdAt": "2025-11-03T11:46:17.500Z",
-    "updatedAt": "2025-11-03T11:46:17.500Z"
+    "updatedAt": "2025-11-26T12:34:15.819Z"
   },
   {
     "firstName": "Mark",
@@ -463,7 +466,7 @@
     },
     "_id": "mhj2qtkhp8750",
     "createdAt": "2025-11-03T11:46:17.777Z",
-    "updatedAt": "2025-11-03T11:46:17.777Z"
+    "updatedAt": "2025-11-26T12:34:15.821Z"
   },
   {
     "firstName": "Ella",
@@ -495,7 +498,7 @@
     },
     "_id": "mhj2qtsm5dfzv",
     "createdAt": "2025-11-03T11:46:18.070Z",
-    "updatedAt": "2025-11-03T11:46:18.070Z"
+    "updatedAt": "2025-11-26T12:34:15.822Z"
   },
   {
     "firstName": "Lory",
@@ -527,7 +530,7 @@
     },
     "_id": "mhj2qu06fwuix",
     "createdAt": "2025-11-03T11:46:18.342Z",
-    "updatedAt": "2025-11-03T11:46:18.342Z"
+    "updatedAt": "2025-11-26T12:34:15.824Z"
   },
   {
     "firstName": "Max",
@@ -559,7 +562,7 @@
     },
     "_id": "mhj2qu7zmq8kf",
     "createdAt": "2025-11-03T11:46:18.623Z",
-    "updatedAt": "2025-11-03T11:46:18.623Z"
+    "updatedAt": "2025-11-26T12:34:15.825Z"
   },
   {
     "firstName": "Rachel",
@@ -591,7 +594,7 @@
     },
     "_id": "mhj2qufo0942a",
     "createdAt": "2025-11-03T11:46:18.900Z",
-    "updatedAt": "2025-11-03T11:46:18.900Z"
+    "updatedAt": "2025-11-26T12:34:15.827Z"
   },
   {
     "firstName": "Flor",
@@ -623,7 +626,7 @@
     },
     "_id": "mhj2qumo0pu03",
     "createdAt": "2025-11-03T11:46:19.152Z",
-    "updatedAt": "2025-11-03T11:46:19.152Z"
+    "updatedAt": "2025-11-26T12:34:15.829Z"
   },
   {
     "firstName": "Dory",
@@ -655,7 +658,7 @@
     },
     "_id": "mhj2quv12gcg5",
     "createdAt": "2025-11-03T11:46:19.453Z",
-    "updatedAt": "2025-11-03T11:46:19.453Z"
+    "updatedAt": "2025-11-26T12:34:15.830Z"
   },
   {
     "firstName": "Carl",
@@ -687,7 +690,7 @@
     },
     "_id": "mhj2qv218sgc0",
     "createdAt": "2025-11-03T11:46:19.705Z",
-    "updatedAt": "2025-11-03T11:46:19.705Z"
+    "updatedAt": "2025-11-26T12:34:15.832Z"
   },
   {
     "firstName": "Maria",
@@ -719,7 +722,7 @@
     },
     "_id": "mhj2qv8ifo69b",
     "createdAt": "2025-11-03T11:46:19.938Z",
-    "updatedAt": "2025-11-03T11:46:19.938Z"
+    "updatedAt": "2025-11-26T12:34:15.834Z"
   },
   {
     "firstName": "Mary16",
@@ -751,7 +754,7 @@
     },
     "_id": "mhj2rmag3fu2s",
     "createdAt": "2025-11-03T11:46:55.000Z",
-    "updatedAt": "2025-11-23T10:24:53.997Z",
+    "updatedAt": "2025-11-26T12:34:15.836Z",
     "updatedBy": "mgnhicbwhxfy9"
   },
   {
@@ -788,7 +791,7 @@
     "password": "$2b$10$o1HXVdov2xfH/qPLQQknNOePp37lwM7ZuT.tRDaDZvNKGvLxP/z3u",
     "_id": "micosx98s2u1z",
     "createdAt": "2025-11-24T05:09:06.525Z",
-    "updatedAt": "2025-11-24T08:07:50.432Z",
+    "updatedAt": "2025-11-26T12:34:15.838Z",
     "updatedBy": "mgnhicbwhxfy9"
   }
 ]

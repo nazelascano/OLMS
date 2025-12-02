@@ -16,10 +16,9 @@ const BORROWING_DEFAULTS = {
 
 const SYSTEM_DEFAULTS = {
   maintenanceMode: false,
-  allowRegistration: true,
-  requireEmailVerification: true,
   sessionTimeoutMinutes: 60,
   maxLoginAttempts: 5,
+  passwordMinLength: 8,
   backupFrequency: 'daily',
   logRetentionDays: 90,
   auditLogging: true,
@@ -177,14 +176,6 @@ const getNotificationChannelState = (settings = NOTIFICATION_DEFAULTS) => {
 
 const buildSystemSettings = (settingsMap) => ({
   maintenanceMode: toBoolean(settingsMap.MAINTENANCE_MODE, SYSTEM_DEFAULTS.maintenanceMode),
-  allowRegistration: toBoolean(
-    settingsMap.ALLOW_REGISTRATION,
-    SYSTEM_DEFAULTS.allowRegistration,
-  ),
-  requireEmailVerification: toBoolean(
-    settingsMap.REQUIRE_EMAIL_VERIFICATION,
-    SYSTEM_DEFAULTS.requireEmailVerification,
-  ),
   sessionTimeoutMinutes: toNumber(
     settingsMap.SESSION_TIMEOUT_MINUTES,
     SYSTEM_DEFAULTS.sessionTimeoutMinutes,
@@ -192,6 +183,10 @@ const buildSystemSettings = (settingsMap) => ({
   maxLoginAttempts: toNumber(
     settingsMap.MAX_LOGIN_ATTEMPTS,
     SYSTEM_DEFAULTS.maxLoginAttempts,
+  ),
+  passwordMinLength: toNumber(
+    settingsMap.PASSWORD_MIN_LENGTH,
+    SYSTEM_DEFAULTS.passwordMinLength,
   ),
   backupFrequency: settingsMap.BACKUP_FREQUENCY || SYSTEM_DEFAULTS.backupFrequency,
   logRetentionDays: toNumber(

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -27,6 +27,7 @@ import {
   IconButton,
   Menu,
   ListItemIcon,
+  CircularProgress,
 } from "@mui/material";
 import {
   Search,
@@ -49,11 +50,13 @@ import {
   ensureUserAttributes,
   collectAllSections,
   getSectionsForGrade,
+  buildGradeColorMap,
 } from "../../utils/userAttributes";
 import { PageLoading } from "../../components/Loading";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
+import { addActionButtonSx, importActionButtonSx } from "../../theme/actionButtons";
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -94,6 +97,10 @@ const StudentsList = () => {
 
   const gradeOptions = userAttributes.gradeLevels;
   const gradeStructure = userAttributes.gradeStructure || [];
+  const gradeColorMap = useMemo(
+    () => buildGradeColorMap(gradeStructure),
+    [gradeStructure],
+  );
   const allSections = collectAllSections(gradeStructure);
   const availableSections = gradeFilter
     ? (() => {
@@ -267,7 +274,7 @@ const StudentsList = () => {
       toast.loading("Generating library card...");
       const libraryResponse = await settingsAPI.getByCategory('library');
       const librarySettings = libraryResponse.data || {};
-      const libraryCardPDF = await generateLibraryCard(student, librarySettings);
+      const libraryCardPDF = await generateLibraryCard(student, librarySettings, { gradeColorMap });
       downloadPDF(libraryCardPDF, `library_card_${student.libraryCardNumber}.pdf`);
       toast.dismiss();
       toast.success("Library card generated successfully!");
@@ -305,7 +312,10 @@ const StudentsList = () => {
     }).format(amount || 0);
   };
 
-  if (loading) {
+  // Only show the full-page loading indicator on the initial load (no students yet).
+  // This preserves the search input while background fetches happen and prevents
+  // the search field from losing focus when typing due to the page being replaced.
+  if (loading && students.length === 0) {
     return <PageLoading message="Loading students..." />;
   }
 
@@ -326,34 +336,30 @@ const StudentsList = () => {
         >
           Students Management{" "}
         </Typography>{" "}
-        <Box display="flex" gap={2}>
+        <Box display="flex" gap={2} alignItems="center">
+          {loading && students.length > 0 && (
+            <CircularProgress size={18} sx={{ mr: 1 }} />
+          )}
           <Button
             variant="outlined"
             startIcon={<GetApp />}
             onClick={() => {
               setImportDialogOpen(true);
             }}
-            sx={{
-              borderColor: "#22C55E",
-              color: "#22C55E",
-              "&:hover": { backgroundColor: "#22C55E", color: "white" },
-            }}
+            sx={importActionButtonSx}
           >
-            Import{" "}
-          </Button>{" "}
+            Import
+          </Button>
           <Button
             variant="contained"
             startIcon={<PersonAdd />}
             onClick={() => {
               navigate("/students/new");
             }}
-            sx={{
-              backgroundColor: "#22C55E",
-              "&:hover": { backgroundColor: "#16A34A" },
-            }}
+            sx={addActionButtonSx}
           >
-            Add Student{" "}
-          </Button>{" "}
+            Add Student
+          </Button>
         </Box>{" "}
       </Box>
   {/* Search and Filters */}
@@ -487,11 +493,7 @@ const StudentsList = () => {
               variant="contained"
               startIcon={<PersonAdd />}
               onClick={() => navigate("/students/new")}
-              sx={{
-                mt: 2,
-                backgroundColor: "#22C55E",
-                "&:hover": { backgroundColor: "#16A34A" },
-              }}
+              sx={{ ...addActionButtonSx, mt: 2 }}
             >
               Add First Student{" "}
             </Button>
@@ -775,7 +777,7 @@ const StudentsList = () => {
           </Typography>{" "}
         </DialogContent>{" "}
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}> Cancel </Button>{" "}
+          <Button variant="outlined" onClick={() => setDeleteDialogOpen(false)}> Cancel </Button>{" "}
           <Button
             onClick={handleDeleteStudent}
             color="error"
@@ -799,7 +801,7 @@ const StudentsList = () => {
           </Typography>{" "}
         </DialogContent>{" "}
         <DialogActions>
-          <Button onClick={() => setPaymentDialogOpen(false)}> Cancel </Button>{" "}
+          <Button variant="outlined" onClick={() => setPaymentDialogOpen(false)}> Cancel </Button>{" "}
           <Button onClick={handlePayDues} color="success" variant="contained">
             Pay Dues{" "}
           </Button>{" "}

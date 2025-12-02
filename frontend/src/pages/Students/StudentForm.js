@@ -30,6 +30,7 @@ import {
   ensureUserAttributes,
   getSectionsForGrade,
   collectAllSections,
+  buildGradeColorMap,
 } from "../../utils/userAttributes";
 import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
@@ -109,6 +110,10 @@ const StudentForm = () => {
   const gradeStructure = useMemo(
     () => userAttributes.gradeStructure || [],
     [userAttributes.gradeStructure],
+  );
+  const gradeColorMap = useMemo(
+    () => buildGradeColorMap(gradeStructure),
+    [gradeStructure],
   );
   const curriculumOptions = userAttributes.curriculum;
   const hasGradeOptions = gradeOptions.length > 0;
@@ -686,7 +691,11 @@ const StudentForm = () => {
           const libraryResponse = await settingsAPI.getByCategory('library');
           const librarySettings = libraryResponse.data || {};
           
-          const libraryCardPDF = await generateLibraryCard(response.data.student || studentData, librarySettings);
+          const libraryCardPDF = await generateLibraryCard(
+            response.data.student || studentData,
+            librarySettings,
+            { gradeColorMap },
+          );
           downloadPDF(libraryCardPDF, `library_card_${studentData.libraryCardNumber}.pdf`);
           toast.success("Library card generated and downloaded");
         } catch (cardError) {

@@ -124,6 +124,9 @@ router.get('/library', async(req, res) => {
             libraryEmail: index.LIBRARY_EMAIL || '',
             website: index.LIBRARY_WEBSITE || '',
             description: index.LIBRARY_DESCRIPTION || '',
+            openingTime: index.LIBRARY_OPENING_TIME || '08:00',
+            closingTime: index.LIBRARY_CLOSING_TIME || '17:00',
+            operatingDays: Array.isArray(index.LIBRARY_OPERATING_DAYS) ? index.LIBRARY_OPERATING_DAYS : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
         };
 
         res.json(response);
@@ -240,16 +243,10 @@ router.get('/system', verifyToken, requireLibrarian, async(req, res) => {
 
         const response = {
             maintenanceMode: toBoolean(index.MAINTENANCE_MODE, false),
-            allowRegistration: toBoolean(index.ALLOW_REGISTRATION, true),
-            requireEmailVerification: toBoolean(index.REQUIRE_EMAIL_VERIFICATION, true),
             sessionTimeoutMinutes: toNumber(index.SESSION_TIMEOUT_MINUTES, 60),
             maxLoginAttempts: toNumber(index.MAX_LOGIN_ATTEMPTS, 5),
             passwordPolicy: {
                 minLength: toNumber(index.PASSWORD_MIN_LENGTH, 8),
-                requireUppercase: toBoolean(index.PASSWORD_REQUIRE_UPPERCASE, true),
-                requireLowercase: toBoolean(index.PASSWORD_REQUIRE_LOWERCASE, true),
-                requireNumbers: toBoolean(index.PASSWORD_REQUIRE_NUMBERS, true),
-                requireSpecialChars: toBoolean(index.PASSWORD_REQUIRE_SPECIAL_CHARS, false)
             },
             backupFrequency: index.BACKUP_FREQUENCY || 'daily',
             logRetentionDays: toNumber(index.LOG_RETENTION_DAYS, 90),
@@ -274,6 +271,9 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
             libraryEmail = '',
             website = '',
             description = '',
+            openingTime = '08:00',
+            closingTime = '17:00',
+            operatingDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
         } = req.body || {};
 
         const updates = [
@@ -283,6 +283,9 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
             { id: 'LIBRARY_EMAIL', value: libraryEmail, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_WEBSITE', value: website, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_DESCRIPTION', value: description, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_OPENING_TIME', value: openingTime, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_CLOSING_TIME', value: closingTime, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_OPERATING_DAYS', value: Array.isArray(operatingDays) ? operatingDays : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], type: 'array', category: LIBRARY_CATEGORY },
         ];
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, updates);
@@ -478,8 +481,6 @@ router.put('/system', verifyToken, requireAdmin, logAction('UPDATE', 'settings-s
     try {
         const {
             maintenanceMode,
-            allowRegistration,
-            requireEmailVerification,
             sessionTimeoutMinutes,
             maxLoginAttempts,
             passwordPolicy = {},
@@ -490,8 +491,6 @@ router.put('/system', verifyToken, requireAdmin, logAction('UPDATE', 'settings-s
 
         const updates = [
             { id: 'MAINTENANCE_MODE', value: toBoolean(maintenanceMode, false), type: 'boolean', category: SYSTEM_CATEGORY },
-            { id: 'ALLOW_REGISTRATION', value: toBoolean(allowRegistration, true), type: 'boolean', category: SYSTEM_CATEGORY },
-            { id: 'REQUIRE_EMAIL_VERIFICATION', value: toBoolean(requireEmailVerification, true), type: 'boolean', category: SYSTEM_CATEGORY },
             { id: 'SESSION_TIMEOUT_MINUTES', value: toNumber(sessionTimeoutMinutes, 60), type: 'number', category: SYSTEM_CATEGORY },
             { id: 'MAX_LOGIN_ATTEMPTS', value: toNumber(maxLoginAttempts, 5), type: 'number', category: SYSTEM_CATEGORY },
             { id: 'BACKUP_FREQUENCY', value: backupFrequency || 'daily', type: 'string', category: SYSTEM_CATEGORY },
@@ -501,18 +500,10 @@ router.put('/system', verifyToken, requireAdmin, logAction('UPDATE', 'settings-s
 
         const normalizedPolicy = {
             minLength: toNumber(passwordPolicy.minLength, 8),
-            requireUppercase: toBoolean(passwordPolicy.requireUppercase, true),
-            requireLowercase: toBoolean(passwordPolicy.requireLowercase, true),
-            requireNumbers: toBoolean(passwordPolicy.requireNumbers, true),
-            requireSpecialChars: toBoolean(passwordPolicy.requireSpecialChars, false)
         };
 
         const policyUpdates = [
-            { id: 'PASSWORD_MIN_LENGTH', value: normalizedPolicy.minLength, type: 'number', category: SYSTEM_CATEGORY },
-            { id: 'PASSWORD_REQUIRE_UPPERCASE', value: normalizedPolicy.requireUppercase, type: 'boolean', category: SYSTEM_CATEGORY },
-            { id: 'PASSWORD_REQUIRE_LOWERCASE', value: normalizedPolicy.requireLowercase, type: 'boolean', category: SYSTEM_CATEGORY },
-            { id: 'PASSWORD_REQUIRE_NUMBERS', value: normalizedPolicy.requireNumbers, type: 'boolean', category: SYSTEM_CATEGORY },
-            { id: 'PASSWORD_REQUIRE_SPECIAL_CHARS', value: normalizedPolicy.requireSpecialChars, type: 'boolean', category: SYSTEM_CATEGORY }
+            { id: 'PASSWORD_MIN_LENGTH', value: normalizedPolicy.minLength, type: 'number', category: SYSTEM_CATEGORY }
         ];
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, [...updates, ...policyUpdates]);
@@ -823,6 +814,71 @@ router.post('/reset/defaults', verifyToken, requireAdmin, logAction('RESET_DEFAU
         });
         res.status(500).json({ message: 'Failed to reset settings' });
     }
+});
+
+router.post('/backup', verifyToken, requireAdmin, logAction('BACKUP', 'system'), async (req, res) => {
+  try {
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    const backupDir = path.join(__dirname, '../backups');
+    await fs.mkdir(backupDir, { recursive: true });
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(backupDir, `backup-${timestamp}`);
+    await fs.mkdir(backupPath, { recursive: true });
+
+    const collections = ['users', 'books', 'transactions', 'settings', 'audit', 'notifications'];
+
+    for (const collection of collections) {
+      const data = await req.dbAdapter.findInCollection(collection, {});
+      const filePath = path.join(backupPath, `${collection}.json`);
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+    }
+
+    setAuditContext(req, {
+      success: true,
+      description: `Backup created at ${backupPath}`,
+      metadata: { backupPath, collections }
+    });
+
+    res.json({ message: 'Backup created successfully', path: backupPath });
+  } catch (error) {
+    console.error('Backup error:', error);
+    setAuditContext(req, {
+      success: false,
+      description: `Backup failed: ${error.message}`,
+      details: { error: error.message }
+    });
+    res.status(500).json({ message: 'Backup failed' });
+  }
+});
+
+router.post('/cleanup-logs', verifyToken, requireAdmin, logAction('CLEANUP_LOGS', 'system'), async (req, res) => {
+  try {
+    const systemSettings = req.systemSettings;
+    const retentionDays = systemSettings?.logRetentionDays || 90;
+    const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+
+    // Assuming deleteFromCollection returns the number of deleted documents
+    const deletedCount = await req.dbAdapter.deleteFromCollection('audit', { timestamp: { $lt: cutoff } });
+
+    setAuditContext(req, {
+      success: true,
+      description: `Cleaned up audit logs older than ${retentionDays} days`,
+      metadata: { retentionDays, deletedCount, cutoff }
+    });
+
+    res.json({ message: `Cleaned up ${deletedCount || 'some'} old audit logs` });
+  } catch (error) {
+    console.error('Cleanup logs error:', error);
+    setAuditContext(req, {
+      success: false,
+      description: `Log cleanup failed: ${error.message}`,
+      details: { error: error.message }
+    });
+    res.status(500).json({ message: 'Log cleanup failed' });
+  }
 });
 
 module.exports = router;

@@ -1031,7 +1031,7 @@ const BorrowForm = () => {
                   />
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+                  <Button variant="outlined" onClick={() => setScannerOpen(false)}>Cancel</Button>
                 </DialogActions>
               </Dialog>
             )}

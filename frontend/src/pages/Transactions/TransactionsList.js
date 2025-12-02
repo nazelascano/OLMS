@@ -58,6 +58,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { api, settingsAPI } from "../../utils/api";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
+import { addActionButtonSx, importActionButtonSx } from "../../theme/actionButtons";
 
 const TransactionsList = () => {
   const navigate = useNavigate();
@@ -82,6 +83,11 @@ const TransactionsList = () => {
     active: 0,
     overdue: 0,
     returned: 0,
+  });
+  // Borrowing settings state
+  const [borrowingSettings, setBorrowingSettings] = useState({
+    annualBorrowingEnabled: true,
+    overnightBorrowingEnabled: false,
   });
   // Return confirmation dialog state
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -218,6 +224,15 @@ const TransactionsList = () => {
     }
   }, []);
 
+  const fetchBorrowingSettings = useCallback(async () => {
+    try {
+      const response = await api.get("/settings/borrowing-rules");
+      setBorrowingSettings(response.data);
+    } catch (error) {
+      console.error("Error fetching borrowing settings:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
@@ -225,6 +240,10 @@ const TransactionsList = () => {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  useEffect(() => {
+    fetchBorrowingSettings();
+  }, [fetchBorrowingSettings]);
 
   useEffect(() => {
     setPage(0);
@@ -809,17 +828,12 @@ const TransactionsList = () => {
             flexWrap="wrap"
             justifyContent="flex-end"
           >
-            {canManageAnnualBorrowing && (
+            {canManageAnnualBorrowing && borrowingSettings.annualBorrowingEnabled && (
               <Button
                 variant="outlined"
                 startIcon={<AutoStories />}
                 onClick={() => navigate("/annual-borrowing")}
-                sx={{
-                  borderColor: "#0ea5e9",
-                  color: "#0ea5e9",
-                  minWidth: 160,
-                  "&:hover": { backgroundColor: "#0ea5e9", color: "white" },
-                }}
+                sx={{ ...importActionButtonSx, minWidth: 160 }}
               >
                 Annual Borrowing
               </Button>
@@ -828,12 +842,7 @@ const TransactionsList = () => {
               variant="outlined"
               startIcon={<Assignment />}
               onClick={() => navigate("/transactions/borrow")}
-              sx={{
-                borderColor: "#22C55E",
-                color: "#22C55E",
-                minWidth: 140,
-                "&:hover": { backgroundColor: "#22C55E", color: "white" },
-              }}
+              sx={{ ...importActionButtonSx, minWidth: 140 }}
             >
               New Borrow
             </Button>
@@ -841,11 +850,7 @@ const TransactionsList = () => {
               variant="contained"
               startIcon={<AssignmentReturn />}
               onClick={() => navigate("/transactions/return")}
-              sx={{
-                backgroundColor: "#22C55E",
-                minWidth: 150,
-                "&:hover": { backgroundColor: "#16A34A" },
-              }}
+              sx={{ ...addActionButtonSx, minWidth: 150 }}
             >
               Return Books
             </Button>
@@ -1212,7 +1217,7 @@ const TransactionsList = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReturnDialogOpen(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setReturnDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleConfirmReturn} variant="contained" color="primary">
             Confirm Return
           </Button>
@@ -1433,7 +1438,7 @@ const TransactionsList = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setScannerOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -796,7 +796,7 @@ const TransactionDetails = () => {
             />{" "}
           </DialogContent>{" "}
           <DialogActions>
-            <Button onClick={() => setRenewDialog(false)}> Cancel </Button>{" "}
+            <Button variant="outlined" onClick={() => setRenewDialog(false)}> Cancel </Button>{" "}
             <Button
               onClick={handleRenewTransaction}
               variant="contained"
@@ -826,7 +826,7 @@ const TransactionDetails = () => {
             )}{" "}
           </DialogContent>{" "}
           <DialogActions>
-            <Button onClick={() => setReturnDialog(false)}> Cancel </Button>{" "}
+            <Button variant="outlined" onClick={() => setReturnDialog(false)}> Cancel </Button>{" "}
             <Button
               onClick={handleReturnBook}
               variant="contained"
@@ -857,7 +857,7 @@ const TransactionDetails = () => {
             />
           </DialogContent>{" "}
           <DialogActions>
-            <Button onClick={() => setEditNotesDialog(false)}> Cancel </Button>{" "}
+            <Button variant="outlined" onClick={() => setEditNotesDialog(false)}> Cancel </Button>{" "}
             <Button
               onClick={handleUpdateNotes}
               variant="contained"

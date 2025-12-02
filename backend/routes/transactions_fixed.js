@@ -31,41 +31,6 @@ const getBorrowingSettings = async (req) => {
     }
 };
 
-const getLibrarySettings = async (req) => {
-    try {
-        const snapshot = await ensureSettingsSnapshot(req);
-        return snapshot?.library || {
-            openingTime: "08:00",
-            closingTime: "17:00",
-            operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"]
-        };
-    } catch (error) {
-        console.error('Library settings load error:', error);
-        return {
-            openingTime: "08:00",
-            closingTime: "17:00",
-            operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"]
-        };
-    }
-};
-
-const isWithinOperatingHours = (librarySettings) => {
-    const now = new Date();
-    const currentDay = now.toLocaleLowerCase('en-US', { weekday: 'long' });
-    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
-
-    // Check if today is an operating day
-    if (!librarySettings.operatingDays.includes(currentDay)) {
-        return false;
-    }
-
-    // Check if current time is within operating hours
-    const openingTime = librarySettings.openingTime;
-    const closingTime = librarySettings.closingTime;
-
-    return currentTime >= openingTime && currentTime <= closingTime;
-};
-
 const getNotificationSettings = async (req) => {
     try {
         const snapshot = await ensureSettingsSnapshot(req);
@@ -926,22 +891,6 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
             return res.status(403).json({ message: 'Annual borrowing is currently disabled' });
         }
 
-        // Check school year for annual borrowing
-        if (isAnnualType(transactionType)) {
-            const systemSettings = req.systemSettings;
-            const schoolYearStart = new Date(systemSettings.schoolYearStart);
-            const schoolYearEnd = new Date(systemSettings.schoolYearEnd);
-            const now = new Date();
-            if (now < schoolYearStart || now > schoolYearEnd) {
-                setAuditContext(req, {
-                    success: false,
-                    status: 'OutsideSchoolYear',
-                    description: 'Borrow request blocked: outside school year for annual borrowing'
-                });
-                return res.status(403).json({ message: 'Annual borrowing is only allowed during the school year' });
-            }
-        }
-
         const maxBooksPerTransaction = Number(borrowingSettings.maxBooksPerTransaction) || 0;
         if (maxBooksPerTransaction > 0 && items.length > maxBooksPerTransaction) {
             setAuditContext(req, {
@@ -1139,17 +1088,6 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
             return res.status(400).json({ message: 'User account is not active' });
         }
 
-        // Check operating hours for student accounts
-        const userRole = (user.role || '').toLowerCase();
-        const isStudent = !['admin', 'librarian', 'staff'].includes(userRole);
-        if (isStudent) {
-            const librarySettings = await getLibrarySettings(req);
-            if (!isWithinOperatingHours(librarySettings)) {
-                setAuditContext(req, { success: false, status: 'OutsideOperatingHours', description: 'Request blocked: outside library operating hours' });
-                return res.status(403).json({ message: 'Borrow requests are only allowed during library operating hours' });
-            }
-        }
-
         // Respect settings for max books per transaction if available but do not reserve copies here
         if (isOvernightType(transactionType) && borrowingSettings.overnightBorrowingEnabled === false) {
             setAuditContext(req, { success: false, status: 'OvernightDisabled', description: 'Request blocked: overnight borrowing disabled' });
@@ -1158,22 +1096,6 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
         if (isAnnualType(transactionType) && borrowingSettings.annualBorrowingEnabled === false) {
             setAuditContext(req, { success: false, status: 'AnnualDisabled', description: 'Request blocked: annual borrowing disabled' });
             return res.status(403).json({ message: 'Annual borrowing is currently disabled' });
-        }
-
-        // Check school year for annual borrowing
-        if (isAnnualType(transactionType)) {
-            const systemSettings = req.systemSettings;
-            const schoolYearStart = new Date(systemSettings.schoolYearStart);
-            const schoolYearEnd = new Date(systemSettings.schoolYearEnd);
-            const now = new Date();
-            if (now < schoolYearStart || now > schoolYearEnd) {
-                setAuditContext(req, {
-                    success: false,
-                    status: 'OutsideSchoolYear',
-                    description: 'Request blocked: outside school year for annual borrowing'
-                });
-                return res.status(403).json({ message: 'Annual borrowing is only allowed during the school year' });
-            }
         }
 
         const parsedMaxBooks = parseInt(borrowingSettings.maxBooksPerTransaction, 10);
@@ -1609,7 +1531,7 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             return res.status(400).json({ message: 'One or more requested copies are missing or unavailable', details: validationFailures });
         }
 
-        // All validations passed — proceed to reserve copies and update books
+        // All validations passed ΓÇö proceed to reserve copies and update books
         const updatedBooks = [];
         for (const ready of readyToUpdate) {
             const { targetBook, copyId } = ready;
@@ -1641,30 +1563,9 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             return res.status(403).json({ message: 'Annual borrowing is currently disabled' });
         }
 
-        // Check school year for annual borrowing
-        if (isAnnualType(transactionType)) {
-            const systemSettings = req.systemSettings;
-            const schoolYearStart = new Date(systemSettings.schoolYearStart);
-            const schoolYearEnd = new Date(systemSettings.schoolYearEnd);
-            const now = new Date();
-            if (now < schoolYearStart || now > schoolYearEnd) {
-                setAuditContext(req, {
-                    success: false,
-                    status: 'OutsideSchoolYear',
-                    description: 'Approve request blocked: outside school year for annual borrowing'
-                });
-                return res.status(403).json({ message: 'Annual borrowing is only allowed during the school year' });
-            }
-        }
-
         const borrowWindowDays = resolveBorrowWindowDays(transactionType, borrowingSettings);
         const borrowDate = new Date();
         const dueDate = calculateDueDate(borrowDate, borrowWindowDays);
-        
-        // Calculate reservation expiration date
-        const reservationPeriodDays = Number(borrowingSettings.reservationPeriodDays) || 3;
-        const reservationExpiresAt = new Date(borrowDate);
-        reservationExpiresAt.setDate(reservationExpiresAt.getDate() + reservationPeriodDays);
 
         // Update transaction
         const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
@@ -1672,7 +1573,6 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             status: 'borrowed',
             borrowDate,
             dueDate,
-            reservationExpiresAt,
             updatedAt: new Date(),
             updatedBy: req.user.id,
             items: items.map(it => ({ ...it, status: 'borrowed' }))
@@ -1702,21 +1602,15 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                     const dueDateValue = dueDate instanceof Date ? dueDate : new Date(dueDate);
                     const dueDateIso = Number.isNaN(dueDateValue.getTime()) ? null : dueDateValue.toISOString();
                     const friendlyDueDate = dueDateIso ? dueDateIso.split('T')[0] : 'the scheduled due date';
-                    
-                    const reservationExpiresValue = reservationExpiresAt instanceof Date ? reservationExpiresAt : new Date(reservationExpiresAt);
-                    const reservationExpiresIso = Number.isNaN(reservationExpiresValue.getTime()) ? null : reservationExpiresValue.toISOString();
-                    const friendlyPickupDate = reservationExpiresIso ? reservationExpiresIso.split('T')[0] : 'the pickup deadline';
-                    
                     await req.dbAdapter.insertIntoCollection('notifications', {
                         title: 'Borrow request approved',
-                        message: `Your borrow request ${transaction.id || transaction._id} has been approved. Please pick up your items by ${friendlyPickupDate}. Items are due on ${friendlyDueDate}.`,
+                        message: `Your borrow request ${transaction.id || transaction._id} has been approved. Items are due on ${friendlyDueDate}.`,
                         type: 'request-approved',
                         transactionId: transaction.id || transaction._id,
                         recipients: borrowerRecipients,
                         meta: {
                             transactionId: transaction.id || transaction._id,
                             dueDate: dueDateIso,
-                            reservationExpiresAt: reservationExpiresIso,
                             itemCount: items.length,
                             status: 'borrowed'
                         },
@@ -2045,220 +1939,107 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
     }
 });
 
-router.post('/expire-reservations', verifyToken, requireStaff, logAction('EXPIRE_RESERVATIONS', 'transaction'), async (req, res) => {
+router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transaction'), async(req, res) => {
     try {
-        const now = new Date();
-        
-        // Find all borrowed transactions with expired reservations
-        const expiredReservations = await req.dbAdapter.findInCollection('transactions', {
-            status: 'borrowed',
-            reservationExpiresAt: { $lt: now }
-        });
-
-        if (expiredReservations.length === 0) {
-            return res.json({ message: 'No expired reservations found', expiredCount: 0 });
-        }
-
-        let expiredCount = 0;
-        const results = [];
-
-        for (const transaction of expiredReservations) {
-            try {
-                // Check if transaction is still active (not returned)
-                const hasActiveItems = (transaction.items || []).some(item => item.status !== 'returned');
-                if (!hasActiveItems) {
-                    continue; // Skip already returned transactions
+        const transactionId = req.params.id;
+        const { extensionDays = 14 } = req.body;
+        setAuditContext(req, {
+            details: {
+                transactionId
+            },
+            metadata: {
+                renewalRequest: {
+                    transactionId,
+                    extensionDays
                 }
-
-                // Update transaction status to indicate expired reservation
-                const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
-                await req.dbAdapter.updateInCollection('transactions', txQuery, {
-                    status: 'reservation-expired',
-                    reservationExpiredAt: now,
-                    updatedAt: now,
-                    notes: (transaction.notes || '') + ' [Reservation expired]'
-                });
-
-                // Make copies available again
-                const allBooks = await req.dbAdapter.findInCollection('books', {});
-                for (const item of transaction.items || []) {
-                    if (item.status !== 'returned') {
-                        // Find the book and update the copy status back to available
-                        for (const book of allBooks) {
-                            const copy = book.copies?.find(c => c.copyId === item.copyId);
-                            if (copy && copy.status === 'borrowed') {
-                                const updatedCopies = book.copies.map(c => 
-                                    c.copyId === item.copyId ? { ...c, status: 'available', updatedAt: now } : c
-                                );
-                                const bookQuery = book.id ? { id: book.id } : { _id: book._id };
-                                await req.dbAdapter.updateInCollection('books', bookQuery, {
-                                    copies: updatedCopies,
-                                    availableCopies: updatedCopies.filter(c => c.status === 'available').length,
-                                    updatedAt: now
-                                });
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // Update user borrowing stats
-                let user = await req.dbAdapter.findOneInCollection('users', { id: transaction.userId });
-                if (!user) user = await req.dbAdapter.findOneInCollection('users', { _id: transaction.userId });
-                if (user) {
-                    const stats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
-                    const activeItems = (transaction.items || []).filter(item => item.status !== 'returned').length;
-                    const updatedStats = {
-                        ...stats,
-                        currentlyBorrowed: Math.max(0, (stats.currentlyBorrowed || 0) - activeItems)
-                    };
-                    const userQuery = user.id ? { id: user.id } : { _id: user._id };
-                    await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: now });
-                }
-
-                expiredCount++;
-                results.push({
-                    transactionId: transaction.id || transaction._id,
-                    userId: transaction.userId,
-                    itemCount: (transaction.items || []).filter(item => item.status !== 'returned').length
-                });
-
-            } catch (error) {
-                console.error(`Failed to expire reservation for transaction ${transaction.id || transaction._id}:`, error);
             }
+        });
+        const transaction = await req.dbAdapter.findOneInCollection('transactions', { id: transactionId });
+        if (!transaction) {
+            setAuditContext(req, {
+                success: false,
+                status: 'TransactionNotFound',
+                description: `Renew request failed: transaction ${transactionId} not found`,
+                entityId: transactionId
+            });
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+        if (transaction.status !== 'borrowed') {
+            setAuditContext(req, {
+                success: false,
+                status: 'InvalidStatus',
+                description: `Renew request failed: transaction ${transactionId} is not in borrowed status`,
+                entityId: transactionId,
+                metadata: {
+                    transactionStatus: transaction.status
+                }
+            });
+            return res.status(400).json({ message: 'Can only renew borrowed transactions' });
+        }
+        if (!transaction.dueDate) {
+            setAuditContext(req, {
+                success: false,
+                status: 'NoDueDate',
+                description: `Renew request failed: transaction ${transactionId} does not have a due date`,
+                entityId: transactionId
+            });
+            return res.status(400).json({ message: 'Transaction does not have a due date to renew' });
+        }
+        const borrowingSettings = await getBorrowingSettings(req);
+        const maxRenewals = Number(borrowingSettings.maxRenewals) || 0;
+        const currentRenewals = Number(transaction.renewalCount || 0);
+        if (maxRenewals > 0 && currentRenewals >= maxRenewals) {
+            setAuditContext(req, {
+                success: false,
+                status: 'RenewalLimit',
+                description: `Renew request failed: transaction ${transactionId} reached renewal limit`,
+                metadata: {
+                    maxRenewals
+                }
+            });
+            return res.status(400).json({ message: 'Maximum number of renewals reached for this transaction' });
         }
 
+        const allowRenewalsWithOverdue = borrowingSettings.allowRenewalsWithOverdue === true;
+        const currentDueDate = new Date(transaction.dueDate);
+        const isOverdue = Date.now() > currentDueDate.getTime();
+        if (isOverdue && !allowRenewalsWithOverdue) {
+            setAuditContext(req, {
+                success: false,
+                status: 'OverdueRenewalBlocked',
+                description: `Renew request failed: transaction ${transactionId} is overdue`,
+                metadata: {
+                    dueDate: currentDueDate.toISOString()
+                }
+            });
+            return res.status(400).json({ message: 'Cannot renew overdue transactions at this time' });
+        }
+
+        const requestedExtension = parseInt(extensionDays, 10);
+        const defaultExtension = resolveBorrowWindowDays(transaction.type, borrowingSettings);
+        const effectiveExtensionDays = Number.isFinite(requestedExtension) && requestedExtension > 0 ? requestedExtension : defaultExtension;
+        const newDueDate = new Date(currentDueDate);
+        newDueDate.setDate(newDueDate.getDate() + effectiveExtensionDays);
+        const nextRenewalCount = currentRenewals + 1;
+        await req.dbAdapter.updateInCollection('transactions', { id: transactionId }, { dueDate: newDueDate, renewalCount: nextRenewalCount, updatedAt: new Date(), renewedBy: req.user.id });
         setAuditContext(req, {
             success: true,
             status: 'Completed',
-            description: `Expired ${expiredCount} reservations`,
+            entityId: transactionId,
+            resourceId: transactionId,
+            description: `Renewed transaction ${transactionId} by ${effectiveExtensionDays} day(s)`,
             metadata: {
-                expiredCount,
-                actorId: req.user.id
+                actorId: req.user.id,
+                extensionDays: effectiveExtensionDays,
+                newDueDate: newDueDate.toISOString()
             },
             details: {
-                results
+                renewalCount: nextRenewalCount,
+                previousDueDate: currentDueDate.toISOString(),
+                newDueDate: newDueDate.toISOString()
             }
         });
-
-        res.json({ 
-            message: `Expired ${expiredCount} reservations`, 
-            expiredCount,
-            results 
-        });
-    } catch (error) {
-        console.error('Expire reservations error:', error);
-        setAuditContext(req, {
-            success: false,
-            status: 'Error',
-            description: `Expire reservations failed: ${error.message}`,
-            details: { error: error.message }
-        });
-        res.status(500).json({ message: 'Failed to expire reservations' });
-    }
-});
-
-router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transaction'), async(req, res) => {
-    const transactionId = req.params.id;
-    const { extensionDays = 14 } = req.body;
-    setAuditContext(req, {
-        details: {
-            transactionId
-        },
-        metadata: {
-            renewalRequest: {
-                transactionId,
-                extensionDays
-            }
-        }
-    });
-    try {
-    const transaction = await req.dbAdapter.findOneInCollection('transactions', { id: transactionId });
-    if (!transaction) {
-        setAuditContext(req, {
-            success: false,
-            status: 'TransactionNotFound',
-            description: `Renew request failed: transaction ${transactionId} not found`,
-            entityId: transactionId
-        });
-        return res.status(404).json({ message: 'Transaction not found' });
-    }
-    if (transaction.status !== 'borrowed') {
-        setAuditContext(req, {
-            success: false,
-            status: 'InvalidStatus',
-            description: `Renew request failed: transaction ${transactionId} is not in borrowed status`,
-            entityId: transactionId,
-            metadata: {
-                transactionStatus: transaction.status
-            }
-        });
-        return res.status(400).json({ message: 'Can only renew borrowed transactions' });
-    }
-    if (!transaction.dueDate) {
-        setAuditContext(req, {
-            success: false,
-            status: 'NoDueDate',
-            description: `Renew request failed: transaction ${transactionId} does not have a due date`,
-            entityId: transactionId
-        });
-        return res.status(400).json({ message: 'Transaction does not have a due date to renew' });
-    }
-    const borrowingSettings = await getBorrowingSettings(req);
-    const maxRenewals = Number(borrowingSettings.maxRenewals) || 0;
-    const currentRenewals = Number(transaction.renewalCount || 0);
-    if (maxRenewals > 0 && currentRenewals >= maxRenewals) {
-        setAuditContext(req, {
-            success: false,
-            status: 'RenewalLimit',
-            description: `Renew request failed: transaction ${transactionId} reached renewal limit`,
-            metadata: {
-                maxRenewals
-            }
-        });
-        return res.status(400).json({ message: 'Maximum number of renewals reached for this transaction' });
-    }
-
-    const allowRenewalsWithOverdue = borrowingSettings.allowRenewalsWithOverdue === true;
-    const currentDueDate = new Date(transaction.dueDate);
-    const isOverdue = Date.now() > currentDueDate.getTime();
-    if (isOverdue && !allowRenewalsWithOverdue) {
-        setAuditContext(req, {
-            success: false,
-            status: 'OverdueRenewalBlocked',
-            description: `Renew request failed: transaction ${transactionId} is overdue`,
-            metadata: {
-                dueDate: currentDueDate.toISOString()
-            }
-        });
-        return res.status(400).json({ message: 'Cannot renew overdue transactions at this time' });
-    }
-
-    const requestedExtension = parseInt(extensionDays, 10);
-    const defaultExtension = resolveBorrowWindowDays(transaction.type, borrowingSettings);
-    const effectiveExtensionDays = Number.isFinite(requestedExtension) && requestedExtension > 0 ? requestedExtension : defaultExtension;
-    const newDueDate = new Date(currentDueDate);
-    newDueDate.setDate(newDueDate.getDate() + effectiveExtensionDays);
-    const nextRenewalCount = currentRenewals + 1;
-    await req.dbAdapter.updateInCollection('transactions', { id: transactionId }, { dueDate: newDueDate, renewalCount: nextRenewalCount, updatedAt: new Date(), renewedBy: req.user.id });
-    setAuditContext(req, {
-        success: true,
-        status: 'Completed',
-        entityId: transactionId,
-        resourceId: transactionId,
-        description: `Renewed transaction ${transactionId} by ${effectiveExtensionDays} day(s)`,
-        metadata: {
-            actorId: req.user.id,
-            extensionDays: effectiveExtensionDays,
-            newDueDate: newDueDate.toISOString()
-        },
-        details: {
-            renewalCount: nextRenewalCount,
-            previousDueDate: currentDueDate.toISOString(),
-            newDueDate: newDueDate.toISOString()
-        }
-    });
-    res.json({ message: 'Transaction renewed successfully', newDueDate: newDueDate.toISOString() });
+        res.json({ message: 'Transaction renewed successfully', newDueDate: newDueDate.toISOString() });
     } catch (error) {
         console.error('Renew transaction error:', error);
         setAuditContext(req, {
@@ -2278,3 +2059,4 @@ router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transac
 
 module.exports = router;
 module.exports.enrichTransactionsWithBookMetadata = enrichTransactionsWithBookMetadata;
+

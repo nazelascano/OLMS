@@ -21,9 +21,12 @@ describe("normalizeGradeStructure", () => {
     const normalized = normalizeGradeStructure(raw);
 
     expect(normalized).toHaveLength(3);
-    expect(normalized[0]).toEqual({ grade: "Grade 7", sections: [] });
-    expect(normalized[1]).toEqual({ grade: "Grade 8", sections: ["Alpha", "alpha", "Beta"] });
-    expect(normalized[2]).toEqual({ grade: "Grade 9", sections: ["Gamma", "Delta"] });
+    expect(normalized[0]).toMatchObject({ grade: "Grade 7", sections: [] });
+    expect(normalized[1]).toMatchObject({ grade: "Grade 8", sections: ["Alpha", "alpha", "Beta"] });
+    expect(normalized[2]).toMatchObject({ grade: "Grade 9", sections: ["Gamma", "Delta"] });
+    normalized.forEach((entry) => {
+      expect(entry.color).toMatch(/^#[0-9A-F]{6}$/);
+    });
   });
 
   it("returns fallback copy when input is empty", () => {
@@ -34,7 +37,11 @@ describe("normalizeGradeStructure", () => {
 
     const normalized = normalizeGradeStructure([], fallback);
 
-    expect(normalized).toEqual(fallback);
+    expect(normalized).toHaveLength(2);
+    normalized.forEach((entry, index) => {
+      expect(entry).toMatchObject({ grade: fallback[index].grade, sections: fallback[index].sections });
+      expect(entry.color).toMatch(/^#[0-9A-F]{6}$/);
+    });
     expect(normalized).not.toBe(fallback);
   });
 
@@ -95,10 +102,12 @@ describe("ensureUserAttributes", () => {
 
     const result = ensureUserAttributes(attributes);
 
-    expect(result.gradeStructure).toEqual([
-      { grade: "Grade X", sections: ["Section 1"] },
-      { grade: "Grade Y", sections: [] },
-    ]);
+    expect(result.gradeStructure).toHaveLength(2);
+    expect(result.gradeStructure[0]).toMatchObject({ grade: "Grade X", sections: ["Section 1"] });
+    expect(result.gradeStructure[1]).toMatchObject({ grade: "Grade Y", sections: [] });
+    result.gradeStructure.forEach((entry) => {
+      expect(entry.color).toMatch(/^#[0-9A-F]{6}$/);
+    });
     expect(result.gradeLevels).toEqual(["Grade X", "Grade Y"]);
     expect(result.curriculum).toEqual(["STEM"]);
   });

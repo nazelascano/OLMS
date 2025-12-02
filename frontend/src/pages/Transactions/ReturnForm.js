@@ -476,7 +476,7 @@ const ReturnForm = () => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setScannerOpen(false)}>Cancel</Button>
+            <Button variant="outlined" onClick={() => setScannerOpen(false)}>Cancel</Button>
           </DialogActions>
         </Dialog>
         {/* Borrowed Books Table */}
@@ -693,7 +693,7 @@ const ReturnForm = () => {
             </List>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
+            <Button variant="outlined" onClick={() => setConfirmDialog(false)}>Cancel</Button>
             <Button onClick={confirmReturn} variant="contained" disabled={loading}>
               {loading ? "Processing..." : "Confirm Return"}
             </Button>

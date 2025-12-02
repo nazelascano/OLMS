@@ -50,6 +50,7 @@ import { resolveEntityAvatar } from "../../utils/media";
 import toast from "react-hot-toast";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
+import { addActionButtonSx, floatingAddFabSx } from "../../theme/actionButtons";
 
 const UsersList = () => {
   const navigate = useNavigate();
@@ -232,7 +233,7 @@ const UsersList = () => {
             variant="contained"
             startIcon={<Add />}
             onClick={() => navigate("/users/new")}
-            sx={{ backgroundColor: "#22C55E", "&:hover": { backgroundColor: "#16A34A" } }}
+            sx={addActionButtonSx}
           >
             Add New User
           </Button>
@@ -305,7 +306,7 @@ const UsersList = () => {
             {hasPermission("users.create") && "Start by adding your first user to the system"}
           </Typography>
           {hasPermission("users.create") && (
-            <Button variant="contained" startIcon={<Add />} onClick={() => navigate("/users/new")} sx={{ mt: 2, backgroundColor: "#22C55E", "&:hover": { backgroundColor: "#16A34A" } }}>
+            <Button variant="contained" startIcon={<Add />} onClick={() => navigate("/users/new")} sx={{ ...addActionButtonSx, mt: 2 }}>
               Add First User
             </Button>
           )}
@@ -496,7 +497,7 @@ const UsersList = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleDeleteUser} color="error" variant="contained">Delete</Button>
         </DialogActions>
       </Dialog>
@@ -510,7 +511,7 @@ const UsersList = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setStatusDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleToggleStatus} color={selectedUser?.isActive ? "error" : "success"} variant="contained">
             {selectedUser?.isActive ? "Deactivate" : "Activate"}
           </Button>
@@ -591,7 +592,7 @@ const UsersList = () => {
 
       {/* Floating Add Button for Mobile */}
       {hasPermission("users.create") && (
-        <Fab color="primary" aria-label="add user" sx={{ position: "fixed", bottom: 16, right: 16, display: { xs: "flex", sm: "none" }, backgroundColor: "#22C55E", "&:hover": { backgroundColor: "#16A34A" } }} onClick={() => navigate("/users/new")}>
+        <Fab color="primary" aria-label="add user" sx={{ ...floatingAddFabSx, position: "fixed", bottom: 16, right: 16, display: { xs: "flex", sm: "none" } }} onClick={() => navigate("/users/new")}>
           <Add />
         </Fab>
       )}

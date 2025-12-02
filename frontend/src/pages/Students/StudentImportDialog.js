@@ -1,5 +1,5 @@
 // Student Import Dialog Component
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -29,6 +29,7 @@ import {
   ensureUserAttributes,
   getSectionsForGrade,
   collectAllSections,
+  buildGradeColorMap,
 } from "../../utils/userAttributes";
 import { downloadPDF } from "../../utils/pdfGenerator";
 
@@ -59,6 +60,10 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
 
   const gradeOptions = userAttributes.gradeLevels || [];
   const gradeStructure = userAttributes.gradeStructure || [];
+  const gradeColorMap = useMemo(
+    () => buildGradeColorMap(gradeStructure),
+    [gradeStructure],
+  );
   const allSectionOptions = collectAllSections(gradeStructure);
   const resolveSectionOptions = (gradeName) => {
     const options = getSectionsForGrade(gradeStructure, gradeName);
@@ -461,7 +466,11 @@ Mary,Smith,Cruz,mary.smith@student.example.edu,09111222333,,123456789013,${sampl
             );
             const libraryResponse = await settingsAPI.getByCategory('library');
             const librarySettings = libraryResponse.data || {};
-            const multiPDF = await pdfModule.generateLibraryCardsPDF(importedStudents, librarySettings);
+            const multiPDF = await pdfModule.generateLibraryCardsPDF(
+              importedStudents,
+              librarySettings,
+              { gradeColorMap },
+            );
             const filename = `library_cards_import_${Date.now()}.pdf`;
             downloadPDF(multiPDF, filename);
             toast.dismiss(loadingId);

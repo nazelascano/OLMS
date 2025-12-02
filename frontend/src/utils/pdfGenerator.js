@@ -11,6 +11,44 @@ import { formatCurrency } from './currency';
 // - printPDF(pdf)
 
 const MM = 'mm';
+const DEFAULT_STRIPE_COLOR = '#C62828';
+
+const sanitizeHexColor = (value, fallback = DEFAULT_STRIPE_COLOR) => {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  const normalized = value.trim().replace(/^#/u, '').toUpperCase();
+  if (/^[0-9A-F]{6}$/u.test(normalized)) {
+    return `#${normalized}`;
+  }
+  return fallback;
+};
+
+const hexToRgb = (hexColor = DEFAULT_STRIPE_COLOR) => {
+  const normalized = sanitizeHexColor(hexColor).slice(1);
+  return [
+    parseInt(normalized.slice(0, 2), 16) || 0,
+    parseInt(normalized.slice(2, 4), 16) || 0,
+    parseInt(normalized.slice(4, 6), 16) || 0
+  ];
+};
+
+const deriveStripeColor = (student = {}, gradeColorMap = {}) => {
+  const direct = student.gradeColor || student.cardColor || student.stripeColor;
+  if (direct) {
+    return sanitizeHexColor(direct);
+  }
+
+  const gradeName = student.grade || student.gradeLevel;
+  if (typeof gradeName === 'string') {
+    const key = gradeName.trim().toLowerCase();
+    if (key && gradeColorMap && gradeColorMap[key]) {
+      return sanitizeHexColor(gradeColorMap[key]);
+    }
+  }
+
+  return DEFAULT_STRIPE_COLOR;
+};
 
 const createDoc = (opts = {}) => {
   const { orientation = 'portrait', format = 'letter' } = opts;
@@ -47,10 +85,12 @@ const deriveStudentLibraryId = (student = {}) => {
 // (no longer using a wrapper for splitTextToSize; use doc.splitTextToSize directly)
 
 // Draw front side of the library card on the given doc at the current page
-const drawCardFront = async (doc, student, librarySettings = {}) => {
+const drawCardFront = async (doc, student, librarySettings = {}, options = {}) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 3;
+  const gradeColor = deriveStripeColor(student, options.gradeColorMap || {});
+  const [stripeR, stripeG, stripeB] = hexToRgb(gradeColor);
 
   // Use library settings with fallbacks
   const libraryName = librarySettings.libraryName || 'Odiongan National High School';
@@ -108,7 +148,7 @@ const drawCardFront = async (doc, student, librarySettings = {}) => {
 
   // 5. Name in red bar (bottom)
   const barH = 8;
-  doc.setFillColor(0, 102, 204); // blue color
+  doc.setFillColor(stripeR, stripeG, stripeB);
   doc.rect(0, pageHeight-barH, pageWidth, barH, 'F');
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
@@ -196,28 +236,28 @@ const drawCardBack = (doc) => {
   doc.text('Librarian: ______________________', footerX, footerY3);
 };
 
-export const generateLibraryCard = async (studentData = {}, librarySettings = {}) => {
+export const generateLibraryCard = async (studentData = {}, librarySettings = {}, options = {}) => {
   // Use ID card dimensions (mm) and landscape orientation
   const doc = createDoc({ orientation: 'landscape', format: [85.6, 54] });
-  await drawCardFront(doc, studentData, librarySettings);
+  await drawCardFront(doc, studentData, librarySettings, options);
   doc.addPage();
   drawCardBack(doc);
   return doc;
 };
 
 // Generate a single PDF containing many cards (front + back pages per student)
-export const generateLibraryCardsPDF = async (students = [], librarySettings = {}) => {
+export const generateLibraryCardsPDF = async (students = [], librarySettings = {}, options = {}) => {
   const firstDoc = createDoc({ orientation: 'landscape', format: [85.6, 54] });
   let doc = firstDoc;
   for (let i = 0; i < students.length; i += 1) {
     const s = students[i] || {};
     if (i === 0) {
-      await drawCardFront(doc, s, librarySettings);
+      await drawCardFront(doc, s, librarySettings, options);
       doc.addPage();
       drawCardBack(doc);
     } else {
       doc.addPage();
-      await drawCardFront(doc, s, librarySettings);
+      await drawCardFront(doc, s, librarySettings, options);
       doc.addPage();
       drawCardBack(doc);
     }

@@ -42,6 +42,7 @@ import BookImportDialog from "./BookImportDialog";
 import { PageLoading } from "../../components/Loading";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
+import { addActionButtonSx, importActionButtonSx, floatingAddFabSx } from "../../theme/actionButtons";
 
 const sanitizeFilename = (value, fallback) => {
   if (!value) {
@@ -290,11 +291,16 @@ const BooksList = () => {
               variant="outlined"
               startIcon={<CloudUpload />}
               onClick={() => setImportDialogOpen(true)}
-              sx={{ borderColor: "#22C55E", color: "#22C55E", "&:hover": { backgroundColor: "#22C55E", color: "white" } }}
+              sx={importActionButtonSx}
             >
               Import Books
             </Button>
-            <Button variant="contained" startIcon={<Add />} onClick={() => navigate("/books/new")} sx={{ backgroundColor: "#22C55E", "&:hover": { backgroundColor: "#16A34A" } }}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => navigate("/books/new")}
+              sx={addActionButtonSx}
+            >
               Add New Book
             </Button>
           </Box>
@@ -351,7 +357,12 @@ const BooksList = () => {
             {hasPermission("books.create") && "Start by adding your first book to the library"}
           </Typography>
           {hasPermission("books.create") && (
-            <Button variant="contained" startIcon={<Add />} onClick={() => navigate("/books/new")} sx={{ mt: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => navigate("/books/new")}
+              sx={{ ...addActionButtonSx, mt: 2 }}
+            >
               Add First Book
             </Button>
           )}
@@ -492,7 +503,12 @@ const BooksList = () => {
 
       {/* Floating Add Button for Mobile */}
       {hasPermission("books.create") && (
-        <Fab color="primary" aria-label="add book" sx={{ position: "fixed", bottom: 16, right: 16, display: { xs: "flex", sm: "none" } }} onClick={() => navigate("/books/new")}>
+        <Fab
+          color="primary"
+          aria-label="add book"
+          sx={{ ...floatingAddFabSx, position: "fixed", bottom: 16, right: 16, display: { xs: "flex", sm: "none" } }}
+          onClick={() => navigate("/books/new")}
+        >
           <Add />
         </Fab>
       )}

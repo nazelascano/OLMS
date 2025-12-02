@@ -91,8 +91,8 @@ const customTheme = createTheme({
     },
     button: {
       textTransform: "none",
-      fontWeight: 500,
-      fontSize: "0.75rem",
+      fontWeight: 600,
+      fontSize: "0.875rem",
     },
   },
   components: {
@@ -134,18 +134,92 @@ const customTheme = createTheme({
           fontSize: "0.75rem",
         },
         contained: {
-          boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+          boxShadow: "0 3px 8px rgba(0, 0, 0, 0.12)",
           "&:hover": {
-            boxShadow:
-              "0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06)",
+            boxShadow: "0 6px 18px rgba(0, 0, 0, 0.16)",
+            transform: "translateY(-1px)",
+          },
+          "&.Mui-disabled": {
+            opacity: 0.6,
+            boxShadow: "none",
+          },
+          "&:focus-visible": {
+            outline: "2px solid #305FB7",
+            outlineOffset: "2px",
+          },
+        },
+        outlined: {
+          borderWidth: "1.5px",
+          borderColor: "#E2E8F0",
+          "&:hover": {
+            borderColor: "#305FB7",
+            backgroundColor: "rgba(48, 95, 183, 0.04)",
+          },
+        },
+        text: {
+          "&:hover": {
+            backgroundColor: "rgba(48, 95, 183, 0.04)",
           },
         },
         small: {
-          padding: "4px 8px",
-          minHeight: "28px",
-          fontSize: "0.7rem",
+          padding: "6px 10px",
+          minHeight: "32px",
+          fontSize: "0.8rem",
+        },
+        containedPrimary: {
+          backgroundColor: "#305FB7",
+          color: "#FFFFFF",
+          '&:hover': {
+            backgroundColor: '#1E4A8C',
+          }
+        },
+        containedSecondary: {
+          backgroundColor: '#22C55E',
+          color: '#FFFFFF',
+          '&:hover': {
+            backgroundColor: '#16A34A',
+          }
+        },
+        outlinedPrimary: {
+          borderColor: '#305FB7',
+          color: '#305FB7',
+        },
+        outlinedSecondary: {
+          borderColor: '#22C55E',
+          color: '#22C55E',
         },
       },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 6px 18px rgba(0,0,0,0.16)',
+          '&:hover': {
+            boxShadow: '0 10px 26px rgba(0,0,0,0.18)',
+            transform: 'translateY(-2px)'
+          }
+        }
+      }
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          padding: 8,
+          borderRadius: 8,
+          color: "#374151",
+          backgroundColor: "transparent",
+          '&:hover': {
+            backgroundColor: '#F1F5F9',
+          },
+          '&.Mui-disabled': {
+            color: '#9CA3AF',
+          },
+          '&:focus-visible': {
+            outline: '3px solid rgba(48, 95, 183, 0.18)',
+            outlineOffset: '2px',
+          }
+        }
+      }
     },
     MuiTextField: {
       styleOverrides: {

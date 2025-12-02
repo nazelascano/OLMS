@@ -141,7 +141,7 @@ const requireRole = (roles) => {
 };
 
 // Helper function to generate JWT token
-const generateToken = (user) => {
+const generateToken = (user, expiresIn = JWT_EXPIRES_IN) => {
   const payload = {
     userId: user._id,
     email: user.email,
@@ -149,7 +149,7 @@ const generateToken = (user) => {
     role: user.role
   };
   
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 };
 
 // Helper function to hash password (simplified for testing)

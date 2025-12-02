@@ -1470,7 +1470,7 @@ const AnnualBorrowing = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeCreateDialog}>Cancel</Button>
+          <Button variant="outlined" onClick={closeCreateDialog}>Cancel</Button>
           <Button variant="contained" onClick={handleSubmitCreate}>
             Save Annual Set
           </Button>

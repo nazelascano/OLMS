@@ -484,7 +484,7 @@ const BookDetails = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCopyDialog(false)}>Cancel</Button>
+          <Button variant="outlined" onClick={() => setCopyDialog(false)}>Cancel</Button>
           <Button onClick={handleAddCopy} variant="contained" disabled={!newCopy.copyId}>
             Add Copy
           </Button>

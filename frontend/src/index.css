@@ -215,7 +215,32 @@ code {
     color: white;
     height: 48px;
     padding: 0 30px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: box-shadow 0.15s ease, transform 0.12s ease;
 }
+.btn-gradient:hover{
+    box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    transform: translateY(-2px);
+}
+.btn-gradient:focus-visible{outline:2px solid #305FB7;outline-offset:2px}
+
+.btn{
+    padding: 6px 12px;
+    min-height: 32px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+.btn-primary{background:#305FB7;color:#fff;}
+.btn-outline{background:transparent;border:1.5px solid #E2E8F0;color:#374151;}
+.btn:focus-visible{outline:2px solid #305FB7;outline-offset:2px}
 
 
 /* Receipt styles */

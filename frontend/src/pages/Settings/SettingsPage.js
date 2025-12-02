@@ -45,6 +45,8 @@ import {
   ensureUserAttributes,
   normalizeStringList,
   normalizeGradeStructure,
+  getDefaultGradeColor,
+  sanitizeHexColor,
 } from "../../utils/userAttributes";
 
 const TabPanel = ({ children, value, index }) => {
@@ -73,6 +75,9 @@ const normalizeBoolean = (value, fallback) => {
 const sanitizePhoneInput = (value = "") =>
   String(value ?? "").replace(/\D/g, "").slice(0, 11);
 
+const resolveGradeColorValue = (entry, index = 0) =>
+  sanitizeHexColor(entry?.color, getDefaultGradeColor(index));
+
 const createDefaultLibrarySettings = () => ({
   libraryName: "",
   libraryAddress: "",
@@ -80,6 +85,9 @@ const createDefaultLibrarySettings = () => ({
   libraryEmail: "",
   website: "",
   description: "",
+  openingTime: "08:00",
+  closingTime: "17:00",
+  operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
 });
 
 const mergeLibrarySettings = (data = {}) => ({
@@ -89,6 +97,9 @@ const mergeLibrarySettings = (data = {}) => ({
   libraryEmail: data.libraryEmail || "",
   website: data.website || "",
   description: data.description || "",
+  openingTime: data.openingTime || "08:00",
+  closingTime: data.closingTime || "17:00",
+  operatingDays: Array.isArray(data.operatingDays) ? data.operatingDays : ["monday", "tuesday", "wednesday", "thursday", "friday"],
 });
 
 const createDefaultBorrowingRules = () => ({
@@ -190,16 +201,10 @@ const mergeNotificationSettings = (data = {}) => {
 
 const createDefaultSystemSettings = () => ({
   maintenanceMode: false,
-  allowRegistration: true,
-  requireEmailVerification: true,
   sessionTimeoutMinutes: 60,
   maxLoginAttempts: 5,
   passwordPolicy: {
     minLength: 8,
-    requireUppercase: true,
-    requireLowercase: true,
-    requireNumbers: true,
-    requireSpecialChars: false,
   },
   backupFrequency: "daily",
   logRetentionDays: 90,
@@ -213,18 +218,9 @@ const mergeSystemSettings = (data = {}) => {
   return {
     ...base,
     passwordPolicy: {
-      ...base.passwordPolicy,
-      ...(data.passwordPolicy || {}),
+      minLength: data.passwordPolicy?.minLength ?? base.passwordPolicy.minLength,
     },
     maintenanceMode: normalizeBoolean(data.maintenanceMode, base.maintenanceMode),
-    allowRegistration: normalizeBoolean(
-      data.allowRegistration,
-      base.allowRegistration,
-    ),
-    requireEmailVerification: normalizeBoolean(
-      data.requireEmailVerification,
-      base.requireEmailVerification,
-    ),
     sessionTimeoutMinutes: normalizeNumber(
       data.sessionTimeoutMinutes,
       base.sessionTimeoutMinutes,
@@ -402,6 +398,29 @@ const SettingsPage = () => {
     }));
   };
 
+  const handleGradeColorChange = (grade, colorValue) => {
+    if (!grade) {
+      return;
+    }
+
+    setUserAttributes((prev) => {
+      const structure = Array.isArray(prev.gradeStructure) ? prev.gradeStructure : [];
+      const nextStructure = structure.map((entry, index) => {
+        if (entry.grade !== grade) {
+          return entry;
+        }
+        return {
+          ...entry,
+          color: sanitizeHexColor(colorValue, resolveGradeColorValue(entry, index)),
+        };
+      });
+      return {
+        ...prev,
+        gradeStructure: nextStructure,
+      };
+    });
+  };
+
   const handleAddGradeLevel = () => {
     const value = newGradeLevel.trim();
     if (!value) return;
@@ -411,10 +430,11 @@ const SettingsPage = () => {
       if (structure.some((entry) => entry.grade?.toLowerCase() === value.toLowerCase())) {
         return prev;
       }
+      const defaultColor = getDefaultGradeColor(structure.length);
       const nextStructure = normalizeGradeStructure(
         [
           ...structure,
-          { grade: value, sections: [] },
+          { grade: value, sections: [], color: defaultColor },
         ],
         [],
         { useFallbackWhenEmpty: false }
@@ -728,6 +748,78 @@ const SettingsPage = () => {
                         })
                       }
                     />
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card elevation={1}>
+                <CardHeader
+                  title="Operating Hours"
+                  subheader="When the library is open for business"
+                />
+                <CardContent>
+                  <Stack spacing={2}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Opening Time"
+                        type="time"
+                        value={librarySettings.openingTime}
+                        onChange={(e) =>
+                          setLibrarySettings({
+                            ...librarySettings,
+                            openingTime: e.target.value,
+                          })
+                        }
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Closing Time"
+                        type="time"
+                        value={librarySettings.closingTime}
+                        onChange={(e) =>
+                          setLibrarySettings({
+                            ...librarySettings,
+                            closingTime: e.target.value,
+                          })
+                        }
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Stack>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Operating Days</InputLabel>
+                      <Select
+                        multiple
+                        value={librarySettings.operatingDays}
+                        onChange={(e) =>
+                          setLibrarySettings({
+                            ...librarySettings,
+                            operatingDays: e.target.value,
+                          })
+                        }
+                        renderValue={(selected) => (
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            {selected.map((value) => (
+                              <Chip
+                                key={value}
+                                label={value.charAt(0).toUpperCase() + value.slice(1)}
+                                size="small"
+                              />
+                            ))}
+                          </Box>
+                        )}
+                      >
+                        {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+                          <MenuItem key={day} value={day}>
+                            {day.charAt(0).toUpperCase() + day.slice(1)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Stack>
                 </CardContent>
               </Card>
@@ -1201,34 +1293,6 @@ const SettingsPage = () => {
                     <FormControlLabel
                       control={
                         <Switch
-                          checked={systemSettings.allowRegistration}
-                          onChange={(e) =>
-                            setSystemSettings({
-                              ...systemSettings,
-                              allowRegistration: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Allow User Registration"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={systemSettings.requireEmailVerification}
-                          onChange={(e) =>
-                            setSystemSettings({
-                              ...systemSettings,
-                              requireEmailVerification: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Require Email Verification"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
                           checked={systemSettings.auditLogging}
                           onChange={(e) =>
                             setSystemSettings({
@@ -1448,19 +1512,47 @@ const SettingsPage = () => {
                       </Typography>
                     ) : (
                       <Stack spacing={2}>
-                        {userAttributes.gradeStructure.map((entry) => (
-                          <Paper key={entry.grade} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                              <Typography variant="subtitle1">{entry.grade}</Typography>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleRemoveGradeLevel(entry.grade)}
-                                aria-label={`Remove ${entry.grade}`}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Stack>
+                        {userAttributes.gradeStructure.map((entry, entryIndex) => {
+                          const entryColor = resolveGradeColorValue(entry, entryIndex);
+                          return (
+                            <Paper
+                              key={entry.grade}
+                              variant="outlined"
+                              sx={{ p: 2, borderRadius: 2, borderColor: entryColor }}
+                            >
+                              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                                <Box display="flex" alignItems="center" flexWrap="wrap" gap={1}>
+                                  <Typography variant="subtitle1">{entry.grade}</Typography>
+                                  <Box display="flex" alignItems="center" gap={1}>
+                                    <Box
+                                      component="input"
+                                      type="color"
+                                      aria-label={`Select color for ${entry.grade}`}
+                                      value={entryColor}
+                                      onChange={(event) => handleGradeColorChange(entry.grade, event.target.value)}
+                                      sx={{
+                                        width: 40,
+                                        height: 32,
+                                        border: "none",
+                                        background: "transparent",
+                                        cursor: "pointer",
+                                        p: 0,
+                                      }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary">
+                                      {entryColor}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleRemoveGradeLevel(entry.grade)}
+                                  aria-label={`Remove ${entry.grade}`}
+                                >
+                                  <Delete fontSize="small" />
+                                </IconButton>
+                              </Stack>
                             {entry.sections.length === 0 ? (
                               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                                 No sections yet. Add at least one section for this grade.
@@ -1502,8 +1594,9 @@ const SettingsPage = () => {
                                 Add Section
                               </Button>
                             </Stack>
-                          </Paper>
-                        ))}
+                            </Paper>
+                          );
+                        })}
                       </Stack>
                     )}
                   </Stack>
