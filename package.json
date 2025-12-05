@@ -16,7 +16,8 @@
         "build": "cd frontend && npm run build",
     "test": "cd frontend && npm test",
         "server:dev:auto": "node scripts/start-auto.js --target=backend",
-        "client:dev:auto": "node scripts/start-auto.js --target=frontend"
+        "client:dev:auto": "node scripts/start-auto.js --target=frontend",
+        "keep-alive": "node scripts/keep-alive.js"
     },
     "keywords": [
         "library-management",

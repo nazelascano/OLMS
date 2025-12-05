@@ -49,19 +49,23 @@ const getLibrarySettings = async (req) => {
     }
 };
 
-const isWithinOperatingHours = (librarySettings) => {
+const isWithinOperatingHours = (librarySettings = {}) => {
     const now = new Date();
-    const currentDay = now.toLocaleLowerCase('en-US', { weekday: 'long' });
+    const currentDay = now
+        .toLocaleString('en-US', { weekday: 'long' })
+        .toLowerCase();
     const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
 
-    // Check if today is an operating day
-    if (!librarySettings.operatingDays.includes(currentDay)) {
+    const operatingDays = Array.isArray(librarySettings.operatingDays)
+        ? librarySettings.operatingDays.map(day => String(day).toLowerCase())
+        : [];
+
+    if (operatingDays.length > 0 && !operatingDays.includes(currentDay)) {
         return false;
     }
 
-    // Check if current time is within operating hours
-    const openingTime = librarySettings.openingTime;
-    const closingTime = librarySettings.closingTime;
+    const openingTime = librarySettings.openingTime || '00:00';
+    const closingTime = librarySettings.closingTime || '23:59';
 
     return currentTime >= openingTime && currentTime <= closingTime;
 };

@@ -247,6 +247,27 @@ npm run server:start
 - Configure custom domains on both platforms if desired, and enable HTTPS (Render & Vercel handle certificates automatically).
 - Keep environment variables in sync between staging/production.
 
+### 4. Keep the Render backend warm
+Render free plans put inactive services to sleep after a few minutes, which causes the first login/data fetch to stall while the container wakes up. To keep the API responsive you can run the built-in keep-alive pinger anywhere with outbound internet access (local machine, a tiny VM, GitHub Actions schedule, etc.):
+
+```bash
+npm run keep-alive
+```
+
+By default it pings `https://olms-backend.onrender.com/health` every five minutes. Customize it with environment variables:
+
+- `KEEP_ALIVE_URL` – full URL to ping (include `https://` and optionally `?key=value`).
+- `KEEP_ALIVE_INTERVAL_MS` – interval in milliseconds (default `300000`).
+- `KEEP_ALIVE_TIMEOUT_MS` – request timeout in milliseconds (default `10000`).
+
+Example (PowerShell):
+
+```powershell
+$env:KEEP_ALIVE_URL='https://olms-backend.onrender.com/health'; $env:KEEP_ALIVE_INTERVAL_MS='180000'; npm run keep-alive
+```
+
+Leave the process running (or schedule it) and Render will stay awake, giving your deployed frontend instant responses.
+
 ## 📁 Project Structure
 
 ```
