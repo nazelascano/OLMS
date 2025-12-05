@@ -1686,15 +1686,19 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
         let user = await req.dbAdapter.findOneInCollection('users', { id: transaction.userId });
         if (!user) user = await req.dbAdapter.findOneInCollection('users', { _id: transaction.userId });
         if (user) {
-            const stats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
-            const updatedStats = {
-                totalBorrowed: (stats.totalBorrowed || 0) + items.length,
-                currentlyBorrowed: (stats.currentlyBorrowed || 0) + items.length,
-                totalFines: stats.totalFines || 0,
-                totalReturned: stats.totalReturned || 0
-            };
-            const userQuery = user.id ? { id: user.id } : { _id: user._id };
-            await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: new Date() });
+            try {
+                const stats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
+                const updatedStats = {
+                    totalBorrowed: (stats.totalBorrowed || 0) + items.length,
+                    currentlyBorrowed: (stats.currentlyBorrowed || 0) + items.length,
+                    totalFines: stats.totalFines || 0,
+                    totalReturned: stats.totalReturned || 0
+                };
+                const userQuery = user.id ? { id: user.id } : { _id: user._id };
+                await req.dbAdapter.updateInCollection('users', userQuery, { borrowingStats: updatedStats, updatedAt: new Date() });
+            } catch (statsErr) {
+                console.error('Failed to update borrower stats after approval:', statsErr);
+            }
 
             const borrowerRecipients = buildRecipientList(user.id, user._id, user.userId, user.libraryCardNumber, user.email, user.username);
             if (
