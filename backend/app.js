@@ -16,10 +16,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration (simplified)
+// CORS configuration (allow multiple origins via env)
+const resolvedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
+  origin(origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (resolvedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
 }));
 
 app.use(morgan('combined'));

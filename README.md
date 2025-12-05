@@ -113,6 +113,7 @@ Create `backend/.env` file with the following variables:
 NODE_ENV=development
 PORT=5001
 FRONTEND_URL=http://localhost:3001
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # Database Configuration
 MONGODB_URI=mongodb://localhost:27017/olms
@@ -225,6 +226,7 @@ npm run server:start
    - `JWT_SECRET` – long random string for token signing.
    - `EMAIL_USER`/`EMAIL_PASS` or other SMTP credentials if email is needed.
    - `FRONTEND_URL` – Vercel URL (update once the frontend is live).
+   - `CORS_ORIGINS` – comma-separated list of allowed origins (include Vercel + any admin domains).
    - Leave `USE_OFFLINE_DB` as `false` so the Mongo adapter is used.
 - After the first deploy, visit `/health` on the Render URL to confirm the API is healthy.
 
