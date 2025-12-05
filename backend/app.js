@@ -16,18 +16,43 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration (allow multiple origins via env)
+// CORS configuration (allow multiple origins + wildcards via env)
 const resolvedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const originMatchers = resolvedOrigins.map((entry) => {
+  if (!entry) {
+    return null;
+  }
+  if (entry.includes('*')) {
+    const regexPattern = `^${escapeRegex(entry).replace(/\\\*/g, '.*')}$`;
+    return { type: 'wildcard', regex: new RegExp(regexPattern) };
+  }
+  return { type: 'exact', value: entry };
+}).filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+  if (!originMatchers.length) {
+    return false;
+  }
+  return originMatchers.some((matcher) => {
+    if (matcher.type === 'wildcard') {
+      return matcher.regex.test(origin);
+    }
+    return matcher.value === origin;
+  });
+};
 
 app.use(cors({
   origin(origin, callback) {
     if (!origin) {
       return callback(null, true);
     }
-    if (resolvedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       return callback(null, true);
     }
     return callback(new Error(`Not allowed by CORS: ${origin}`));
