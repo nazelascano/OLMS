@@ -113,7 +113,7 @@ Create `backend/.env` file with the following variables:
 NODE_ENV=development
 PORT=5001
 FRONTEND_URL=http://localhost:3001
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001,https://*.vercel.app
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 # Database Configuration
 MONGODB_URI=mongodb://localhost:27017/olms
@@ -138,6 +138,8 @@ DEFAULT_BORROW_DAYS=14
 DEFAULT_FINE_PER_DAY=5
 AUTO_CLEANUP_DAYS=365
 ```
+
+> **Deployment tip:** In production set `FRONTEND_URL` and `CORS_ORIGINS` to your live domain(s) (e.g., `https://olms-blush.vercel.app`). When `CORS_ORIGINS` is omitted, the backend falls back to `FRONTEND_URL` plus local dev origins, but explicitly listing production URLs avoids surprises.
 
 #### Frontend Environment (.env)
 Create `frontend/.env` file with the following variables:

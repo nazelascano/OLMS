@@ -17,9 +17,20 @@ app.use((req, res, next) => {
 });
 
 // CORS configuration (allow multiple origins + wildcards via env)
-const resolvedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001')
+const devFallbackOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+const explicitOriginList = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const derivedFallbackOrigins = [];
+if (process.env.FRONTEND_URL) {
+  derivedFallbackOrigins.push(process.env.FRONTEND_URL.trim());
+}
+
+const resolvedOrigins = (explicitOriginList.length
+  ? explicitOriginList
+  : [...derivedFallbackOrigins, ...devFallbackOrigins])
   .filter(Boolean);
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
