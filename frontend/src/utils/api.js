@@ -264,7 +264,14 @@ export const searchAPI = {
 
 export const notificationsAPI = {
   getAll: (params) => api.get("/notifications", { params }),
-  markRead: (id, read = true) => api.put(`/notifications/${id}/read`, { read }),
+  markRead: (id, read = true) => {
+    const normalizedId = id === undefined || id === null ? "" : String(id).trim();
+    if (!normalizedId) {
+      return Promise.reject(new Error("Notification id is required"));
+    }
+    const encodedId = encodeURIComponent(normalizedId);
+    return api.put(`/notifications/${encodedId}/read`, { read });
+  },
   delete: (id) => api.delete(`/notifications/${id}`),
 };
 

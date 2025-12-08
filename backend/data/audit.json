@@ -24798,5 +24798,870 @@
     "_id": "miwowu4dp51ed",
     "createdAt": "2025-12-08T05:07:32.605Z",
     "updatedAt": "2025-12-08T05:07:32.605Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:17:15.557Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T04:23:34.929Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwp9bxh973t1",
+    "_id": "miwp9bxh973t1",
+    "createdAt": "2025-12-08T05:17:15.557Z",
+    "updatedAt": "2025-12-08T05:17:15.557Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:17:25.903Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:17:15.552Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwp9jwvcamic",
+    "_id": "miwp9jwvcamic",
+    "createdAt": "2025-12-08T05:17:25.903Z",
+    "updatedAt": "2025-12-08T05:17:25.903Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:17:40.971Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:17:25.899Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwp9vjffrcks",
+    "_id": "miwp9vjffrcks",
+    "createdAt": "2025-12-08T05:17:40.971Z",
+    "updatedAt": "2025-12-08T05:17:40.971Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:18:15.312Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:17:40.967Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwpam1c48n4b",
+    "_id": "miwpam1c48n4b",
+    "createdAt": "2025-12-08T05:18:15.312Z",
+    "updatedAt": "2025-12-08T05:18:15.312Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:35:35.709Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:18:15.309Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwpwwt99j9sy",
+    "_id": "miwpwwt99j9sy",
+    "createdAt": "2025-12-08T05:35:35.709Z",
+    "updatedAt": "2025-12-08T05:35:35.709Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:36:21.369Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:35:35.701Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwpxw1l3ime4",
+    "_id": "miwpxw1l3ime4",
+    "createdAt": "2025-12-08T05:36:21.369Z",
+    "updatedAt": "2025-12-08T05:36:21.369Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:37:12.088Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:36:21.365Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwpyz6gicbhk",
+    "_id": "miwpyz6gicbhk",
+    "createdAt": "2025-12-08T05:37:12.088Z",
+    "updatedAt": "2025-12-08T05:37:12.088Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:50:19.413Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:37:12.084Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwqfuom1v49u",
+    "_id": "miwqfuom1v49u",
+    "createdAt": "2025-12-08T05:50:19.414Z",
+    "updatedAt": "2025-12-08T05:50:19.414Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:50:27.454Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-12-08T04:13:17.782Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwqg0vywb2n7",
+    "_id": "miwqg0vywb2n7",
+    "createdAt": "2025-12-08T05:50:27.454Z",
+    "updatedAt": "2025-12-08T05:50:27.454Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:50:36.489Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-12-08T05:50:27.451Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwqg7uynptem",
+    "_id": "miwqg7uynptem",
+    "createdAt": "2025-12-08T05:50:36.490Z",
+    "updatedAt": "2025-12-08T05:50:36.490Z"
+  },
+  {
+    "timestamp": "2025-12-08T05:50:48.135Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:50:19.405Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwqgguf2ip6e",
+    "_id": "miwqgguf2ip6e",
+    "createdAt": "2025-12-08T05:50:48.135Z",
+    "updatedAt": "2025-12-08T05:50:48.135Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:02:07.596Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T05:50:48.130Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwqv14d0etw8",
+    "_id": "miwqv14d0etw8",
+    "createdAt": "2025-12-08T06:02:07.597Z",
+    "updatedAt": "2025-12-08T06:02:07.597Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:02:59.019Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1765170452600_qqm9ll",
+    "resource": "transaction",
+    "resourceId": "borrow_1765170452600_qqm9ll",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_1",
+            "copyId": "copy-1",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        },
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_2",
+            "copyId": "copy-2",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 13
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1765170452600_qqm9ll",
+    "id": "miwqw4sr6gl0f",
+    "_id": "miwqw4sr6gl0f",
+    "createdAt": "2025-12-08T06:02:59.019Z",
+    "updatedAt": "2025-12-08T06:02:59.019Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:03:04.851Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1765170452600_qqm9ll",
+    "resource": "transaction",
+    "resourceId": "borrow_1765170452600_qqm9ll",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_1",
+            "copyId": "copy-1",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        },
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_2",
+            "copyId": "copy-2",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 5
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1765170452600_qqm9ll",
+    "id": "miwqw9aro6k8m",
+    "_id": "miwqw9aro6k8m",
+    "createdAt": "2025-12-08T06:03:04.851Z",
+    "updatedAt": "2025-12-08T06:03:04.851Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:03:17.241Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1765170452600_qqm9ll",
+    "resource": "transaction",
+    "resourceId": "borrow_1765170452600_qqm9ll",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_1",
+            "copyId": "copy-1",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        },
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_2",
+            "copyId": "copy-2",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 4
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1765170452600_qqm9ll",
+    "id": "miwqwiuxoys27",
+    "_id": "miwqwiuxoys27",
+    "createdAt": "2025-12-08T06:03:17.241Z",
+    "updatedAt": "2025-12-08T06:03:17.241Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:10:13.896Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T06:02:07.589Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwr5gcopghwy",
+    "_id": "miwr5gcopghwy",
+    "createdAt": "2025-12-08T06:10:13.896Z",
+    "updatedAt": "2025-12-08T06:10:13.896Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:10:34.645Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1765170452600_qqm9ll",
+    "resource": "transaction",
+    "resourceId": "borrow_1765170452600_qqm9ll",
+    "description": "Cannot approve request: one or more copies missing or unavailable",
+    "details": {
+      "validationFailures": [
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_1",
+            "copyId": "copy-1",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        },
+        {
+          "item": {
+            "requestItemId": "borrow_1765170452600_qqm9ll_item_2",
+            "copyId": "copy-2",
+            "bookId": "",
+            "status": "requested"
+          },
+          "reason": "copy-not-found"
+        }
+      ]
+    },
+    "metadata": {
+      "statusCode": 400,
+      "durationMs": 6
+    },
+    "status": "ValidationFailed",
+    "statusCode": 400,
+    "success": false,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1765170452600_qqm9ll",
+    "id": "miwr5wd1dqs8y",
+    "_id": "miwr5wd1dqs8y",
+    "createdAt": "2025-12-08T06:10:34.645Z",
+    "updatedAt": "2025-12-08T06:10:34.645Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:11:02.903Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-12-08T05:50:36.486Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwr6i5zqdo1n",
+    "_id": "miwr6i5zqdo1n",
+    "createdAt": "2025-12-08T06:11:02.903Z",
+    "updatedAt": "2025-12-08T06:11:02.903Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:11:53.678Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1765174313669_h4xi42",
+    "resource": "transaction",
+    "resourceId": "borrow_1765174313669_h4xi42",
+    "description": "Created borrow request (borrow_1765174313669_h4xi42) for user mhiohn87n1w6u",
+    "details": {
+      "requestedBy": "mhiohn87n1w6u"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 81,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1765174313669_h4xi42",
+      "itemCount": 1,
+      "actorId": "mhiohn87n1w6u"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "miwr7lce8ymtj",
+    "_id": "miwr7lce8ymtj",
+    "createdAt": "2025-12-08T06:11:53.678Z",
+    "updatedAt": "2025-12-08T06:11:53.678Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:12:44.817Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for admin",
+    "details": {
+      "username": "admin",
+      "role": "admin",
+      "lastLoginAt": "2025-12-08T06:10:13.887Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwr8osxltc26",
+    "_id": "miwr8osxltc26",
+    "createdAt": "2025-12-08T06:12:44.817Z",
+    "updatedAt": "2025-12-08T06:12:44.817Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:13:11.531Z",
+    "action": "APPROVE",
+    "entity": "transaction",
+    "entityId": "borrow_1765174313669_h4xi42",
+    "resource": "transaction",
+    "resourceId": "borrow_1765174313669_h4xi42",
+    "description": "Approved borrow request borrow_1765174313669_h4xi42",
+    "details": {
+      "request": {
+        "method": "POST",
+        "url": "/api/transactions/approve/borrow_1765174313669_h4xi42",
+        "body": {
+          "items": [
+            {
+              "requestItemId": "borrow_1765174313669_h4xi42_item_1",
+              "bookId": "book-approve-test",
+              "copyId": "APPROVE-COPY-2"
+            }
+          ]
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 47,
+      "approvedBy": "mgnhicbwhxfy9"
+    },
+    "status": "Approved",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mgnhicbwhxfy9",
+    "userEmail": "admin@olms.com",
+    "userRole": "admin",
+    "userName": "System Administrator",
+    "username": "admin",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/approve/borrow_1765174313669_h4xi42",
+    "id": "miwr99ez5f2jw",
+    "_id": "miwr99ez5f2jw",
+    "createdAt": "2025-12-08T06:13:11.531Z",
+    "updatedAt": "2025-12-08T06:13:11.531Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:14:32.644Z",
+    "action": "LOGIN",
+    "entity": "auth",
+    "entityId": null,
+    "resource": "auth",
+    "resourceId": null,
+    "description": "Login successful for 123456789014",
+    "details": {
+      "username": "123456789014",
+      "role": "student",
+      "lastLoginAt": "2025-12-08T06:11:02.899Z"
+    },
+    "metadata": {},
+    "status": "Success",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/auth/login",
+    "id": "miwrb004onltm",
+    "_id": "miwrb004onltm",
+    "createdAt": "2025-12-08T06:14:32.644Z",
+    "updatedAt": "2025-12-08T06:14:32.644Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:19:53.336Z",
+    "action": "REQUEST",
+    "entity": "transaction",
+    "entityId": "borrow_1765174793323_dy5lq7",
+    "resource": "transaction",
+    "resourceId": "borrow_1765174793323_dy5lq7",
+    "description": "Created borrow request (borrow_1765174793323_dy5lq7) for user mhiohn87n1w6u",
+    "details": {
+      "requestedBy": "mhiohn87n1w6u"
+    },
+    "metadata": {
+      "statusCode": 201,
+      "durationMs": 99,
+      "borrowRequest": {
+        "type": "regular",
+        "itemCount": 1
+      },
+      "requestId": "borrow_1765174793323_dy5lq7",
+      "itemCount": 1,
+      "actorId": "mhiohn87n1w6u"
+    },
+    "status": "Created",
+    "statusCode": 201,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "POST",
+    "requestPath": "/api/transactions/request",
+    "id": "miwrhvg81fx5x",
+    "_id": "miwrhvg81fx5x",
+    "createdAt": "2025-12-08T06:19:53.336Z",
+    "updatedAt": "2025-12-08T06:19:53.336Z"
+  },
+  {
+    "timestamp": "2025-12-08T06:24:23.884Z",
+    "action": "UPDATE",
+    "entity": "preferences",
+    "entityId": "mhiohn87n1w6u",
+    "resource": "preferences",
+    "resourceId": "mhiohn87n1w6u",
+    "description": "Updated user preferences",
+    "details": {
+      "request": {
+        "method": "PUT",
+        "url": "/api/auth/preferences",
+        "body": {
+          "preferences": {
+            "studentDashboard": {
+              "welcomeDismissed": true
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "statusCode": 200,
+      "durationMs": 8
+    },
+    "status": "Updated",
+    "statusCode": 200,
+    "success": true,
+    "userId": "mhiohn87n1w6u",
+    "userEmail": "john.doe@student.example.edu",
+    "userRole": "student",
+    "userName": "Mary1 Doe",
+    "username": "123456789014",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0",
+    "requestMethod": "PUT",
+    "requestPath": "/api/auth/preferences",
+    "id": "miwrno7gq9q8k",
+    "_id": "miwrno7gq9q8k",
+    "createdAt": "2025-12-08T06:24:23.884Z",
+    "updatedAt": "2025-12-08T06:24:23.884Z"
   }
 ]

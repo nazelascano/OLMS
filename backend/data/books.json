@@ -713,21 +713,21 @@
     "copies": [
       {
         "copyId": "APPROVE-COPY-1",
-        "status": "borrowed",
-        "location": "Main",
-        "updatedAt": "2025-12-08T05:07:31.301Z",
-        "updatedBy": "mgnhicbwhxfy9"
+        "status": "available",
+        "location": "Main"
       },
       {
         "copyId": "APPROVE-COPY-2",
-        "status": "available",
-        "location": "Main"
+        "status": "borrowed",
+        "location": "Main",
+        "updatedAt": "2025-12-08T06:13:11.502Z",
+        "updatedBy": "mgnhicbwhxfy9"
       }
     ],
     "availableCopies": 1,
     "_id": "mhfkvgnso61c7",
     "createdAt": "2025-11-01T01:02:42.712Z",
-    "updatedAt": "2025-12-08T05:07:31.302Z"
+    "updatedAt": "2025-12-08T06:13:11.503Z"
   },
   {
     "id": "book-approve-test",

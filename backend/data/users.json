@@ -26,9 +26,9 @@
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-12-08T05:07:31.308Z",
-    "lastLoginAt": "2025-12-08T04:23:34.929Z",
-    "lastActivityAt": "2025-12-08T04:58:48.823Z",
+    "updatedAt": "2025-12-08T06:13:32.741Z",
+    "lastLoginAt": "2025-12-08T06:12:44.814Z",
+    "lastActivityAt": "2025-12-08T06:13:32.738Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -231,18 +231,18 @@
     "role": "student",
     "isActive": true,
     "borrowingStats": {
-      "totalBorrowed": 1,
-      "currentlyBorrowed": 1,
+      "totalBorrowed": 2,
+      "currentlyBorrowed": 2,
       "totalFines": 0,
       "totalReturned": 0
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-12-08T04:18:46.246Z",
+    "updatedAt": "2025-12-08T06:24:36.868Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
-    "lastLoginAt": "2025-12-08T04:13:17.782Z",
-    "lastActivityAt": "2025-12-08T04:18:46.242Z",
+    "lastLoginAt": "2025-12-08T06:14:32.640Z",
+    "lastActivityAt": "2025-12-08T06:24:36.868Z",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
     "avatar": {
@@ -252,7 +252,12 @@
       "size": 401612,
       "uploadedAt": "2025-12-08T04:17:30.669Z"
     },
-    "avatarUrl": "/uploads/avatars/avatar-1765167450651-207326744.jpg"
+    "avatarUrl": "/uploads/avatars/avatar-1765167450651-207326744.jpg",
+    "preferences": {
+      "studentDashboard": {
+        "welcomeDismissed": true
+      }
+    }
   },
   {
     "firstName": "Mary2",

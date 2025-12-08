@@ -24,11 +24,35 @@ const StudentDashboard = () => {
     ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Student"
     : "Student";
   const studentInitial = (studentDisplayName.charAt(0) || "U").toUpperCase();
+  const userIdentifier = useMemo(() => {
+    return (
+      user?.id ||
+      user?._id ||
+      user?.userId ||
+      user?.libraryCardNumber ||
+      ""
+    );
+  }, [user]);
 
   const resolveTransactionId = useCallback((tx) => {
     if (!tx) return "";
     return tx.id || tx._id || tx.transactionId || tx.documentId || "";
   }, []);
+
+  const normalizeStatus = (status) => {
+    if (!status) return "pending";
+    return String(status).toLowerCase();
+  };
+
+  const isActiveBorrowStatus = (status) => {
+    const normalized = normalizeStatus(status);
+    return normalized === "borrowed" || normalized === "active";
+  };
+
+  const isPendingRequestStatus = (status) => {
+    const normalized = normalizeStatus(status);
+    return normalized === "requested" || normalized === "pending";
+  };
 
   useEffect(() => {
     const dismissed = Boolean(
@@ -37,10 +61,11 @@ const StudentDashboard = () => {
     setShowWelcomeCard(!dismissed);
 
     const fetchUserTransactions = async () => {
-      if (!user || !user.id) return;
+      if (!userIdentifier) return;
       try {
         setLoading(true);
-        const resp = await api.get(`/transactions/user/${user.id}`);
+        const encodedId = encodeURIComponent(userIdentifier);
+        const resp = await api.get(`/transactions/user/${encodedId}`);
         const txs = Array.isArray(resp.data) ? resp.data : resp.data?.transactions || [];
         setTransactions(txs);
       } catch (err) {
@@ -52,7 +77,7 @@ const StudentDashboard = () => {
     };
 
     fetchUserTransactions();
-  }, [user]);
+  }, [user, userIdentifier]);
 
   const handleDismissWelcomeCard = async () => {
     setShowWelcomeCard(false);
@@ -84,17 +109,20 @@ const StudentDashboard = () => {
     }
   };
 
-  const currentBorrows = transactions.filter(t => (t.status === 'borrowed' || t.status === 'active' || t.status === 'pending'));
-  const requests = transactions.filter(t => t.status === 'requested');
+  const currentBorrows = transactions.filter(t => isActiveBorrowStatus(t.status));
+  const requests = transactions.filter(t => isPendingRequestStatus(t.status));
   const overdue = transactions.filter(t => {
     try {
       if (!t.dueDate) return false;
       const due = new Date(t.dueDate);
-      return (t.status === 'borrowed' || t.status === 'active') && due < new Date();
+      return isActiveBorrowStatus(t.status) && due < new Date();
     } catch (e) { return false; }
   });
 
-  const totalBorrowed = user?.borrowingStats?.totalBorrowed ?? transactions.filter(t => t.status === 'borrowed' || t.status === 'returned' || t.status === 'active').length;
+  const totalBorrowed = user?.borrowingStats?.totalBorrowed ?? transactions.filter(t => {
+    const status = normalizeStatus(t.status);
+    return status === 'borrowed' || status === 'returned' || status === 'active';
+  }).length;
   const currentlyBorrowed = user?.borrowingStats?.currentlyBorrowed ?? currentBorrows.length;
   const pendingRequestsCount = requests.length;
 

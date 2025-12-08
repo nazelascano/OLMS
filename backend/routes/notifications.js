@@ -43,6 +43,43 @@ const getUserIdString = (user = {}) => {
   return null;
 };
 
+const buildNotificationFingerprint = (item) => {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const candidates = [
+    item.fingerprint,
+    item.link ? `${item.type || 'notification'}:${item.link}` : null,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null) {
+      continue;
+    }
+    const normalized = String(candidate).trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  if (item.title || item.message) {
+    const parts = [item.type || 'notification'];
+    if (item.title) {
+      parts.push(item.title);
+    }
+    if (item.message) {
+      parts.push(item.message);
+    }
+    const fingerprint = parts.join(':').trim();
+    if (fingerprint) {
+      return fingerprint;
+    }
+  }
+
+  return null;
+};
+
 const getNotificationIdentifier = (item) => {
   if (!item || typeof item !== 'object') {
     return null;
@@ -53,6 +90,7 @@ const getNotificationIdentifier = (item) => {
     item._id,
     item.transactionId,
     item?.meta?.transactionId,
+    buildNotificationFingerprint(item),
   ];
 
   for (const candidate of candidates) {
@@ -83,12 +121,9 @@ const ensureNotificationIdentifiers = (notification) => {
     }
   }
 
-  if (!notification.fingerprint) {
-    notification.fingerprint =
-      identifier ||
-      (notification.link
-        ? `${notification.type || 'notification'}:${notification.link}`
-        : null);
+  const fingerprint = buildNotificationFingerprint(notification);
+  if (fingerprint) {
+    notification.fingerprint = fingerprint;
   }
 
   return notification;

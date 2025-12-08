@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert,
   Autocomplete,
@@ -28,6 +29,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -36,6 +38,7 @@ import QRScanner from '../../components/QRScanner';
 
 const RequestsPage = () => {
   useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState([]);
@@ -72,21 +75,39 @@ const RequestsPage = () => {
     return `${bookId}-${index}`;
   };
 
-  const fetchRequests = async () => {
+    const normalizeRequests = useCallback((entries = []) => {
+      if (!Array.isArray(entries)) return [];
+      const seen = new Set();
+      return entries.reduce((acc, entry, index) => {
+        const id = resolveTransactionId(entry);
+        if (id) {
+          if (seen.has(id)) {
+            return acc;
+          }
+          seen.add(id);
+          acc.push(entry);
+          return acc;
+        }
+        acc.push({ ...entry, __fallbackKey: `request-${index}` });
+        return acc;
+      }, []);
+    }, []);
+
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
       const resp = await api.get('/transactions', { params: { status: 'requested', limit: 200 } });
       const data = Array.isArray(resp.data) ? resp.data : resp.data?.transactions || [];
-      setRequests(data);
+      setRequests(normalizeRequests(data));
     } catch (err) {
       console.error('Failed to load requests', err);
       toast.error('Failed to load requests');
     } finally {
       setLoading(false);
     }
-  };
+  }, [normalizeRequests]);
 
-  useEffect(() => { fetchRequests(); }, []);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   const approveWithoutAssignments = async (tx) => {
     const id = resolveTransactionId(tx);
@@ -300,6 +321,11 @@ const RequestsPage = () => {
     });
   }, [approveAssignments, approveDialogOpen, approveLoading, dialogItems]);
 
+  const actionableRequestCount = useMemo(
+    () => requests.filter((entry) => Boolean(resolveTransactionId(entry))).length,
+    [requests]
+  );
+
   const handleBulkApprove = async () => {
     if (!selected || selected.length === 0) return;
     const autoApprove = [];
@@ -370,12 +396,13 @@ const RequestsPage = () => {
   const isSelected = (id) => selected.includes(id);
 
   const toggleSelect = (id) => {
+    if (!id) return;
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      const allIds = requests.map(tx => tx.id || tx.transactionId || tx._id).filter(Boolean);
+      const allIds = requests.map(resolveTransactionId).filter(Boolean);
       setSelected(allIds);
     } else {
       setSelected([]);
@@ -384,10 +411,16 @@ const RequestsPage = () => {
 
   const handleChangePage = (event, newPage) => setPage(newPage);
   const handleChangeRowsPerPage = (event) => { setRowsPerPage(parseInt(event.target.value, 10)); setPage(0); };
+  const handleBack = () => navigate('/transactions');
 
   return (
     <Box>
-      <Box mb={2}><Typography variant="h4">Borrow Requests</Typography></Box>
+      <Box display="flex" alignItems="center" mb={2}>
+        <IconButton onClick={handleBack} aria-label="Go back" sx={{ color: 'text.primary', mr: 2 }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4" color={"white"}>Borrow Requests</Typography>
+      </Box>
       <Paper>
         <TableContainer>
           <Table size="small">
@@ -395,10 +428,11 @@ const RequestsPage = () => {
               <TableRow>
                 <TableCell padding="checkbox">
                   <Checkbox
-                    indeterminate={selected.length > 0 && selected.length < requests.length}
-                    checked={requests.length > 0 && selected.length === requests.length}
+                    indeterminate={selected.length > 0 && selected.length < actionableRequestCount}
+                    checked={actionableRequestCount > 0 && selected.length === actionableRequestCount}
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     inputProps={{ 'aria-label': 'select all requests' }}
+                    disabled={actionableRequestCount === 0}
                   />
                 </TableCell>
                 <TableCell>Transaction ID</TableCell>
@@ -412,20 +446,39 @@ const RequestsPage = () => {
               {requests.length === 0 ? (
                 <TableRow><TableCell colSpan={6} align="center">{loading ? 'Loading...' : 'No requests'}</TableCell></TableRow>
               ) : (
-                (requests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)).map(tx => {
-                  const txId = tx.id || tx._id || tx.transactionId;
+                (requests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)).map((tx, idx) => {
+                  const txId = resolveTransactionId(tx);
+                  const rowIndex = page * rowsPerPage + idx;
+                  const rowKey = txId || tx.__fallbackKey || `request-row-${rowIndex}`;
+                  const isActionable = Boolean(txId);
                   return (
-                    <TableRow key={txId} hover>
+                    <TableRow key={rowKey} hover>
                       <TableCell padding="checkbox">
-                        <Checkbox checked={isSelected(txId)} onChange={() => toggleSelect(txId)} />
+                        <Checkbox
+                          checked={Boolean(txId) && isSelected(txId)}
+                          onChange={() => toggleSelect(txId)}
+                          disabled={!isActionable}
+                        />
                       </TableCell>
                       <TableCell>{txId}</TableCell>
                       <TableCell>{tx.borrowerName || tx.user || tx.userId || 'Unknown'}</TableCell>
                       <TableCell>{(tx.items || []).length}</TableCell>
                       <TableCell>{new Date(tx.createdAt || tx.borrowDate || Date.now()).toLocaleString()}</TableCell>
                       <TableCell>
-                        <Button size="small" onClick={() => startApproveWorkflow(tx)} sx={{ mr: 1 }}>Approve</Button>
-                        <Button size="small" color="error" onClick={() => { setSelected([txId]); setRejectDialogOpen(true); setRejectReason(''); }}>Reject</Button>
+                        <Button size="small" onClick={() => startApproveWorkflow(tx)} sx={{ mr: 1 }} disabled={!isActionable}>Approve</Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => {
+                            if (!txId) return;
+                            setSelected([txId]);
+                            setRejectDialogOpen(true);
+                            setRejectReason('');
+                          }}
+                          disabled={!isActionable}
+                        >
+                          Reject
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );

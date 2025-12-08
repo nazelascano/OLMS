@@ -3409,5 +3409,115 @@
     "readBy": [],
     "_id": "miwowu4c8b8jh",
     "updatedAt": "2025-12-08T05:07:32.604Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1765174313669_h4xi42. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1765174313669_h4xi42",
+    "recipients": [
+      "mhiohn87n1w6u",
+      "LIB-25-0023",
+      "john.doe@student.example.edu",
+      "123456789014"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765174313669_h4xi42",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-12-08T06:11:53.673Z",
+    "updatedAt": "2025-12-08T06:13:11.519Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "miwr7lcadjaas",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary1 Santos Doe requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1765174313669_h4xi42",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765174313669_h4xi42"
+    },
+    "createdAt": "2025-12-08T06:11:53.675Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "miwr7lccmd8gx",
+    "updatedAt": "2025-12-08T06:13:11.524Z",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1765174313669_h4xi42 has been approved. Please pick up your items by 2025-12-11. Items are due on 2025-12-22.",
+    "type": "request-approved",
+    "transactionId": "borrow_1765174313669_h4xi42",
+    "recipients": [
+      "mhiohn87n1w6u",
+      "LIB-25-0023",
+      "john.doe@student.example.edu",
+      "123456789014"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765174313669_h4xi42",
+      "dueDate": "2025-12-22T06:13:11.506Z",
+      "reservationExpiresAt": "2025-12-11T06:13:11.506Z",
+      "itemCount": 1,
+      "status": "borrowed"
+    },
+    "createdAt": "2025-12-08T06:13:11.513Z",
+    "updatedAt": "2025-12-08T06:13:11.527Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "miwr99ejdrnd9",
+    "archived": true
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1765174793323_dy5lq7. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1765174793323_dy5lq7",
+    "recipients": [
+      "mhiohn87n1w6u",
+      "LIB-25-0023",
+      "john.doe@student.example.edu",
+      "123456789014"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765174793323_dy5lq7",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-12-08T06:19:53.326Z",
+    "updatedAt": "2025-12-08T06:19:53.327Z",
+    "readBy": [],
+    "_id": "miwrhvfzblr1e"
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary1 Santos Doe requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1765174793323_dy5lq7",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765174793323_dy5lq7"
+    },
+    "createdAt": "2025-12-08T06:19:53.329Z",
+    "readBy": [],
+    "_id": "miwrhvg3hjdpo",
+    "updatedAt": "2025-12-08T06:19:53.331Z"
   }
 ]

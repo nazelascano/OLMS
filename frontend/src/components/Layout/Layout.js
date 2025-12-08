@@ -1061,6 +1061,58 @@ const Layout = () => {
     });
   }, [notificationsAnchorEl, notifications, registerReadNotifications]);
 
+  useEffect(() => {
+    if (!notifications.length) {
+      return;
+    }
+
+    const normalizedPath = (location.pathname || '').replace(/\/+$/, '') || '/';
+    const onNotificationsPage = normalizedPath === '/notifications';
+    if (!onNotificationsPage) {
+      return;
+    }
+
+    const unreadItems = notifications.filter((item) => !item.read);
+    if (unreadItems.length === 0) {
+      return;
+    }
+
+    registerReadNotifications(unreadItems);
+
+    const markSet = new Set(
+      unreadItems
+        .map(
+          (item) =>
+            item.fingerprint ||
+            getNotificationFingerprint(item) ||
+            item._id ||
+            item.id,
+        )
+        .filter(Boolean),
+    );
+
+    if (markSet.size === 0) {
+      return;
+    }
+
+    setNotifications((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) {
+        return prev;
+      }
+      return prev.map((item) => {
+        const identifier =
+          item.fingerprint ||
+          getNotificationFingerprint(item) ||
+          item._id ||
+          item.id;
+        if (identifier && markSet.has(identifier)) {
+          return { ...item, read: true };
+        }
+        return item;
+      });
+    });
+  }, [location.pathname, notifications, registerReadNotifications]);
+
   const handleNotificationNavigate = (item) => {
     if (item) {
       registerReadNotifications([item]);
