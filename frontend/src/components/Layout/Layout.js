@@ -532,38 +532,41 @@ const Layout = () => {
     });
   }, []);
 
-  const registerReadNotifications = (items) => {
-    if (!Array.isArray(items) || items.length === 0) {
-      return;
-    }
-
-    const aggregate = new Set(readNotificationIdSet);
-    let changed = false;
-    const markable = [];
-
-    items.forEach((item) => {
-      const fingerprint = item?.fingerprint || getNotificationFingerprint(item);
-      if (fingerprint && !aggregate.has(fingerprint)) {
-        aggregate.add(fingerprint);
-        changed = true;
+  const registerReadNotifications = useCallback(
+    (items) => {
+      if (!Array.isArray(items) || items.length === 0) {
+        return;
       }
-      if (!item?.read) {
-        markable.push(item);
+
+      const aggregate = new Set(readNotificationIdSet);
+      let changed = false;
+      const markable = [];
+
+      items.forEach((item) => {
+        const fingerprint = item?.fingerprint || getNotificationFingerprint(item);
+        if (fingerprint && !aggregate.has(fingerprint)) {
+          aggregate.add(fingerprint);
+          changed = true;
+        }
+        if (!item?.read) {
+          markable.push(item);
+        }
+      });
+
+      if (changed) {
+        const idsArray = Array.from(aggregate);
+        const maxEntries = 200;
+        const trimmed =
+          idsArray.length > maxEntries
+            ? idsArray.slice(idsArray.length - maxEntries)
+            : idsArray;
+        setReadNotificationIds(trimmed);
       }
-    });
 
-    if (changed) {
-      const idsArray = Array.from(aggregate);
-      const maxEntries = 200;
-      const trimmed =
-        idsArray.length > maxEntries
-          ? idsArray.slice(idsArray.length - maxEntries)
-          : idsArray;
-      setReadNotificationIds(trimmed);
-    }
-
-    markNotificationsRead(markable);
-  };
+      markNotificationsRead(markable);
+    },
+    [markNotificationsRead, readNotificationIdSet],
+  );
 
   const handleSearchResultsWheel = (event) => {
     event.stopPropagation();
@@ -1013,6 +1016,50 @@ const Layout = () => {
       return prev.map((item) => ({ ...item, read: true }));
     });
   };
+
+  useEffect(() => {
+    if (!notificationsAnchorEl || notifications.length === 0) {
+      return;
+    }
+
+    const unreadItems = notifications.filter((item) => !item.read);
+    if (unreadItems.length === 0) {
+      return;
+    }
+
+    registerReadNotifications(unreadItems);
+
+    setNotifications((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) {
+        return prev;
+      }
+      const markSet = new Set(
+        unreadItems
+          .map(
+            (item) =>
+              item.fingerprint ||
+              getNotificationFingerprint(item) ||
+              item._id ||
+              item.id,
+          )
+          .filter(Boolean),
+      );
+      if (markSet.size === 0) {
+        return prev;
+      }
+      return prev.map((item) => {
+        const identifier =
+          item.fingerprint ||
+          getNotificationFingerprint(item) ||
+          item._id ||
+          item.id;
+        if (identifier && markSet.has(identifier)) {
+          return { ...item, read: true };
+        }
+        return item;
+      });
+    });
+  }, [notificationsAnchorEl, notifications, registerReadNotifications]);
 
   const handleNotificationNavigate = (item) => {
     if (item) {

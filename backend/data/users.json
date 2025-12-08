@@ -20,15 +20,15 @@
       "fineBalance": 0
     },
     "borrowingStats": {
-      "totalBorrowed": 17,
-      "currentlyBorrowed": 16,
+      "totalBorrowed": 18,
+      "currentlyBorrowed": 17,
       "totalFines": 0,
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-12-02T12:53:27.993Z",
-    "lastLoginAt": "2025-12-02T11:57:27.310Z",
-    "lastActivityAt": "2025-12-02T12:53:27.992Z",
+    "updatedAt": "2025-12-08T05:07:31.308Z",
+    "lastLoginAt": "2025-12-08T04:23:34.929Z",
+    "lastActivityAt": "2025-12-08T04:58:48.823Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -238,11 +238,21 @@
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-11-26T12:34:15.807Z",
+    "updatedAt": "2025-12-08T04:18:46.246Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
-    "lastLoginAt": "2025-11-14T05:47:38.933Z",
-    "lastActivityAt": "2025-11-14T05:49:08.943Z"
+    "lastLoginAt": "2025-12-08T04:13:17.782Z",
+    "lastActivityAt": "2025-12-08T04:18:46.242Z",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "avatar": {
+      "url": "/uploads/avatars/avatar-1765167450651-207326744.jpg",
+      "filename": "avatar-1765167450651-207326744.jpg",
+      "mimeType": "image/jpeg",
+      "size": 401612,
+      "uploadedAt": "2025-12-08T04:17:30.669Z"
+    },
+    "avatarUrl": "/uploads/avatars/avatar-1765167450651-207326744.jpg"
   },
   {
     "firstName": "Mary2",

@@ -715,7 +715,7 @@
         "copyId": "APPROVE-COPY-1",
         "status": "borrowed",
         "location": "Main",
-        "updatedAt": "2025-11-25T01:56:05.485Z",
+        "updatedAt": "2025-12-08T05:07:31.301Z",
         "updatedBy": "mgnhicbwhxfy9"
       },
       {
@@ -727,7 +727,7 @@
     "availableCopies": 1,
     "_id": "mhfkvgnso61c7",
     "createdAt": "2025-11-01T01:02:42.712Z",
-    "updatedAt": "2025-11-25T01:56:05.486Z"
+    "updatedAt": "2025-12-08T05:07:31.302Z"
   },
   {
     "id": "book-approve-test",
@@ -1564,5 +1564,44 @@
     "_id": "midxck80puzke",
     "createdAt": "2025-11-25T01:56:05.856Z",
     "updatedAt": "2025-11-25T01:56:05.856Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "miwowt1z72pbm",
+    "createdAt": "2025-12-08T05:07:31.223Z",
+    "updatedAt": "2025-12-08T05:07:31.223Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "miwowtolm7w3u",
+    "createdAt": "2025-12-08T05:07:32.037Z",
+    "updatedAt": "2025-12-08T05:07:32.037Z"
   }
 ]

@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Grid, Card, CardContent, Button, Avatar, Stack, Divider, IconButton } from "@mui/material";
 import { School, Email, Phone, Badge, Close } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { api, authAPI, transactionsAPI } from "../../utils/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { resolveEntityAvatar } from "../../utils/media";
 
 const StudentDashboard = () => {
   const { user, updateUserData } = useAuth();
@@ -18,6 +19,11 @@ const StudentDashboard = () => {
     return !dismissed;
   });
   const navigate = useNavigate();
+  const studentAvatarSrc = useMemo(() => resolveEntityAvatar(user), [user]);
+  const studentDisplayName = user
+    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Student"
+    : "Student";
+  const studentInitial = (studentDisplayName.charAt(0) || "U").toUpperCase();
 
   const resolveTransactionId = useCallback((tx) => {
     if (!tx) return "";
@@ -164,15 +170,19 @@ const StudentDashboard = () => {
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} md={4} lg={3}>
             <Box display="flex" alignItems="center" gap={2}>
-              <Avatar sx={{ width: 80, height: 80, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 34 }}>
-                {user ? ((user.firstName || user.username || 'U').charAt(0).toUpperCase()) : 'U'}
+              <Avatar
+                src={studentAvatarSrc || undefined}
+                alt={studentDisplayName}
+                sx={{ width: 80, height: 80, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 34 }}
+              >
+                {studentInitial}
               </Avatar>
               <Box>
                 <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>
                   Student
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                  {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username : 'Student'}
+                  {studentDisplayName}
                 </Typography>
                 <Stack direction="row" spacing={1} mt={1} flexWrap="wrap" useFlexGap>
                   {user?.curriculum && <Chip size="small" color="primary" variant="outlined" label={`Curriculum: ${user.curriculum}`} />}

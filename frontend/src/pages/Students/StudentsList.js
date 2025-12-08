@@ -95,19 +95,29 @@ const StudentsList = () => {
     setMenuStudent(null);
   };
 
-  const gradeOptions = userAttributes.gradeLevels;
-  const gradeStructure = userAttributes.gradeStructure || [];
+  const gradeOptions = useMemo(
+    () => (Array.isArray(userAttributes.gradeLevels) ? userAttributes.gradeLevels : []),
+    [userAttributes.gradeLevels],
+  );
+  const gradeStructure = useMemo(
+    () => (Array.isArray(userAttributes.gradeStructure) ? userAttributes.gradeStructure : []),
+    [userAttributes.gradeStructure],
+  );
   const gradeColorMap = useMemo(
     () => buildGradeColorMap(gradeStructure),
     [gradeStructure],
   );
-  const allSections = collectAllSections(gradeStructure);
-  const availableSections = gradeFilter
-    ? (() => {
-        const gradeSpecific = getSectionsForGrade(gradeStructure, gradeFilter);
-        return gradeSpecific.length > 0 ? gradeSpecific : allSections;
-      })()
-    : allSections;
+  const allSections = useMemo(
+    () => collectAllSections(gradeStructure),
+    [gradeStructure],
+  );
+  const availableSections = useMemo(() => {
+    if (!gradeFilter) {
+      return allSections;
+    }
+    const gradeSpecific = getSectionsForGrade(gradeStructure, gradeFilter);
+    return gradeSpecific.length > 0 ? gradeSpecific : allSections;
+  }, [gradeFilter, gradeStructure, allSections]);
   const hasGradeOptions = gradeOptions.length > 0;
   // Filter menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);

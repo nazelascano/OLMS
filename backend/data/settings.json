@@ -244,5 +244,30 @@
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "micokmw7tkjx3"
+  },
+  {
+    "id": "NOTIFICATION_SETTINGS",
+    "value": {
+      "emailNotifications": false,
+      "smsNotifications": false,
+      "dueDateReminders": true,
+      "overdueNotifications": true,
+      "reservationNotifications": true,
+      "reminderDaysBefore": 3,
+      "maxReminders": 3,
+      "emailTemplate": {
+        "dueDate": "",
+        "overdue": "",
+        "reservation": ""
+      }
+    },
+    "type": "object",
+    "category": "notifications",
+    "description": "",
+    "createdAt": "2025-12-08T04:40:29.954Z",
+    "updatedAt": "2025-12-08T04:40:29.957Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "miwny22tjqzoj"
   }
 ]

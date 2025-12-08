@@ -14,6 +14,12 @@ const BORROWING_DEFAULTS = {
   allowRenewalsWithOverdue: false,
 };
 
+const LIBRARY_DEFAULTS = {
+  openingTime: '08:00',
+  closingTime: '17:00',
+  operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+};
+
 const SYSTEM_DEFAULTS = {
   maintenanceMode: false,
   sessionTimeoutMinutes: 60,
@@ -88,6 +94,11 @@ const buildLibraryProfile = (settingsMap) => ({
   libraryEmail: settingsMap.LIBRARY_EMAIL || '',
   website: settingsMap.LIBRARY_WEBSITE || '',
   description: settingsMap.LIBRARY_DESCRIPTION || '',
+  openingTime: settingsMap.LIBRARY_OPENING_TIME || LIBRARY_DEFAULTS.openingTime,
+  closingTime: settingsMap.LIBRARY_CLOSING_TIME || LIBRARY_DEFAULTS.closingTime,
+  operatingDays: Array.isArray(settingsMap.LIBRARY_OPERATING_DAYS)
+    ? settingsMap.LIBRARY_OPERATING_DAYS
+    : LIBRARY_DEFAULTS.operatingDays,
 });
 
 const buildBorrowingSettings = (settingsMap) => ({

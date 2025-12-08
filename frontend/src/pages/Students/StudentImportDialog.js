@@ -1,5 +1,5 @@
 // Student Import Dialog Component
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -58,17 +58,29 @@ const StudentImportDialog = ({ open, onClose, onImportComplete }) => {
   const [attributeError, setAttributeError] = useState("");
   const [autoPrintCards, setAutoPrintCards] = useState(true);
 
-  const gradeOptions = userAttributes.gradeLevels || [];
-  const gradeStructure = userAttributes.gradeStructure || [];
+  const gradeOptions = useMemo(
+    () => (Array.isArray(userAttributes.gradeLevels) ? userAttributes.gradeLevels : []),
+    [userAttributes.gradeLevels],
+  );
+  const gradeStructure = useMemo(
+    () => (Array.isArray(userAttributes.gradeStructure) ? userAttributes.gradeStructure : []),
+    [userAttributes.gradeStructure],
+  );
   const gradeColorMap = useMemo(
     () => buildGradeColorMap(gradeStructure),
     [gradeStructure],
   );
-  const allSectionOptions = collectAllSections(gradeStructure);
-  const resolveSectionOptions = (gradeName) => {
-    const options = getSectionsForGrade(gradeStructure, gradeName);
-    return options.length > 0 ? options : allSectionOptions;
-  };
+  const allSectionOptions = useMemo(
+    () => collectAllSections(gradeStructure),
+    [gradeStructure],
+  );
+  const resolveSectionOptions = useCallback(
+    (gradeName) => {
+      const options = getSectionsForGrade(gradeStructure, gradeName);
+      return options.length > 0 ? options : allSectionOptions;
+    },
+    [gradeStructure, allSectionOptions],
+  );
 
   useEffect(() => {
     if (!open) {

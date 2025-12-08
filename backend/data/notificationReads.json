@@ -1,26 +1,18 @@
 [
   {
     "userId": "mgnhicbwhxfy9",
-    "notificationId": "overdue-trans_1760081060086_mi928e9fu",
+    "notificationId": "overdue-borrow_1763886563233_2rervt",
     "read": true,
-    "_id": "mifztdkgyoq9u",
-    "createdAt": "2025-11-26T12:40:41.968Z",
-    "updatedAt": "2025-11-26T12:40:41.968Z"
-  },
-  {
+    "_id": "miwo1h4mfk6re",
+    "createdAt": "2025-12-08T04:43:09.430Z",
+    "updatedAt": "2025-12-08T04:43:09.576Z"
+  }
+]  {
     "userId": "mgnhicbwhxfy9",
-    "notificationId": "overdue-trans_1760081060086_m0szkjmfl",
+    "notificationId": "overdue-borrow_1763885363760_4230t0",
     "read": true,
-    "_id": "mifztdmuonvuh",
-    "createdAt": "2025-11-26T12:40:42.054Z",
-    "updatedAt": "2025-11-26T12:40:42.054Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "missing-trans_1760081060088_pr7q930ye",
-    "read": true,
-    "_id": "mifztdnrfr079",
-    "createdAt": "2025-11-26T12:40:42.087Z",
-    "updatedAt": "2025-11-26T12:40:42.108Z"
+    "_id": "miwo1h8n1kwlj",
+    "createdAt": "2025-12-08T04:43:09.575Z",
+    "updatedAt": "2025-12-08T04:43:09.575Z"
   }
 ]

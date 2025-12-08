@@ -1683,8 +1683,20 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
         });
 
         // Update user borrowing stats
-        let user = await req.dbAdapter.findOneInCollection('users', { id: transaction.userId });
-        if (!user) user = await req.dbAdapter.findOneInCollection('users', { _id: transaction.userId });
+        const borrowerLookupVariants = [
+            { id: transaction.userId },
+            { _id: transaction.userId },
+            { userId: transaction.userId },
+            { libraryCardNumber: transaction.userId }
+        ];
+
+        let user = null;
+        for (const variant of borrowerLookupVariants) {
+            user = await req.dbAdapter.findOneInCollection('users', variant);
+            if (user) {
+                break;
+            }
+        }
         if (user) {
             try {
                 const stats = user.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
@@ -1736,6 +1748,9 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                     console.error('Failed to notify borrower about request approval:', notifyError);
                 }
             }
+        }
+        else {
+            console.warn('Approve request warning: borrower not found for transaction', transaction.id || transaction._id);
         }
 
         setAuditContext(req, {

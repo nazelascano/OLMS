@@ -53,7 +53,17 @@ const TabPanel = ({ children, value, index }) => {
   if (value !== index) {
     return null;
   }
-  return <Box sx={{ py: 3 }}>{children}</Box>;
+  return (
+    <Box
+      sx={{
+        px: { xs: 2, md: 3 },
+        pt: 3,
+        pb: 6,
+      }}
+    >
+      {children}
+    </Box>
+  );
 };
 
 const normalizeNumber = (value, fallback) => {
