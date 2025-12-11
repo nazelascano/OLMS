@@ -243,6 +243,82 @@ const collectUserIdentifiers = (user) => {
   return identifiers;
 };
 
+const normalizeRole = (role) => (role ? String(role).trim().toLowerCase() : '');
+
+const buildRoleTargets = (role) => {
+  const normalized = normalizeRole(role);
+  if (!normalized) {
+    return [];
+  }
+
+  const targets = new Set();
+  targets.add(normalized);
+  if (!normalized.endsWith('s')) {
+    targets.add(`${normalized}s`);
+  }
+
+  if (normalized === 'admin') {
+    targets.add('librarian');
+    targets.add('librarians');
+    targets.add('staff');
+    targets.add('staffs');
+  } else if (normalized === 'librarian') {
+    targets.add('staff');
+    targets.add('staffs');
+  }
+
+  return Array.from(targets);
+};
+
+const shouldDeliverPersistentNotification = (notification, context = {}) => {
+  if (!notification || notification.archived) {
+    return false;
+  }
+
+  const recipients = Array.isArray(notification.recipients)
+    ? notification.recipients
+    : [];
+
+  if (recipients.length === 0) {
+    return true;
+  }
+
+  const identifiers = context.identifiers instanceof Set ? context.identifiers : new Set();
+  const roleTargets = Array.isArray(context.roleTargets) ? context.roleTargets : [];
+  const normalizedRoleTargets = roleTargets.map((value) => normalizeRole(value)).filter(Boolean);
+
+  const normalizedRecipients = recipients
+    .map((value) => (value === undefined || value === null ? '' : String(value).trim()))
+    .filter(Boolean);
+
+  if (normalizedRecipients.length === 0) {
+    return true;
+  }
+
+  const broadcast = normalizedRecipients.some((value) => {
+    const normalized = value.toLowerCase();
+    return normalized === 'all' || normalized === '*' || normalized === 'everyone';
+  });
+  if (broadcast) {
+    return true;
+  }
+
+  const userMatch = normalizedRecipients.some((value) => identifiers.has(value));
+  if (userMatch) {
+    return true;
+  }
+
+  if (normalizedRoleTargets.length > 0) {
+    const recipientRoleTokens = normalizedRecipients.map((value) => value.toLowerCase());
+    const match = normalizedRoleTargets.some((target) => recipientRoleTokens.includes(target));
+    if (match) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const resolveTransactionBook = (transaction, bookMap) => {
   const collections = [];
   if (Array.isArray(transaction.items)) collections.push(transaction.items);
@@ -388,10 +464,11 @@ router.get('/', verifyToken, async (req, res) => {
     const reservationEnabled = notificationSettings.reservationNotifications !== false;
     const reminderDaysBefore = Math.max(parseInt(notificationSettings.reminderDaysBefore, 10) || 0, 0);
 
-    const [transactions, books, users] = await Promise.all([
+    const [transactions, books, users, persistentRecords] = await Promise.all([
       req.dbAdapter.findInCollection('transactions', {}),
       req.dbAdapter.findInCollection('books', {}),
       req.dbAdapter.findInCollection('users', {}),
+      req.dbAdapter.findInCollection('notifications', {}),
     ]);
 
     const bookMap = new Map();
@@ -418,6 +495,7 @@ router.get('/', verifyToken, async (req, res) => {
     });
 
     const identifiers = collectUserIdentifiers(req.user);
+    const roleTargets = buildRoleTargets(role);
     const now = new Date();
     const dueSoonThreshold = new Date(now.getTime() + reminderDaysBefore * MS_IN_DAY);
 
@@ -546,6 +624,31 @@ router.get('/', verifyToken, async (req, res) => {
       }
     });
 
+    const viewerId = userId;
+    const persistentContext = { identifiers, roleTargets };
+    (Array.isArray(persistentRecords) ? persistentRecords : [])
+      .filter((entry) => shouldDeliverPersistentNotification(entry, persistentContext))
+      .forEach((entry) => {
+        const normalized = ensureNotificationIdentifiers({ ...entry });
+        const readByList = Array.isArray(entry.readBy)
+          ? entry.readBy.map((value) => String(value))
+          : [];
+        normalized.read = viewerId ? readByList.includes(viewerId) : false;
+        const timestampCandidate =
+          normalized.timestamp ||
+          normalized.updatedAt ||
+          normalized.createdAt ||
+          entry.timestamp;
+        normalized.timestamp =
+          toIsoString(timestampCandidate) ||
+          toIsoString(new Date());
+        if (!normalized.link && normalized.transactionId) {
+          normalized.link = `/transactions/${String(normalized.transactionId)}`;
+        }
+        normalized.source = normalized.source || 'persistent';
+        notifications.push(normalized);
+      });
+
     const readIdSet = await loadUserReadSet(req.dbAdapter, userId);
     notifications.forEach((entry) => {
       const identifier = getNotificationIdentifier(entry);
@@ -575,15 +678,10 @@ router.get('/', verifyToken, async (req, res) => {
 router.get('/persistent', verifyToken, async (req, res) => {
   try {
     const role = req.user?.role || 'student';
+    const identifiers = collectUserIdentifiers(req.user);
+    const roleTargets = buildRoleTargets(role);
     let items = await req.dbAdapter.findInCollection('notifications', {});
-    // If student, filter notifications targeted to the user
-    if (role === 'student') {
-      const identifiers = collectUserIdentifiers(req.user);
-      items = items.filter(n => {
-        if (!n.recipients || !Array.isArray(n.recipients)) return false;
-        return n.recipients.some(r => identifiers.has(String(r)) || ['staff','librarian','admin'].includes(r));
-      });
-    }
+    items = items.filter((entry) => shouldDeliverPersistentNotification(entry, { identifiers, roleTargets }));
     items.sort((a,b) => new Date(b.createdAt || b.timestamp || 0) - new Date(a.createdAt || a.timestamp || 0));
 
     const viewerId = getUserIdString(req.user);
