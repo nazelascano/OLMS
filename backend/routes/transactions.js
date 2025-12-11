@@ -49,12 +49,57 @@ const getLibrarySettings = async (req) => {
     }
 };
 
+const parseTimeStringToMinutes = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized) {
+        return null;
+    }
+
+    const ampmMatch = normalized.match(/^([0-9]{1,2})(?::([0-9]{1,2}))?\s*(am|pm)$/);
+    if (ampmMatch) {
+        let hours = parseInt(ampmMatch[1], 10);
+        const minutes = parseInt(ampmMatch[2] || '0', 10);
+        if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+            return null;
+        }
+        const suffix = ampmMatch[3];
+        if (suffix === 'pm' && hours < 12) {
+            hours += 12;
+        }
+        if (suffix === 'am' && hours === 12) {
+            hours = 0;
+        }
+        return hours * 60 + minutes;
+    }
+
+    const segments = normalized.split(':');
+    if (segments.length < 2) {
+        return null;
+    }
+    const hours = parseInt(segments[0], 10);
+    const minutes = parseInt(segments[1], 10);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+        return null;
+    }
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        return null;
+    }
+    return hours * 60 + minutes;
+};
+
+const getMinutesSinceMidnight = (date = new Date()) => {
+    const target = date instanceof Date ? date : new Date(date);
+    return target.getHours() * 60 + target.getMinutes();
+};
+
 const isWithinOperatingHours = (librarySettings = {}) => {
     const now = new Date();
     const currentDay = now
         .toLocaleString('en-US', { weekday: 'long' })
         .toLowerCase();
-    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
 
     const operatingDays = Array.isArray(librarySettings.operatingDays)
         ? librarySettings.operatingDays.map(day => String(day).toLowerCase())
@@ -64,10 +109,20 @@ const isWithinOperatingHours = (librarySettings = {}) => {
         return false;
     }
 
-    const openingTime = librarySettings.openingTime || '00:00';
-    const closingTime = librarySettings.closingTime || '23:59';
+    const currentMinutes = getMinutesSinceMidnight(now);
+    const openingMinutes = parseTimeStringToMinutes(librarySettings.openingTime) ?? 0;
+    const closingMinutes = parseTimeStringToMinutes(librarySettings.closingTime) ?? (23 * 60 + 59);
 
-    return currentTime >= openingTime && currentTime <= closingTime;
+    if (openingMinutes === closingMinutes) {
+        return true;
+    }
+
+    if (closingMinutes > openingMinutes) {
+        return currentMinutes >= openingMinutes && currentMinutes <= closingMinutes;
+    }
+
+    // Handle overnight windows (e.g., 20:00 - 06:00)
+    return currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
 };
 
 const getNotificationSettings = async (req) => {
