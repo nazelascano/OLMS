@@ -98,6 +98,7 @@ const createDefaultLibrarySettings = () => ({
   openingTime: "08:00",
   closingTime: "17:00",
   operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+  timezone: "Asia/Manila",
 });
 
 const mergeLibrarySettings = (data = {}) => ({
@@ -110,6 +111,7 @@ const mergeLibrarySettings = (data = {}) => ({
   openingTime: data.openingTime || "08:00",
   closingTime: data.closingTime || "17:00",
   operatingDays: Array.isArray(data.operatingDays) ? data.operatingDays : ["monday", "tuesday", "wednesday", "thursday", "friday"],
+  timezone: data.timezone || "Asia/Manila",
 });
 
 const createDefaultBorrowingRules = () => ({
@@ -800,6 +802,19 @@ const SettingsPage = () => {
                         InputLabelProps={{ shrink: true }}
                       />
                     </Stack>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Timezone"
+                      value={librarySettings.timezone}
+                      onChange={(e) =>
+                        setLibrarySettings({
+                          ...librarySettings,
+                          timezone: e.target.value,
+                        })
+                      }
+                      helperText="Use an IANA timezone (e.g., Asia/Manila)."
+                    />
                     <FormControl fullWidth size="small">
                       <InputLabel>Operating Days</InputLabel>
                       <Select

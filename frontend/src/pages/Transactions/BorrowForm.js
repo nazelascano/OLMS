@@ -51,10 +51,13 @@ const normalizeBoolean = (value, fallback) => {
   return fallback;
 };
 
+const DEFAULT_LIBRARY_TIMEZONE = "Asia/Manila";
+
 const DEFAULT_LIBRARY_PROFILE = {
   openingTime: "08:00",
   closingTime: "17:00",
   operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+  timezone: DEFAULT_LIBRARY_TIMEZONE,
 };
 
 const capitalizeWord = (value = "") => {
@@ -73,18 +76,52 @@ const normalizeOperatingDays = (value) => {
     .filter(Boolean);
 };
 
-const evaluateOperatingWindow = (settings = DEFAULT_LIBRARY_PROFILE, referenceDate = new Date()) => {
+const getLibraryTimezone = (settings = {}) => {
+  if (settings && typeof settings.timezone === "string" && settings.timezone.trim()) {
+    return settings.timezone.trim();
+  }
+  return DEFAULT_LIBRARY_TIMEZONE;
+};
+
+const getZonedDayAndMinutes = (timeZone = DEFAULT_LIBRARY_TIMEZONE) => {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      weekday: "long",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const weekday = parts.find((part) => part.type === "weekday")?.value?.toLowerCase();
+    const hourValue = parts.find((part) => part.type === "hour")?.value;
+    const minuteValue = parts.find((part) => part.type === "minute")?.value;
+    const hours = hourValue !== undefined ? parseInt(hourValue, 10) : NaN;
+    const minutes = minuteValue !== undefined ? parseInt(minuteValue, 10) : NaN;
+    if (weekday && !Number.isNaN(hours) && !Number.isNaN(minutes)) {
+      return { weekday, minutes: hours * 60 + minutes };
+    }
+  } catch (error) {
+    console.error("Timezone evaluation error:", error);
+  }
+
+  const fallback = new Date();
+  return {
+    weekday: fallback.toLocaleString("en-US", { weekday: "long" }).toLowerCase(),
+    minutes: fallback.getHours() * 60 + fallback.getMinutes(),
+  };
+};
+
+const evaluateOperatingWindow = (settings = DEFAULT_LIBRARY_PROFILE) => {
   const profile = {
     openingTime: settings.openingTime || DEFAULT_LIBRARY_PROFILE.openingTime,
     closingTime: settings.closingTime || DEFAULT_LIBRARY_PROFILE.closingTime,
     operatingDays: normalizeOperatingDays(settings.operatingDays),
+    timezone: getLibraryTimezone(settings),
   };
 
-  const now = referenceDate instanceof Date ? referenceDate : new Date(referenceDate);
-  const currentDay = now
-    .toLocaleString("en-US", { weekday: "long" })
-    .toLowerCase();
-  const currentTime = now.toTimeString().slice(0, 5);
+  const { weekday: currentDay, minutes } = getZonedDayAndMinutes(profile.timezone);
+  const currentTime = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 
   const isOperatingDay =
     profile.operatingDays.length === 0 || profile.operatingDays.includes(currentDay);
@@ -102,6 +139,7 @@ const evaluateOperatingWindow = (settings = DEFAULT_LIBRARY_PROFILE, referenceDa
     ...profile,
     isOpen: isOperatingDay && withinHours,
     currentDay,
+    currentTime,
     reason,
   };
 };

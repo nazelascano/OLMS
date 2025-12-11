@@ -14,10 +14,13 @@ const BORROWING_DEFAULTS = {
   allowRenewalsWithOverdue: false,
 };
 
+const DEFAULT_LIBRARY_TIMEZONE = process.env.LIBRARY_TIMEZONE || 'Asia/Manila';
+
 const LIBRARY_DEFAULTS = {
   openingTime: '08:00',
   closingTime: '17:00',
   operatingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+  timezone: DEFAULT_LIBRARY_TIMEZONE,
 };
 
 const SYSTEM_DEFAULTS = {
@@ -99,6 +102,7 @@ const buildLibraryProfile = (settingsMap) => ({
   operatingDays: Array.isArray(settingsMap.LIBRARY_OPERATING_DAYS)
     ? settingsMap.LIBRARY_OPERATING_DAYS
     : LIBRARY_DEFAULTS.operatingDays,
+  timezone: settingsMap.LIBRARY_TIMEZONE || LIBRARY_DEFAULTS.timezone,
 });
 
 const buildBorrowingSettings = (settingsMap) => ({

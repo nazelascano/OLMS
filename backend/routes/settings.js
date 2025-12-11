@@ -15,6 +15,7 @@ const LEGACY_LIBRARY_CATEGORIES = [LIBRARY_CATEGORY, 'receipt'];
 const SYSTEM_CATEGORY = 'system';
 const NOTIFICATION_CATEGORY = 'notifications';
 const USER_CATEGORY = 'user';
+const DEFAULT_LIBRARY_TIMEZONE = process.env.LIBRARY_TIMEZONE || 'Asia/Manila';
 
 const toBoolean = (value, fallback = false) => {
     if (typeof value === 'boolean') {
@@ -127,6 +128,7 @@ router.get('/library', async(req, res) => {
             openingTime: index.LIBRARY_OPENING_TIME || '08:00',
             closingTime: index.LIBRARY_CLOSING_TIME || '17:00',
             operatingDays: Array.isArray(index.LIBRARY_OPERATING_DAYS) ? index.LIBRARY_OPERATING_DAYS : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+            timezone: index.LIBRARY_TIMEZONE || DEFAULT_LIBRARY_TIMEZONE,
         };
 
         res.json(response);
@@ -274,6 +276,7 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
             openingTime = '08:00',
             closingTime = '17:00',
             operatingDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+            timezone = DEFAULT_LIBRARY_TIMEZONE,
         } = req.body || {};
 
         const updates = [
@@ -286,6 +289,7 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
             { id: 'LIBRARY_OPENING_TIME', value: openingTime, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_CLOSING_TIME', value: closingTime, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_OPERATING_DAYS', value: Array.isArray(operatingDays) ? operatingDays : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], type: 'array', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_TIMEZONE', value: timezone, type: 'string', category: LIBRARY_CATEGORY },
         ];
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, updates);

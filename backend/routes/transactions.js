@@ -8,6 +8,7 @@ const {
     getNotificationChannelState
 } = require('../utils/settingsCache');
 const router = express.Router();
+const DEFAULT_LIBRARY_TIMEZONE = process.env.LIBRARY_TIMEZONE || 'Asia/Manila';
 
 const ensureSettingsSnapshot = async (req) => {
     if (req.settingsSnapshot) {
@@ -37,14 +38,16 @@ const getLibrarySettings = async (req) => {
         return snapshot?.library || {
             openingTime: "08:00",
             closingTime: "17:00",
-            operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"]
+            operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+            timezone: DEFAULT_LIBRARY_TIMEZONE,
         };
     } catch (error) {
         console.error('Library settings load error:', error);
         return {
             openingTime: "08:00",
             closingTime: "17:00",
-            operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"]
+            operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+            timezone: DEFAULT_LIBRARY_TIMEZONE,
         };
     }
 };
@@ -90,16 +93,46 @@ const parseTimeStringToMinutes = (value) => {
     return hours * 60 + minutes;
 };
 
-const getMinutesSinceMidnight = (date = new Date()) => {
-    const target = date instanceof Date ? date : new Date(date);
-    return target.getHours() * 60 + target.getMinutes();
+const getLibraryTimezone = (librarySettings = {}) => {
+    const configured = librarySettings.timezone;
+    if (configured && typeof configured === 'string' && configured.trim().length > 0) {
+        return configured.trim();
+    }
+    return DEFAULT_LIBRARY_TIMEZONE;
+};
+
+const getZonedDayAndMinutes = (timeZone = DEFAULT_LIBRARY_TIMEZONE) => {
+    try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            weekday: 'long'
+        });
+        const parts = formatter.formatToParts(new Date());
+        const weekday = parts.find((part) => part.type === 'weekday')?.value?.toLowerCase();
+        const hourPart = parts.find((part) => part.type === 'hour')?.value;
+        const minutePart = parts.find((part) => part.type === 'minute')?.value;
+        const hour = hourPart !== undefined ? parseInt(hourPart, 10) : NaN;
+        const minute = minutePart !== undefined ? parseInt(minutePart, 10) : NaN;
+        if (weekday && !Number.isNaN(hour) && !Number.isNaN(minute)) {
+            return { weekday, minutes: hour * 60 + minute };
+        }
+    } catch (error) {
+        console.error('Zoned time calculation error:', error);
+    }
+
+    const fallback = new Date();
+    return {
+        weekday: fallback.toLocaleString('en-US', { weekday: 'long' }).toLowerCase(),
+        minutes: fallback.getHours() * 60 + fallback.getMinutes()
+    };
 };
 
 const isWithinOperatingHours = (librarySettings = {}) => {
-    const now = new Date();
-    const currentDay = now
-        .toLocaleString('en-US', { weekday: 'long' })
-        .toLowerCase();
+    const timeZone = getLibraryTimezone(librarySettings);
+    const { weekday: currentDay, minutes: currentMinutes } = getZonedDayAndMinutes(timeZone);
 
     const operatingDays = Array.isArray(librarySettings.operatingDays)
         ? librarySettings.operatingDays.map(day => String(day).toLowerCase())
@@ -109,7 +142,6 @@ const isWithinOperatingHours = (librarySettings = {}) => {
         return false;
     }
 
-    const currentMinutes = getMinutesSinceMidnight(now);
     const openingMinutes = parseTimeStringToMinutes(librarySettings.openingTime) ?? 0;
     const closingMinutes = parseTimeStringToMinutes(librarySettings.closingTime) ?? (23 * 60 + 59);
 
