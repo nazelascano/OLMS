@@ -27,7 +27,6 @@ import {
 } from "@mui/material";
 import {
   ArrowBack,
-  Edit,
   Add,
   Delete,
   Book,
@@ -209,19 +208,9 @@ const BookDetails = () => {
         <IconButton onClick={() => navigate("/books")} sx={{ mr: 2 }}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 }}>
+        <Typography variant="h4" gutterBottom sx={{ flexGrow: 1, mb: 0 , color: "white"}}>
           {book.title}
         </Typography>
-        {canManageCopies && (
-          <Button
-            variant="outlined"
-            startIcon={<Edit />}
-            onClick={() => navigate(`/books/${id}/edit`)}
-            sx={{ mr: 2 }}
-          >
-            Edit Book
-          </Button>
-        )}
       </Box>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

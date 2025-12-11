@@ -1447,6 +1447,95 @@ router.post('/:id/copies', verifyToken, requireStaff, logAction('ADD_COPIES', 'b
     }
 });
 
+router.delete('/:id/copies/:copyId', verifyToken, requireStaff, logAction('DELETE_COPY', 'book'), async(req, res) => {
+    try {
+        const { id, copyId } = req.params;
+
+        setAuditContext(req, {
+            entityId: id,
+            metadata: {
+                deleteCopyRequest: {
+                    copyId,
+                },
+            },
+        });
+
+        const book = await findBookByIdentifier(req, id);
+        if (!book) {
+            setAuditContext(req, {
+                success: false,
+                status: 'BookNotFound',
+                description: `Delete copy failed: book ${id} not found`,
+            });
+            return res.status(404).json({ message: 'Book not found' });
+        }
+
+        const copies = Array.isArray(book.copies) ? [...book.copies] : [];
+        const targetIndex = copies.findIndex((copy) => String(copy.copyId).toLowerCase() === String(copyId).toLowerCase());
+
+        if (targetIndex === -1) {
+            setAuditContext(req, {
+                success: false,
+                status: 'CopyNotFound',
+                description: `Delete copy failed: copy ${copyId} not found in book ${id}`,
+            });
+            return res.status(404).json({ message: 'Book copy not found' });
+        }
+
+        const targetCopy = copies[targetIndex];
+        const copyStatus = normalizeString(targetCopy.status);
+        if (copyStatus === 'borrowed' || copyStatus === 'pending') {
+            setAuditContext(req, {
+                success: false,
+                status: 'CopyBorrowed',
+                description: `Delete copy blocked: copy ${copyId} is currently ${targetCopy.status}`,
+            });
+            return res.status(400).json({ message: 'Cannot delete a copy that is currently borrowed or pending' });
+        }
+
+        const updatedCopies = copies.filter((_, index) => index !== targetIndex);
+        const availableCopies = updatedCopies.filter((copy) => normalizeString(copy.status) === 'available').length;
+
+        const persistenceFilter = resolveBookPersistenceFilter(req, book);
+        if (!persistenceFilter) {
+            console.error('Unable to resolve persistence filter for delete copy', id);
+            return res.status(500).json({ message: 'Failed to delete book copy' });
+        }
+
+        await req.dbAdapter.updateInCollection('books', persistenceFilter, {
+            copies: updatedCopies,
+            totalCopies: updatedCopies.length,
+            availableCopies,
+            updatedAt: new Date(),
+        });
+
+        setAuditContext(req, {
+            entityId: book.id || book._id || id,
+            description: `Deleted copy ${copyId} from ${book.title || id}`,
+            details: {
+                copyId,
+                status: targetCopy.status,
+            },
+            metadata: {
+                actorId: req.user.id,
+            },
+            success: true,
+            status: 'Deleted',
+        });
+
+        return res.json({ message: 'Book copy deleted successfully' });
+    } catch (error) {
+        console.error('Delete copy error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: 'Failed to delete book copy',
+            details: { error: error.message },
+        });
+        return res.status(500).json({ message: 'Failed to delete book copy' });
+    }
+});
+
 router.get('/:id/copies/barcodes', verifyToken, requireStaff, logAction('GENERATE_BARCODES', 'book'), async(req, res) => {
     try {
         const book = await findBookByIdentifier(req, req.params.id);
