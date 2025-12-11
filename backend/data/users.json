@@ -26,9 +26,9 @@
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-12-11T05:47:54.747Z",
-    "lastLoginAt": "2025-12-11T05:46:56.666Z",
-    "lastActivityAt": "2025-12-11T05:47:54.745Z",
+    "updatedAt": "2025-12-11T23:10:40.922Z",
+    "lastLoginAt": "2025-12-11T23:06:48.990Z",
+    "lastActivityAt": "2025-12-11T23:10:40.921Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -808,5 +808,41 @@
     "createdAt": "2025-11-24T05:09:06.525Z",
     "updatedAt": "2025-11-26T12:34:15.838Z",
     "updatedBy": "mgnhicbwhxfy9"
+  },
+  {
+    "username": "nascano",
+    "email": null,
+    "password": "$2b$10$7vonQA8YTuoVGdp0B/jxWetiFdUMc3P1HjLFYcLVrJAf2n5W5Ww7a",
+    "firstName": "Nazel Ascaño b2",
+    "lastName": "dfghjkl",
+    "role": "librarian",
+    "curriculum": null,
+    "gradeLevel": null,
+    "isActive": true,
+    "createdAt": "2025-12-11T23:10:38.854Z",
+    "updatedAt": "2025-12-11T23:12:05.068Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "lastLoginAt": "2025-12-11T23:11:23.269Z",
+    "profile": {
+      "phone": "",
+      "address": "",
+      "dateOfBirth": null
+    },
+    "library": {
+      "cardNumber": "nascano",
+      "membershipDate": "2025-12-11T23:10:38.854Z",
+      "borrowingLimit": 10,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalReturned": 0,
+      "totalFines": 0
+    },
+    "_id": "mj21x9tz8681l",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "lastActivityAt": "2025-12-11T23:12:05.067Z"
   }
 ]

@@ -3115,9 +3115,11 @@
       "transactionId": "borrow_1764035765528_5kmhbk"
     },
     "createdAt": "2025-11-25T01:56:05.532Z",
-    "readBy": [],
+    "readBy": [
+      "mj21x9tz8681l"
+    ],
     "_id": "midxcjz03fwss",
-    "updatedAt": "2025-11-25T01:56:05.532Z"
+    "updatedAt": "2025-12-11T23:10:55.165Z"
   },
   {
     "title": "Borrow request submitted",
@@ -3153,9 +3155,11 @@
       "transactionId": "borrow_1764035765866_hugbkr"
     },
     "createdAt": "2025-11-25T01:56:05.870Z",
-    "readBy": [],
+    "readBy": [
+      "mj21x9tz8681l"
+    ],
     "_id": "midxck8f2f4j5",
-    "updatedAt": "2025-11-25T01:56:05.871Z"
+    "updatedAt": "2025-12-11T23:11:39.400Z"
   },
   {
     "title": "Borrow request rejected",
@@ -3314,9 +3318,11 @@
       "transactionId": "borrow_1765170451356_85x7wr"
     },
     "createdAt": "2025-12-08T05:07:31.359Z",
-    "readBy": [],
+    "readBy": [
+      "mj21x9tz8681l"
+    ],
     "_id": "miwowt5s83zxi",
-    "updatedAt": "2025-12-08T05:07:31.360Z"
+    "updatedAt": "2025-12-11T23:10:55.128Z"
   },
   {
     "title": "Borrow request submitted",
@@ -3352,9 +3358,11 @@
       "transactionId": "borrow_1765170452048_tng2nb"
     },
     "createdAt": "2025-12-08T05:07:32.059Z",
-    "readBy": [],
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
     "_id": "miwowtp71nw9v",
-    "updatedAt": "2025-12-08T05:07:32.059Z"
+    "updatedAt": "2025-12-11T23:06:51.894Z"
   },
   {
     "title": "Borrow request rejected",
@@ -3388,8 +3396,10 @@
       "status": "requested"
     },
     "createdAt": "2025-12-08T05:07:32.602Z",
-    "updatedAt": "2025-12-08T05:07:32.602Z",
-    "readBy": [],
+    "updatedAt": "2025-12-11T23:06:51.849Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
     "_id": "miwowu4ar1fja"
   },
   {
@@ -3516,9 +3526,11 @@
       "transactionId": "borrow_1765174793323_dy5lq7"
     },
     "createdAt": "2025-12-08T06:19:53.329Z",
-    "readBy": [],
+    "readBy": [
+      "mj21x9tz8681l"
+    ],
     "_id": "miwrhvg3hjdpo",
-    "updatedAt": "2025-12-08T06:19:53.331Z"
+    "updatedAt": "2025-12-11T23:11:39.371Z"
   },
   {
     "title": "Borrow request submitted",

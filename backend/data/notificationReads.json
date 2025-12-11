@@ -14,5 +14,13 @@
     "_id": "mj10o2py25a6v",
     "createdAt": "2025-12-11T05:47:43.942Z",
     "updatedAt": "2025-12-11T05:47:43.942Z"
+  },
+  {
+    "userId": "mj21x9tz8681l",
+    "notificationId": "overdue-borrow_1764035765445_bmskvt",
+    "read": true,
+    "_id": "mj21xmf3gdzrx",
+    "createdAt": "2025-12-11T23:10:55.167Z",
+    "updatedAt": "2025-12-11T23:10:55.167Z"
   }
 ]
