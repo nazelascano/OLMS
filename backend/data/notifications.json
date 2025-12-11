@@ -3519,5 +3519,83 @@
     "readBy": [],
     "_id": "miwrhvg3hjdpo",
     "updatedAt": "2025-12-08T06:19:53.331Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1765431862537_qqr410. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1765431862537_qqr410",
+    "recipients": [
+      "mhiohn87n1w6u",
+      "LIB-25-0023",
+      "john.doe@student.example.edu",
+      "123456789014"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765431862537_qqr410",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-12-11T05:44:22.543Z",
+    "updatedAt": "2025-12-11T05:44:22.545Z",
+    "readBy": [],
+    "_id": "mj10jrblkmnms"
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary1 Santos Doe requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1765431862537_qqr410",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765431862537_qqr410"
+    },
+    "createdAt": "2025-12-11T05:44:22.547Z",
+    "readBy": [],
+    "_id": "mj10jrbovvyjo",
+    "updatedAt": "2025-12-11T05:44:22.548Z"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1765431883891_xnx0k6. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1765431883891_xnx0k6",
+    "recipients": [
+      "mhiohn87n1w6u",
+      "LIB-25-0023",
+      "john.doe@student.example.edu",
+      "123456789014"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765431883891_xnx0k6",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2025-12-11T05:44:43.896Z",
+    "updatedAt": "2025-12-11T05:44:43.897Z",
+    "readBy": [],
+    "_id": "mj10k7sp4fzga"
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary1 Santos Doe requested 1 item(s).",
+    "type": "request",
+    "transactionId": "borrow_1765431883891_xnx0k6",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1765431883891_xnx0k6"
+    },
+    "createdAt": "2025-12-11T05:44:43.902Z",
+    "readBy": [],
+    "_id": "mj10k7swvr3lc",
+    "updatedAt": "2025-12-11T05:44:43.904Z"
   }
 ]

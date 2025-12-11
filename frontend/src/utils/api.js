@@ -108,6 +108,28 @@ api.interceptors.response.use(
   },
 );
 
+const SETTINGS_CATEGORY_ENDPOINTS = {
+  library: "/settings/library",
+  borrowing: "/settings/borrowing-rules",
+  "borrowing-rules": "/settings/borrowing-rules",
+  notifications: "/settings/notifications",
+  system: "/settings/system",
+  user: "/settings/user-attributes",
+  "user-attributes": "/settings/user-attributes",
+};
+
+const resolveSettingsCategoryPath = (category) => {
+  const normalized = String(category || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalized) {
+    throw new Error("Settings category is required");
+  }
+
+  return SETTINGS_CATEGORY_ENDPOINTS[normalized] || `/settings/${normalized}`;
+};
+
 // API helper functions
 export const authAPI = {
   login: (usernameOrEmail, password) =>
@@ -235,7 +257,7 @@ export const reportsAPI = {
 
 export const settingsAPI = {
   getAll: () => api.get("/settings"),
-  getByCategory: (category) => api.get(`/settings/category/${category}`),
+  getByCategory: (category) => api.get(resolveSettingsCategoryPath(category)),
   update: (key, value) => api.put(`/settings/${key}`, { value }),
   updateMultiple: (settings) => api.put("/settings/bulk", { settings }),
   getUserAttributes: () => api.get("/settings/user-attributes"),

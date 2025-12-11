@@ -51,6 +51,71 @@ const normalizeBoolean = (value, fallback) => {
   return fallback;
 };
 
+const DEFAULT_LIBRARY_PROFILE = {
+  openingTime: "08:00",
+  closingTime: "17:00",
+  operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+};
+
+const capitalizeWord = (value = "") => {
+  if (!value) return "";
+  const normalized = String(value).trim();
+  if (!normalized) return "";
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+};
+
+const normalizeOperatingDays = (value) => {
+  if (!Array.isArray(value) || value.length === 0) {
+    return DEFAULT_LIBRARY_PROFILE.operatingDays.slice();
+  }
+  return value
+    .map((day) => String(day || "").trim().toLowerCase())
+    .filter(Boolean);
+};
+
+const evaluateOperatingWindow = (settings = DEFAULT_LIBRARY_PROFILE, referenceDate = new Date()) => {
+  const profile = {
+    openingTime: settings.openingTime || DEFAULT_LIBRARY_PROFILE.openingTime,
+    closingTime: settings.closingTime || DEFAULT_LIBRARY_PROFILE.closingTime,
+    operatingDays: normalizeOperatingDays(settings.operatingDays),
+  };
+
+  const now = referenceDate instanceof Date ? referenceDate : new Date(referenceDate);
+  const currentDay = now
+    .toLocaleString("en-US", { weekday: "long" })
+    .toLowerCase();
+  const currentTime = now.toTimeString().slice(0, 5);
+
+  const isOperatingDay =
+    profile.operatingDays.length === 0 || profile.operatingDays.includes(currentDay);
+  const withinHours =
+    currentTime >= profile.openingTime && currentTime <= profile.closingTime;
+
+  let reason = "";
+  if (!isOperatingDay) {
+    reason = `Library is closed on ${capitalizeWord(currentDay)}.`;
+  } else if (!withinHours) {
+    reason = `Requests are accepted between ${profile.openingTime} and ${profile.closingTime}.`;
+  }
+
+  return {
+    ...profile,
+    isOpen: isOperatingDay && withinHours,
+    currentDay,
+    reason,
+  };
+};
+
+const formatOperatingDaysLabel = (days = DEFAULT_LIBRARY_PROFILE.operatingDays) => {
+  if (!Array.isArray(days) || days.length === 0) {
+    return "All days";
+  }
+  if (days.length === 7) {
+    return "Daily";
+  }
+  return days.map(capitalizeWord).join(", ");
+};
+
 const getBorrowerLabel = (borrower) => {
   if (!borrower) return "";
   const name = [
@@ -106,6 +171,11 @@ const BorrowForm = () => {
     enableFines: true,
   });
 
+  const [libraryProfile, setLibraryProfile] = useState(null);
+  const [libraryProfileLoading, setLibraryProfileLoading] = useState(false);
+  const [libraryProfileError, setLibraryProfileError] = useState("");
+  const [libraryOpenState, setLibraryOpenState] = useState(() => evaluateOperatingWindow());
+
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -138,6 +208,24 @@ const BorrowForm = () => {
   const borrowDays = normalizeNumber(rules.maxBorrowDays, 14);
   const finePerDay = normalizeNumber(rules.finePerDay, 5);
   const finesEnabled = normalizeBoolean(rules.enableFines, true);
+  const operatingDaysLabel = useMemo(
+    () =>
+      formatOperatingDaysLabel(
+        libraryProfile?.operatingDays || libraryOpenState.operatingDays,
+      ),
+    [libraryProfile, libraryOpenState.operatingDays],
+  );
+  const canSubmitStudentRequest =
+    selectedBooks.length > 0 && (!libraryProfile || libraryOpenState.isOpen);
+  const canSubmitStaffBorrow = Boolean(selectedBorrower) && selectedBooks.length > 0;
+  const reviewButtonDisabled = isStudentMode
+    ? !canSubmitStudentRequest
+    : !canSubmitStaffBorrow;
+  const reviewButtonLabel = isStudentMode
+    ? libraryProfile && !libraryOpenState.isOpen
+      ? "Library Closed"
+      : "Review Request"
+    : "Review Borrow Request";
 
   useEffect(() => {
     if (isStudentMode) {
@@ -168,6 +256,60 @@ const BorrowForm = () => {
       mounted = false;
     };
   }, [isStudentMode]);
+
+  useEffect(() => {
+    if (!isStudentMode) {
+      setLibraryProfile(null);
+      setLibraryProfileError("");
+      setLibraryOpenState(evaluateOperatingWindow());
+      return;
+    }
+
+    let active = true;
+    setLibraryProfileLoading(true);
+    setLibraryProfileError("");
+
+    settingsAPI
+      .getByCategory("library")
+      .then((response) => {
+        if (!active) return;
+        const profile = response.data || {};
+        setLibraryProfile(profile);
+        setLibraryOpenState(evaluateOperatingWindow(profile));
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Error loading library profile:", error);
+        setLibraryProfile(null);
+        setLibraryProfileError(
+          "Unable to load operating hours. Requests will be validated on submit.",
+        );
+        setLibraryOpenState(evaluateOperatingWindow());
+      })
+      .finally(() => {
+        if (active) setLibraryProfileLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isStudentMode]);
+
+  useEffect(() => {
+    if (!isStudentMode) {
+      return;
+    }
+
+    const updateState = () => {
+      setLibraryOpenState(evaluateOperatingWindow(libraryProfile || undefined));
+    };
+
+    updateState();
+    const intervalId = window.setInterval(updateState, 60000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isStudentMode, libraryProfile]);
 
   useEffect(() => {
     if (isStudentMode) {
@@ -486,6 +628,13 @@ const BorrowForm = () => {
   const openConfirmation = () => {
     clearFeedback();
 
+    if (isStudentMode && libraryProfile && !libraryOpenState.isOpen) {
+      setErrorMessage(
+        `Borrow requests are accepted between ${libraryOpenState.openingTime} and ${libraryOpenState.closingTime} on ${operatingDaysLabel}.`,
+      );
+      return;
+    }
+
     if (!isStudentMode && !borrowerId) {
       setErrorMessage("Select a borrower before submitting the transaction.");
       return;
@@ -622,6 +771,22 @@ const BorrowForm = () => {
         <Alert severity="success" sx={{ mb: 2 }}>
           {successMessage}
         </Alert>
+      )}
+
+      {isStudentMode && (
+        <Box mb={2}>
+          {libraryProfileLoading ? (
+            <Alert severity="info">Checking library operating hours…</Alert>
+          ) : libraryProfileError ? (
+            <Alert severity="warning">{libraryProfileError}</Alert>
+          ) : (
+            <Alert severity={libraryOpenState.isOpen ? "info" : "warning"}>
+              {libraryOpenState.isOpen
+                ? `Borrow requests are open now. Operating hours: ${libraryOpenState.openingTime} - ${libraryOpenState.closingTime} (${operatingDaysLabel}).`
+                : `Library accepts borrow requests between ${libraryOpenState.openingTime} and ${libraryOpenState.closingTime} on ${operatingDaysLabel}.`}
+            </Alert>
+          )}
+        </Box>
       )}
 
       <Grid container spacing={3}>
@@ -1186,14 +1351,20 @@ const BorrowForm = () => {
                   color="primary"
                   startIcon={<Book />}
                   onClick={openConfirmation}
-                  disabled={
-                    isStudentMode
-                      ? selectedBooks.length === 0
-                      : !selectedBorrower || selectedBooks.length === 0
-                  }
+                  disabled={reviewButtonDisabled}
                 >
-                  {isStudentMode ? "Review Request" : "Review Borrow Request"}
+                  {reviewButtonLabel}
                 </Button>
+                {isStudentMode && libraryProfile && !libraryOpenState.isOpen && (
+                  <Typography
+                    variant="caption"
+                    color="warning.main"
+                    display="block"
+                    mt={1}
+                  >
+                    Borrow requests reopen between {libraryOpenState.openingTime} and {libraryOpenState.closingTime}. Operating days: {operatingDaysLabel}.
+                  </Typography>
+                )}
               </Grid>
             </Grid>
           </Paper>

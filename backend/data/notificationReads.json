@@ -1,90 +1,18 @@
 [
   {
     "userId": "mgnhicbwhxfy9",
-    "notificationId": "due-soon-borrow_1764034247463_1si7vb",
-    "read": true,
-    "_id": "miwpysslji06u",
-    "createdAt": "2025-12-08T05:37:03.813Z",
-    "updatedAt": "2025-12-08T05:37:03.813Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "due-soon-borrow_1763989316647_sm1ok0",
-    "read": true,
-    "_id": "miwpysss8bdn7",
-    "createdAt": "2025-12-08T05:37:03.820Z",
-    "updatedAt": "2025-12-08T05:37:03.820Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "overdue-borrow_1763886563233_2rervt",
-    "read": true,
-    "_id": "miwpyst788pz6",
-    "createdAt": "2025-12-08T05:37:03.835Z",
-    "updatedAt": "2025-12-08T05:37:03.835Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "overdue-borrow_1763885363760_4230t0",
-    "read": true,
-    "_id": "miwpystnke5xf",
-    "createdAt": "2025-12-08T05:37:03.851Z",
-    "updatedAt": "2025-12-08T05:37:03.851Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "due-soon-borrow_1764033662356_udbv8w",
-    "read": true,
-    "_id": "miwpz0oe1cg87",
-    "createdAt": "2025-12-08T05:37:14.030Z",
-    "updatedAt": "2025-12-08T05:37:14.030Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "overdue-borrow_1763886334585_w3r67j",
-    "read": true,
-    "_id": "miwpz0onkrp4q",
-    "createdAt": "2025-12-08T05:37:14.039Z",
-    "updatedAt": "2025-12-08T05:37:14.039Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "due-soon-borrow_1763098898534_n6hhpj",
-    "read": true,
-    "_id": "miwq5lglmjokp",
-    "createdAt": "2025-12-08T05:42:20.901Z",
-    "updatedAt": "2025-12-08T05:42:20.901Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
     "notificationId": "overdue-borrow_1763225525584_e1dm9x",
     "read": true,
-    "_id": "miwq5vdqyjvpb",
-    "createdAt": "2025-12-08T05:42:33.758Z",
-    "updatedAt": "2025-12-08T05:42:33.758Z"
+    "_id": "mj10o2nrr65h5",
+    "createdAt": "2025-12-11T05:47:43.863Z",
+    "updatedAt": "2025-12-11T05:47:43.863Z"
   },
   {
     "userId": "mgnhicbwhxfy9",
-    "notificationId": "overdue-borrow_1763903497505_a3zmv2",
+    "notificationId": "overdue-borrow_1763098898534_n6hhpj",
     "read": true,
-    "_id": "miwqfag7tmdew",
-    "createdAt": "2025-12-08T05:49:53.191Z",
-    "updatedAt": "2025-12-08T05:49:53.191Z"
-  },
-  {
-    "userId": "mgnhicbwhxfy9",
-    "notificationId": "due-soon-borrow_1764035765445_bmskvt",
-    "read": true,
-    "_id": "miwqfiqdhuyo3",
-    "createdAt": "2025-12-08T05:50:03.925Z",
-    "updatedAt": "2025-12-08T05:50:03.925Z"
-  },
-  {
-    "userId": "mhiohn87n1w6u",
-    "notificationId": "due-soon-borrow_1763098898534_n6hhpj",
-    "read": true,
-    "_id": "miwqg322lda2z",
-    "createdAt": "2025-12-08T05:50:30.266Z",
-    "updatedAt": "2025-12-08T05:50:30.266Z"
+    "_id": "mj10o2py25a6v",
+    "createdAt": "2025-12-11T05:47:43.942Z",
+    "updatedAt": "2025-12-11T05:47:43.942Z"
   }
 ]
