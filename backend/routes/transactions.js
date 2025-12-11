@@ -157,6 +157,14 @@ const isWithinOperatingHours = (librarySettings = {}) => {
     return currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
 };
 
+const formatCountLabel = (count, singular, plural) => {
+    const numericValue = Number(count);
+    const resolvedCount = Number.isFinite(numericValue) ? numericValue : 0;
+    const resolvedPlural = plural || `${singular}s`;
+    const label = resolvedCount === 1 ? singular : resolvedPlural;
+    return `${resolvedCount} ${label}`;
+};
+
 const getNotificationSettings = async (req) => {
     try {
         const snapshot = await ensureSettingsSnapshot(req);
@@ -1356,7 +1364,7 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
             try {
                 await req.dbAdapter.insertIntoCollection('notifications', {
                     title: 'New borrow request',
-                    message: `${getBorrowerName(user)} requested ${transactionItems.length} item(s).`,
+                    message: `${getBorrowerName(user)} requested ${formatCountLabel(transactionItems.length, 'item')}.`,
                     type: 'request',
                     transactionId,
                     recipients: ['staff','librarian','admin'],
@@ -2036,7 +2044,7 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
         });
 
         res.json({
-            message: `Processed ${totalReturnedItems} item(s) across ${results.length} transaction(s)`,
+            message: `Processed ${formatCountLabel(totalReturnedItems, 'item')} across ${formatCountLabel(results.length, 'transaction')}`,
             results
         });
     } catch (error) {

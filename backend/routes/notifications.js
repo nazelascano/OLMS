@@ -5,6 +5,8 @@ const { getSettingsSnapshot, NOTIFICATION_DEFAULTS, getNotificationChannelState 
 const router = express.Router();
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const MS_IN_HOUR = 60 * 60 * 1000;
+const REQUEST_RECENT_THRESHOLD_HOURS = 12;
 const SYNTHETIC_READ_COLLECTION = 'notificationReads';
 
 const ensureSettingsSnapshot = async (req) => {
@@ -445,6 +447,116 @@ const overdueSeverity = (days) => {
   return 'low';
 };
 
+const formatRelativeAge = (date, reference = new Date()) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return null;
+  }
+  const referenceDate = reference instanceof Date ? reference : new Date(reference);
+  if (Number.isNaN(referenceDate.getTime())) {
+    return null;
+  }
+  const diffMs = referenceDate.getTime() - date.getTime();
+  if (!Number.isFinite(diffMs) || diffMs < 0) {
+    return null;
+  }
+  if (diffMs < 60 * 1000) {
+    return 'moments';
+  }
+  if (diffMs < MS_IN_HOUR) {
+    const minutes = Math.max(1, Math.round(diffMs / (60 * 1000)));
+    return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  }
+  if (diffMs < MS_IN_DAY) {
+    const hours = Math.max(1, Math.round(diffMs / MS_IN_HOUR));
+    return `${hours} hour${hours === 1 ? '' : 's'}`;
+  }
+  const days = Math.max(1, Math.round(diffMs / MS_IN_DAY));
+  return `${days} day${days === 1 ? '' : 's'}`;
+};
+
+const formatShortDateLabel = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return null;
+  }
+  try {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+  } catch (error) {
+    return null;
+  }
+};
+
+const decorateBorrowRequestNotification = (notification, referenceDate = new Date()) => {
+  if (!notification || notification.type !== 'request') {
+    return notification;
+  }
+
+  const createdAt =
+    toDate(notification?.meta?.requestCreatedAt) ||
+    toDate(notification.createdAt) ||
+    toDate(notification.timestamp);
+
+  if (!createdAt) {
+    return notification;
+  }
+
+  const now = referenceDate instanceof Date ? referenceDate : new Date(referenceDate);
+  if (Number.isNaN(now.getTime())) {
+    return notification;
+  }
+
+  const ageMs = now.getTime() - createdAt.getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0) {
+    return notification;
+  }
+
+  const isRecent = ageMs <= REQUEST_RECENT_THRESHOLD_HOURS * MS_IN_HOUR;
+  if (isRecent) {
+    if (!notification.timestamp) {
+      notification.timestamp = createdAt.toISOString();
+    }
+    return notification;
+  }
+
+  const hasBorrowRequestTitle = typeof notification.title === 'string' && /borrow request/i.test(notification.title);
+  if (hasBorrowRequestTitle) {
+    notification.title = 'Pending borrow request';
+  }
+
+  const rawMessage = typeof notification.message === 'string' ? notification.message.trim() : '';
+  const baseMessage = (() => {
+    if (!rawMessage) {
+      return 'Borrow request pending review';
+    }
+    const pendingIndex = rawMessage.toLowerCase().indexOf('pending ');
+    if (pendingIndex === -1) {
+      return rawMessage.replace(/[.]+$/, '');
+    }
+    return rawMessage.slice(0, pendingIndex).trim().replace(/[.]+$/, '');
+  })();
+
+  const ageLabel = formatRelativeAge(createdAt, now);
+  const dateLabel = formatShortDateLabel(createdAt);
+  const pendingClause = ageLabel
+    ? `Pending for ${ageLabel}${dateLabel ? ` (requested ${dateLabel})` : ''}`
+    : dateLabel
+      ? `Pending since ${dateLabel}`
+      : 'Pending review';
+
+  const lead = baseMessage ? `${baseMessage}${baseMessage.endsWith('.') ? '' : '.'}` : '';
+  notification.message = `${lead} ${pendingClause}.`.trim().replace(/\.\./g, '.');
+  notification.meta = {
+    ...(notification.meta || {}),
+    requestCreatedAt: createdAt.toISOString(),
+    requestAgeHours: Math.round(ageMs / MS_IN_HOUR),
+  };
+
+  if (!notification.timestamp) {
+    notification.timestamp = createdAt.toISOString();
+  }
+
+  return notification;
+};
+
 router.get('/', verifyToken, async (req, res) => {
   try {
     const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
@@ -646,6 +758,7 @@ router.get('/', verifyToken, async (req, res) => {
           normalized.link = `/transactions/${String(normalized.transactionId)}`;
         }
         normalized.source = normalized.source || 'persistent';
+        decorateBorrowRequestNotification(normalized, now);
         notifications.push(normalized);
       });
 
@@ -691,6 +804,8 @@ router.get('/persistent', verifyToken, async (req, res) => {
         : [];
       const normalized = ensureNotificationIdentifiers({ ...entry });
       normalized.read = viewerId ? readByList.includes(viewerId) : false;
+      normalized.source = normalized.source || 'persistent';
+      decorateBorrowRequestNotification(normalized);
       return normalized;
     });
 

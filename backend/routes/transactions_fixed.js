@@ -15,7 +15,7 @@ const ensureSettingsSnapshot = async (req) => {
     }
     const snapshot = await getSettingsSnapshot(req.dbAdapter);
     req.settingsSnapshot = snapshot;
-    if (!req.systemSettings) {
+                    message: `${getBorrowerName(user)} requested ${formatCountLabel(transactionItems.length, 'item')}.`,
         req.systemSettings = snapshot.system;
     }
     return snapshot;
@@ -118,6 +118,14 @@ const buildRecipientList = (...values) => {
                 .map(value => String(value))
         )
     );
+};
+
+const formatCountLabel = (count, singular, plural) => {
+    const numericValue = Number(count);
+    const resolvedCount = Number.isFinite(numericValue) ? numericValue : 0;
+    const resolvedPlural = plural || `${singular}s`;
+    const label = resolvedCount === 1 ? singular : resolvedPlural;
+    return `${resolvedCount} ${label}`;
 };
 
 const findTransactionByIdentifier = async(dbAdapter, identifier) => {
@@ -1820,7 +1828,7 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
         });
 
         res.json({
-            message: `Processed ${totalReturnedItems} item(s) across ${results.length} transaction(s)`,
+            message: `Processed ${formatCountLabel(totalReturnedItems, 'item')} across ${formatCountLabel(results.length, 'transaction')}`,
             results
         });
     } catch (error) {
