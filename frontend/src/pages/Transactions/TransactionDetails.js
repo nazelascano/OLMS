@@ -51,6 +51,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
+import ApproveRequestDialog from "../../components/Transactions/ApproveRequestDialog";
 
 const TransactionDetails = () => {
   const { id } = useParams();
@@ -71,6 +72,7 @@ const TransactionDetails = () => {
   const [returnDate, setReturnDate] = useState(new Date());
   const [notes, setNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
 
   const fetchTransactionDetails = useCallback(async () => {
     try {
@@ -191,6 +193,18 @@ const TransactionDetails = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleApproveSuccess = () => {
+    setSuccess("Request approved successfully");
+    setApproveDialogOpen(false);
+    fetchTransactionDetails();
+    fetchTransactionHistory();
+    setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const handleApproveClose = () => {
+    setApproveDialogOpen(false);
   };
 
   const getStatusColor = (status) => {
@@ -743,6 +757,16 @@ const TransactionDetails = () => {
                     >
                       Edit Notes{" "}
                     </Button>{" "}
+                    {transaction.status === "requested" && (
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<CheckCircle />}
+                        onClick={() => setApproveDialogOpen(true)}
+                      >
+                        Approve Request
+                      </Button>
+                    )}
                     {transaction.status === "active" && (
                       <>
                         <Button
@@ -867,6 +891,16 @@ const TransactionDetails = () => {
             </Button>{" "}
           </DialogActions>{" "}
         </Dialog>{" "}
+        <ApproveRequestDialog
+          open={approveDialogOpen}
+          transactionId={id}
+          onClose={handleApproveClose}
+          onApproved={handleApproveSuccess}
+          onNavigateToRequests={() => {
+            setApproveDialogOpen(false);
+            navigate("/transactions/requests");
+          }}
+        />
       </Box>{" "}
     </LocalizationProvider>
   );

@@ -820,9 +820,9 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-12-11T23:10:38.854Z",
-    "updatedAt": "2025-12-11T23:12:05.068Z",
+    "updatedAt": "2025-12-12T00:42:05.707Z",
     "createdBy": "mgnhicbwhxfy9",
-    "lastLoginAt": "2025-12-11T23:11:23.269Z",
+    "lastLoginAt": "2025-12-12T00:41:34.123Z",
     "profile": {
       "phone": "",
       "address": "",
@@ -843,6 +843,6 @@
     "_id": "mj21x9tz8681l",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2025-12-11T23:12:05.067Z"
+    "lastActivityAt": "2025-12-12T00:42:05.706Z"
   }
 ]

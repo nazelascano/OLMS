@@ -3359,10 +3359,11 @@
     },
     "createdAt": "2025-12-08T05:07:32.059Z",
     "readBy": [
-      "mgnhicbwhxfy9"
+      "mgnhicbwhxfy9",
+      "mj21x9tz8681l"
     ],
     "_id": "miwowtp71nw9v",
-    "updatedAt": "2025-12-11T23:06:51.894Z"
+    "updatedAt": "2025-12-12T00:41:19.594Z"
   },
   {
     "title": "Borrow request rejected",
@@ -3610,4 +3611,5 @@
     "_id": "mj10k7swvr3lc",
     "updatedAt": "2025-12-11T05:44:43.904Z"
   }
+] }
 ]
