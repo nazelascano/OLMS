@@ -1,9 +1,8 @@
 /* eslint-disable unicode-bom */
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Card,
@@ -16,7 +15,6 @@ import {
   FormControl,
   Grid,
   IconButton,
-  InputAdornment,
   InputLabel,
   LinearProgress,
   Menu,
@@ -31,10 +29,8 @@ import {
   TablePagination,
   TableRow,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import CircularProgress from "@mui/material/CircularProgress";
 import {
   MoreVert,
   Visibility,
@@ -49,11 +45,11 @@ import {
   AutoStories,
   Print,
   FilterList,
-  QrCodeScanner,
 } from "@mui/icons-material";
 import QRScanner from "../../components/QRScanner";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
+import ApproveRequestDialog from "../../components/Transactions/ApproveRequestDialog";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, settingsAPI } from "../../utils/api";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
@@ -95,16 +91,9 @@ const TransactionsList = () => {
   const [returnError, setReturnError] = useState("");
   // QR scanner dialog
   const [scannerOpen, setScannerOpen] = useState(false);
-  // Approval assignment dialog state
+  // Approval dialog state
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  const [approveAssignments, setApproveAssignments] = useState({});
-  const [approveBooks, setApproveBooks] = useState({});
-  const [approveItems, setApproveItems] = useState([]);
   const [approveTransactionId, setApproveTransactionId] = useState(null);
-  const [approveLoading, setApproveLoading] = useState(false);
-  const [approveSubmitting, setApproveSubmitting] = useState(false);
-  const [approveError, setApproveError] = useState("");
-  const [assignScanner, setAssignScanner] = useState({ open: false, targetKey: null, label: "" });
   const copyIdInputRef = useRef(null);
   // filters menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
@@ -286,13 +275,6 @@ const TransactionsList = () => {
 
   const getDisplayTransactionId = (transaction) =>
     getTransactionIdentifier(transaction) || "-";
-
-  const buildApproveItemKey = (item, index) => {
-    if (!item) return `item-${index}`;
-    if (item.requestItemId) return String(item.requestItemId);
-    const bookId = item.bookId ? String(item.bookId) : "book";
-    return `${bookId}-${index}`;
-  };
 
   const resolveDueDateValue = (transaction) =>
     transaction?.dueDate || transaction?.metadata?.providedDueDate || null;
@@ -494,22 +476,25 @@ const TransactionsList = () => {
     }
   };
 
-  const handleApproveRequest = async () => {
+  const handleApproveRequest = () => {
     const transactionId = getTransactionIdentifier(selectedTransaction);
     if (!transactionId) {
-      setError('Transaction identifier is missing');
+      setError("Transaction identifier is missing");
       return;
     }
+    setApproveTransactionId(transactionId);
+    setApproveDialogOpen(true);
+  };
 
-    try {
-      const { data } = await api.get(`/transactions/${transactionId}`);
-      const items = Array.isArray(data?.items) ? data.items : [];
-      await prepareApproveDialog(transactionId, items);
-    } catch (error) {
-      const message = error.response?.data?.message || 'Failed to approve request';
-      setError(message);
-      console.error('Error approving request:', error);
-    }
+  const handleApproveDialogClose = () => {
+    setApproveDialogOpen(false);
+    setApproveTransactionId(null);
+  };
+
+  const handleApproveDialogApproved = async () => {
+    await fetchTransactions();
+    await fetchStats();
+    handleMenuClose();
   };
 
   // Confirm and perform return — validates copy ID if available
@@ -539,220 +524,6 @@ const TransactionsList = () => {
     } catch (err) {
       setReturnError("Failed to return book. Try again.");
       console.error(err);
-    }
-  };
-
-  const prepareApproveDialog = async (transactionId, items = []) => {
-    setApproveDialogOpen(true);
-    setApproveTransactionId(transactionId);
-    setApproveItems(items);
-    setApproveAssignments({});
-    setApproveBooks({});
-    setApproveError('');
-    setApproveSubmitting(false);
-    setApproveLoading(true);
-
-    try {
-      const collectItemBookIds = (item) => {
-        const candidates = [
-          item?.bookId,
-          item?.book?.id,
-          item?.book?._id,
-          item?.book?.bookId,
-        ];
-        return candidates
-          .map((candidate) => (candidate !== undefined && candidate !== null ? String(candidate).trim() : ''))
-          .filter(Boolean);
-      };
-
-      const fallbackBookFromItems = (bookId) => {
-        const match = items.find((entry) => collectItemBookIds(entry).includes(String(bookId)));
-        if (!match) {
-          return null;
-        }
-        const resolved = match.book || {};
-        return {
-          id: String(bookId),
-          title: resolved.title || match.title || 'Unknown title',
-          author: resolved.author || match.author || '',
-          isbn: resolved.isbn || match.isbn || '',
-          copies: Array.isArray(resolved.copies) ? resolved.copies : [],
-        };
-      };
-
-      const uniqueBookIds = Array.from(
-        new Set(items.flatMap((item) => collectItemBookIds(item)))
-      );
-
-      const booksMap = {};
-      if (uniqueBookIds.length > 0) {
-        const responses = await Promise.all(
-          uniqueBookIds.map(async (bookId) => {
-            try {
-              const resp = await api.get(`/books/${bookId}`);
-              return { bookId, data: resp.data };
-            } catch (err) {
-              console.warn('Failed to load book details', bookId, err?.response?.status || err.message);
-              return { bookId, error: err };
-            }
-          })
-        );
-
-        const failed = [];
-        responses.forEach(({ bookId, data, error }) => {
-          if (data) {
-            const registerKeys = [bookId, data.id, data._id, data.bookId].filter(Boolean);
-            registerKeys.forEach((key) => {
-              booksMap[String(key)] = data;
-            });
-            return;
-          }
-
-          failed.push(bookId);
-          const fallback = fallbackBookFromItems(bookId) || {
-            id: String(bookId),
-            title: 'Unknown title',
-            author: '',
-            isbn: '',
-            copies: [],
-          };
-          const registerKeys = [bookId, fallback.id].filter(Boolean);
-          registerKeys.forEach((key) => {
-            booksMap[String(key)] = fallback;
-          });
-        });
-
-        if (failed.length > 0) {
-          setApproveError((prev) =>
-            prev || 'Some book details were unavailable. Manual copy assignment may be required.'
-          );
-        }
-      }
-
-      const initialAssignments = {};
-      items.forEach((item, index) => {
-        const key = buildApproveItemKey(item, index);
-        initialAssignments[key] = item?.copyId ? String(item.copyId) : '';
-      });
-
-      setApproveBooks(booksMap);
-      setApproveAssignments(initialAssignments);
-    } catch (err) {
-      console.error('Failed to prepare approval dialog', err);
-      setApproveError(err.response?.data?.message || 'Failed to load book details');
-    } finally {
-      setApproveLoading(false);
-    }
-  };
-
-  const closeApproveDialog = () => {
-    if (approveSubmitting) {
-      return;
-    }
-    setApproveDialogOpen(false);
-    setApproveTransactionId(null);
-    setApproveItems([]);
-    setApproveAssignments({});
-    setApproveBooks({});
-    setApproveError('');
-  };
-
-  const handleOpenRequestsPage = () => {
-    closeApproveDialog();
-    navigate('/transactions/requests');
-  };
-
-  const handleAssignmentChange = (itemKey, value) => {
-    const normalized = (value || '').toString().trim();
-    setApproveAssignments((prev) => ({ ...prev, [itemKey]: normalized }));
-    setApproveError('');
-  };
-
-  const openAssignScannerForItem = (itemKey, label) => {
-    if (!itemKey) return;
-    setAssignScanner({ open: true, targetKey: itemKey, label: label || 'Copy ID' });
-  };
-
-  const closeAssignScannerDialog = () => {
-    setAssignScanner({ open: false, targetKey: null, label: '' });
-  };
-
-  const handleAssignmentScanDetected = (value) => {
-    const trimmed = String(value || '').trim();
-    if (!trimmed) {
-      toast.error('QR code did not contain a copy ID');
-      return;
-    }
-    if (!assignScanner.targetKey) {
-      toast.error('No target field selected for scanning');
-      return;
-    }
-    setApproveAssignments((prev) => ({ ...prev, [assignScanner.targetKey]: trimmed }));
-    toast.success('Copy ID captured');
-    closeAssignScannerDialog();
-  };
-
-  const approveDialogItems = useMemo(
-    () => (Array.isArray(approveItems) ? approveItems : []),
-    [approveItems],
-  );
-
-  const takenCopyMap = useMemo(() => {
-    const mapping = {};
-    Object.entries(approveAssignments || {}).forEach(([key, value]) => {
-      if (!value) return;
-      mapping[String(value).toLowerCase()] = key;
-    });
-    return mapping;
-  }, [approveAssignments]);
-
-  const assignmentsReady = useMemo(() => {
-    if (!approveDialogOpen || approveLoading) return false;
-    return approveDialogItems.every((item, index) => {
-      const key = buildApproveItemKey(item, index);
-      const assigned = approveAssignments[key] || item?.copyId;
-      return Boolean((assigned || '').toString().trim());
-    });
-  }, [approveAssignments, approveDialogItems, approveDialogOpen, approveLoading]);
-
-  const handleSubmitApproveAssignments = async () => {
-    if (!approveTransactionId) {
-      setApproveError('Missing transaction identifier.');
-      return;
-    }
-    setApproveSubmitting(true);
-    setApproveError('');
-
-    try {
-      const payloadItems = approveDialogItems.map((item, index) => {
-        const key = buildApproveItemKey(item, index);
-        const copyId = (approveAssignments[key] || item?.copyId || '').toString().trim();
-        const bookId = item?.bookId ? String(item.bookId) : undefined;
-        return {
-          requestItemId: item?.requestItemId,
-          bookId,
-          copyId,
-        };
-      });
-
-      const missingAssignments = payloadItems.filter((entry) => !entry.copyId);
-      if (missingAssignments.length > 0) {
-        setApproveError('Please assign a copy for each requested book.');
-        setApproveSubmitting(false);
-        return;
-      }
-
-      await api.post(`/transactions/approve/${approveTransactionId}`, { items: payloadItems });
-      toast.success('Request approved');
-      closeApproveDialog();
-      await fetchTransactions();
-      await fetchStats();
-      handleMenuClose();
-    } catch (err) {
-      const message = err.response?.data?.message || 'Failed to approve request';
-      setApproveError(message);
-    } finally {
-      setApproveSubmitting(false);
     }
   };
 
@@ -1223,197 +994,17 @@ const TransactionsList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-        <Dialog
-          open={approveDialogOpen}
-          onClose={closeApproveDialog}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>Assign Copies</DialogTitle>
-          <DialogContent dividers>
-            {approveError && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                {approveError}
-              </Alert>
-            )}
-            {approveLoading ? (
-              <Box display="flex" alignItems="center" justifyContent="center" minHeight={200}>
-                <CircularProgress />
-              </Box>
-            ) : approveDialogItems.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No items to assign for this request.
-              </Typography>
-            ) : (
-              <Box>
-                {approveDialogItems.map((item, index) => {
-                  const key = buildApproveItemKey(item, index);
-                  const assignedCopyId = approveAssignments[key] || item?.copyId || '';
-                  const bookId = item?.bookId ? String(item.bookId) : '';
-                  const bookDetails =
-                    approveBooks[bookId] ||
-                    approveBooks[item?.book?._id || ''] ||
-                    approveBooks[item?.book?.id || ''];
-                  const availableCopies = Array.isArray(bookDetails?.copies)
-                    ? bookDetails.copies.filter(
-                        (copy) => String(copy.status).toLowerCase() === 'available'
-                      )
-                    : [];
-                  const hasBookDetails = Boolean(bookDetails);
-                  const title = bookDetails?.title || item?.title || 'Unknown title';
-                  const author = bookDetails?.author || item?.author || '';
-                  const isbn = bookDetails?.isbn || item?.isbn || '';
-                  const copyOptions = availableCopies
-                    .filter((copy) => {
-                      const owner = takenCopyMap[String(copy.copyId).toLowerCase()];
-                      return !owner || owner === key;
-                    })
-                    .map((copy) => copy.copyId)
-                    .filter(Boolean);
-
-                  return (
-                    <Box
-                      key={key}
-                      sx={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: 1,
-                        p: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <Typography variant="subtitle1" fontWeight="600">
-                        {title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {[author && `Author: ${author}`, isbn && `ISBN: ${isbn}`]
-                          .filter(Boolean)
-                          .join(' • ')}
-                      </Typography>
-
-                      {item?.copyId ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Copy already assigned: {item.copyId}
-                        </Typography>
-                      ) : hasBookDetails && copyOptions.length > 0 ? (
-                        <Box sx={{ width: '100%', mt: 2 }}>
-                          <Autocomplete
-                            freeSolo
-                            disableClearable
-                            autoHighlight
-                            options={copyOptions}
-                            value={assignedCopyId || ''}
-                            onChange={(event, newValue) => handleAssignmentChange(key, newValue || '')}
-                            onInputChange={(event, newInputValue, reason) => {
-                              if (reason === 'input') {
-                                handleAssignmentChange(key, newInputValue || '');
-                              }
-                            }}
-                            renderOption={(props, option) => {
-                              const meta = availableCopies.find((copy) => copy.copyId === option);
-                              return (
-                                <li {...props} key={option}>
-                                  <Box display="flex" flexDirection="column">
-                                    <Typography variant="body2">{option}</Typography>
-                                    {meta?.location && (
-                                      <Typography variant="caption" color="text.secondary">
-                                        Location: {meta.location}
-                                      </Typography>
-                                    )}
-                                    {meta?.condition && (
-                                      <Typography variant="caption" color="text.secondary">
-                                        Condition: {meta.condition}
-                                      </Typography>
-                                    )}
-                                  </Box>
-                                </li>
-                              );
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Copy ID"
-                                placeholder="Search or scan copy ID"
-                                InputProps={{
-                                  ...params.InputProps,
-                                  endAdornment: (
-                                    <>
-                                      <InputAdornment position="end">
-                                        <Tooltip title="Scan QR code">
-                                          <span>
-                                            <IconButton
-                                              size="small"
-                                              onClick={() => openAssignScannerForItem(key, title)}
-                                              disabled={approveSubmitting}
-                                            >
-                                              <QrCodeScanner fontSize="small" />
-                                            </IconButton>
-                                          </span>
-                                        </Tooltip>
-                                      </InputAdornment>
-                                      {params.InputProps.endAdornment}
-                                    </>
-                                  ),
-                                }}
-                                helperText="Type to search available copies or scan a QR label"
-                                size="small"
-                              />
-                            )}
-                            disabled={approveSubmitting}
-                          />
-                        </Box>
-                      ) : (
-                        <Alert severity={hasBookDetails ? 'warning' : 'error'} sx={{ mt: 2 }}>
-                          {hasBookDetails
-                            ? 'No available copies for this book.'
-                            : 'Unable to load available copies for this book.'}
-                        </Alert>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeApproveDialog} disabled={approveSubmitting}>
-              Cancel
-            </Button>
-            <Button onClick={handleOpenRequestsPage} disabled={approveSubmitting}>
-              Open Requests Page
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleSubmitApproveAssignments}
-              disabled={!assignmentsReady || approveSubmitting}
-            >
-              {approveSubmitting ? 'Assigning…' : 'Assign Copies'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Dialog
-          open={assignScanner.open}
-          onClose={closeAssignScannerDialog}
-          maxWidth="xs"
-          fullWidth
-        >
-          <DialogTitle>Scan Copy ID</DialogTitle>
-          <DialogContent>
-            {assignScanner.open && (
-              <QRScanner
-                elementId="transaction-assign-qr"
-                onDetected={handleAssignmentScanDetected}
-                onClose={closeAssignScannerDialog}
-              />
-            )}
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Position the QR label for {assignScanner.label || 'this item'} inside the frame.
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeAssignScannerDialog}>Close</Button>
-          </DialogActions>
-        </Dialog>
+      <ApproveRequestDialog
+        open={approveDialogOpen}
+        transactionId={approveTransactionId}
+        onClose={handleApproveDialogClose}
+        onApproved={handleApproveDialogApproved}
+        onNavigateToRequests={() => {
+          handleApproveDialogClose();
+          handleMenuClose();
+          navigate("/transactions/requests");
+        }}
+      />
 
         <MobileScanDialog
           open={searchScannerOpen}

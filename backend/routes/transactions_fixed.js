@@ -15,7 +15,7 @@ const ensureSettingsSnapshot = async (req) => {
     }
     const snapshot = await getSettingsSnapshot(req.dbAdapter);
     req.settingsSnapshot = snapshot;
-                    message: `${getBorrowerName(user)} requested ${formatCountLabel(transactionItems.length, 'item')}.`,
+    if (!req.systemSettings) {
         req.systemSettings = snapshot.system;
     }
     return snapshot;
