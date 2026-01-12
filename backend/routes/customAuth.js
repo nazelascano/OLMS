@@ -7,8 +7,15 @@ const {
   verifyPassword,
   recordAuditEvent,
   setAuditContext,
+  resolveSessionExpiration,
+  setSessionCookie,
+  clearSessionCookie,
+  getCookieMaxAgeSeconds,
+  normalizeRole,
+  AUTH_COOKIE_NAME,
 } = require('../middleware/customAuth');
 const { getSettingsSnapshot } = require('../utils/settingsCache');
+const { notifyRoles, formatUserName } = require('../utils/notificationChannels');
 const router = express.Router();
 
 const isPlainObject = (value) =>
@@ -163,8 +170,10 @@ router.post('/register', logAction('REGISTER', 'user'), async (req, res) => {
     });
 
     // Generate token
-    const expiresIn = systemSettings?.sessionTimeoutMinutes ? `${systemSettings.sessionTimeoutMinutes}m` : JWT_EXPIRES_IN;
+    const expiresIn = resolveSessionExpiration(systemSettings);
     const token = generateToken(newUser, expiresIn);
+    const cookieMaxAgeSeconds = getCookieMaxAgeSeconds(systemSettings);
+    setSessionCookie(res, token, cookieMaxAgeSeconds);
 
     // Remove password from response
     const { password: _, ...userResponse } = newUser;
@@ -338,8 +347,10 @@ router.post('/login', async (req, res) => {
     });
 
     // Generate token
-    const expiresIn = systemSettings?.sessionTimeoutMinutes ? `${systemSettings.sessionTimeoutMinutes}m` : JWT_EXPIRES_IN;
+    const expiresIn = resolveSessionExpiration(systemSettings);
     const token = generateToken(userData, expiresIn);
+    const cookieMaxAgeSeconds = getCookieMaxAgeSeconds(systemSettings);
+    setSessionCookie(res, token, cookieMaxAgeSeconds);
 
     // Remove password from response
     const { password: _, ...userResponse } = userData;
@@ -349,6 +360,10 @@ router.post('/login', async (req, res) => {
         ? userResponse.preferences
         : {},
     };
+
+    const normalizedRole = normalizeRole(userResponse.role);
+    safeUser.roleLabel = userResponse.role || normalizedRole || 'student';
+    safeUser.role = normalizedRole || userResponse.role || 'student';
 
     const responsePayload = {
       message: 'Login successful',
@@ -397,11 +412,17 @@ router.get('/verify', verifyToken, async (req, res) => {
         ? userResponse.preferences
         : {},
     };
-    
-    res.json({
+    const headerToken = req.headers.authorization?.split(' ')[1] || null;
+    const cookieToken = req.cookies?.[AUTH_COOKIE_NAME] || null;
+    const responsePayload = {
       message: 'Token is valid',
-      user: safeUser
-    });
+      user: safeUser,
+    };
+    if (!headerToken && cookieToken) {
+      responsePayload.token = cookieToken;
+    }
+    
+    res.json(responsePayload);
   } catch (error) {
     console.error('Token verification error:', error);
     res.status(401).json({ message: 'Token verification failed' });
@@ -469,6 +490,23 @@ router.post('/change-password', verifyToken, logAction('CHANGE_PASSWORD', 'auth'
       description: 'Password changed successfully',
     });
 
+    const displayName = formatUserName(userData);
+    try {
+      await notifyRoles(req, ['admin'], {
+        title: 'User password changed',
+        body: `${displayName} (${userData.username}) updated their password`,
+        category: 'security',
+        meta: {
+          userId: userData._id,
+          username: userData.username,
+          role: userData.role || 'unknown',
+          changedBy: req.user.id,
+        },
+      });
+    } catch (notifyError) {
+      console.error('Failed to notify admins about password change:', notifyError);
+    }
+
     res.json({ message: 'Password changed successfully' });
 
   } catch (error) {
@@ -493,6 +531,7 @@ router.post('/logout', verifyToken, async (req, res) => {
     description: 'User logged out',
     user: req.user,
   });
+  clearSessionCookie(res);
   res.json({ message: 'Logged out successfully' });
 });
 

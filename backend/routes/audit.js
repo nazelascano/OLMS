@@ -1,5 +1,5 @@
 const express = require('express');
-const { verifyToken, requireStaff } = require('../middleware/customAuth');
+const { verifyToken, requireAdmin } = require('../middleware/customAuth');
 const router = express.Router();
 
 const toPlainObject = (value) =>
@@ -143,7 +143,7 @@ const matchesUserQuery = (log, term) => {
 };
 
 // Get audit logs with pagination and filters
-router.get('/', verifyToken, requireStaff, async(req, res) => {
+router.get('/', verifyToken, requireAdmin, async(req, res) => {
     try {
         const {
             page = 1,
@@ -235,7 +235,7 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Get audit logs for specific user
-router.get('/user/:userId', verifyToken, requireStaff, async(req, res) => {
+router.get('/user/:userId', verifyToken, requireAdmin, async(req, res) => {
     try {
         const userId = req.params.userId;
         const { limit = 100 } = req.query;
@@ -256,7 +256,7 @@ router.get('/user/:userId', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Get audit logs by action type
-router.get('/action/:action', verifyToken, requireStaff, async(req, res) => {
+router.get('/action/:action', verifyToken, requireAdmin, async(req, res) => {
     try {
         const action = req.params.action;
         const { limit = 100, startDate, endDate } = req.query;
@@ -289,7 +289,7 @@ router.get('/action/:action', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Get audit statistics (alias)
-router.get('/stats', verifyToken, requireStaff, async(req, res) => {
+router.get('/stats', verifyToken, requireAdmin, async(req, res) => {
     try {
         const { days = 7 } = req.query;
         const startDate = new Date();
@@ -321,7 +321,7 @@ router.get('/stats', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Get audit summary/statistics
-router.get('/stats/summary', verifyToken, requireStaff, async(req, res) => {
+router.get('/stats/summary', verifyToken, requireAdmin, async(req, res) => {
     try {
         const {
             days = 7,
@@ -445,7 +445,7 @@ router.get('/stats/summary', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Get recent activity
-router.get('/recent/activity', verifyToken, requireStaff, async(req, res) => {
+router.get('/recent/activity', verifyToken, requireAdmin, async(req, res) => {
     try {
         const { limit = 20 } = req.query;
 
@@ -465,7 +465,7 @@ router.get('/recent/activity', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Export audit logs (Admin only)
-router.get('/export/csv', verifyToken, requireStaff, async(req, res) => {
+router.get('/export/csv', verifyToken, requireAdmin, async(req, res) => {
     try {
         const { startDate, endDate } = req.query;
 
@@ -513,7 +513,7 @@ router.get('/export/csv', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Get audit log by ID (MUST BE LAST - catch-all route)
-router.get('/:id', verifyToken, requireStaff, async(req, res) => {
+router.get('/:id', verifyToken, requireAdmin, async(req, res) => {
     try {
         const log = await req.dbAdapter.findOneInCollection('audit', { id: req.params.id });
 

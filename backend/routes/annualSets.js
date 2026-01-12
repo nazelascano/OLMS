@@ -400,10 +400,10 @@ router.get('/:id/issue-context', verifyToken, requireStaff, async(req, res) => {
         const metrics = buildIssueMetrics(allTransactions.filter(txn => String(txn.annualSetId || '') === String(set.id)));
         const [enriched] = enrichSetsWithBooks([set], books, metrics);
 
-        const activeBorrowerIds = new Set();
+        const borrowedStudentIds = new Set();
         (allTransactions || []).forEach(txn => {
             if (String(txn.annualSetId || '') === String(set.id) && txn.status !== 'returned') {
-                activeBorrowerIds.add(String(txn.userId));
+                borrowedStudentIds.add(String(txn.userId));
             }
         });
 
@@ -515,7 +515,7 @@ router.get('/:id/issue-context', verifyToken, requireStaff, async(req, res) => {
                     libraryCardNumber: student.libraryCardNumber || student.library?.cardNumber || '',
                     email: student.email || '',
                     isActive: student.isActive !== false,
-                    hasActiveBorrowing: activeBorrowerIds.has(identifier)
+                    hasBorrowedSet: borrowedStudentIds.has(identifier)
                 };
             })
             .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
@@ -623,16 +623,16 @@ router.post('/:id/issue', verifyToken, requireStaff, logAction('BORROW', 'annual
         }
 
         const allTransactions = await req.dbAdapter.findInCollection('transactions', {});
-        const hasActiveBorrowing = (allTransactions || []).some(txn => {
+        const hasBorrowedSet = (allTransactions || []).some(txn => {
             if (!txn || txn.status === 'returned') {
                 return false;
             }
             return String(txn.annualSetId || '') === String(set.id) && String(txn.userId || '') === String(student.id || student._id || '');
         });
 
-        if (hasActiveBorrowing) {
-            recordFailure('Conflict', 'Annual set issuance failed: student already has active borrowing');
-            return res.status(400).json({ message: 'Student already has an active borrowing for this annual set' });
+        if (hasBorrowedSet) {
+            recordFailure('Conflict', 'Annual set issuance failed: student already borrowed this set');
+            return res.status(400).json({ message: 'Student already borrowed this annual set' });
         }
 
         const books = await req.dbAdapter.findInCollection('books', {});

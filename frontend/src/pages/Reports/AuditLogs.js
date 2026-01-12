@@ -49,6 +49,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { auditAPI, downloadFile, usersAPI } from "../../utils/api";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -310,7 +311,33 @@ const resolveOptionSearchValue = (option, typedValue) => {
   return option.searchValue || option.label || option.value || typedValue || "";
 };
 
+const DEFAULT_FILTERS = {
+  action: "all",
+  entity: "all",
+  role: "all",
+  userQuery: "",
+  startDate: null,
+  endDate: null,
+};
+
+const extractFiltersFromSearch = (search) => {
+  if (typeof search !== "string") {
+    return {};
+  }
+  const params = new URLSearchParams(search);
+  const output = {};
+  ["action", "entity", "role"].forEach((key) => {
+    if (params.has(key)) {
+      const value = params.get(key);
+      output[key] = value && value.trim() ? value : "all";
+    }
+  });
+  return output;
+};
+
 const AuditLogs = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -324,14 +351,10 @@ const AuditLogs = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [roleOptions, setRoleOptions] = useState(FALLBACK_ROLE_OPTIONS);
 
-  const [filters, setFilters] = useState({
-    action: "all",
-    entity: "all",
-    role: "all",
-    userQuery: "",
-    startDate: null,
-    endDate: null,
-  });
+  const [filters, setFilters] = useState(() => ({
+    ...DEFAULT_FILTERS,
+    ...extractFiltersFromSearch(location.search),
+  }));
   const handleFiltersUpdate = useCallback((updates) => {
     setFilters((prev) => {
       const nextUpdates =
@@ -344,6 +367,58 @@ const AuditLogs = () => {
   const handleFilterChange = (key, value) => {
     handleFiltersUpdate({ [key]: value });
   };
+
+  useEffect(() => {
+    const nextFilters = extractFiltersFromSearch(location.search);
+    setFilters((prev) => {
+      let updated = prev;
+      ["action", "entity", "role"].forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(nextFilters, key)) {
+          const nextValue = nextFilters[key];
+          if (nextValue !== undefined && nextValue !== prev[key]) {
+            if (updated === prev) {
+              updated = { ...prev };
+            }
+            updated[key] = nextValue;
+          }
+        }
+      });
+      return updated;
+    });
+  }, [location.search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    let changed = false;
+    const syncParam = (key, value) => {
+      const normalized = value && value !== "all" ? value : null;
+      const current = params.get(key);
+      if (normalized === null) {
+        if (current !== null) {
+          params.delete(key);
+          changed = true;
+        }
+      } else if (current !== normalized) {
+        params.set(key, normalized);
+        changed = true;
+      }
+    };
+
+    syncParam("action", filters.action);
+    syncParam("entity", filters.entity);
+    syncParam("role", filters.role);
+
+    if (changed) {
+      const nextSearch = params.toString();
+      navigate(
+        {
+          pathname: location.pathname,
+          search: nextSearch ? `?${nextSearch}` : "",
+        },
+        { replace: true },
+      );
+    }
+  }, [filters.action, filters.entity, filters.role, location.pathname, location.search, navigate]);
 
   const loadLogs = useCallback(async () => {
     try {
@@ -900,7 +975,7 @@ const AuditLogs = () => {
                 label="Start date"
                 value={filters.startDate}
                 onChange={(value) => handleFilterChange("startDate", value ?? null)}
-                renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>
             <Grid item xs={12} md={3}>
@@ -908,7 +983,7 @@ const AuditLogs = () => {
                 label="End date"
                 value={filters.endDate}
                 onChange={(value) => handleFilterChange("endDate", value ?? null)}
-                renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Grid>
             {recentActivity.length > 0 && (

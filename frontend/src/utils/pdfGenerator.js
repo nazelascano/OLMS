@@ -186,19 +186,31 @@ const drawCardFront = async (doc, student, librarySettings = {}, options = {}) =
   // (removed duplicate old layout code)
 };
 
-const drawCardBack = (doc) => {
+const drawCardBack = (doc, librarySettings = {}) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 5;
-  const rules = [
-    '1. This card is non-transferable and must be presented when borrowing books.',
-    '2. Handle books with care. Report any damage immediately.',
-    '3. Return books on or before the due date.',
-    '4. Overdue books: PHP 5.00 fine per day.',
-    '5. Lost books must be replaced or paid for.',
-    '6. Report lost cards immediately.',
-    '7. Respect library quiet zones.'
-  ];
+  const finesDisabled =
+    librarySettings?.enableFines === false ||
+    librarySettings?.borrowingRules?.enableFines === false;
+  const finePerDay =
+    librarySettings?.borrowingRules?.finePerDay ??
+    librarySettings?.finePerDay ??
+    5;
+  const normalizedFinePerDay = Number(finePerDay);
+  const fineDisplay = Number.isFinite(normalizedFinePerDay)
+    ? normalizedFinePerDay
+    : 5;
+  const baseRules = [
+    'This card is non-transferable and must be presented when borrowing books.',
+    'Handle books with care. Report any damage immediately.',
+    'Return books on or before the due date.',
+    !finesDisabled ? `Overdue books: PHP ${fineDisplay.toFixed(2)} fine per day.` : null,
+    'Lost books must be replaced or paid for.',
+    'Report lost cards immediately.',
+    'Respect library quiet zones.'
+  ].filter(Boolean);
+  const rules = baseRules.map((text, index) => `${index + 1}. ${text}`);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
@@ -241,7 +253,7 @@ export const generateLibraryCard = async (studentData = {}, librarySettings = {}
   const doc = createDoc({ orientation: 'landscape', format: [85.6, 54] });
   await drawCardFront(doc, studentData, librarySettings, options);
   doc.addPage();
-  drawCardBack(doc);
+  drawCardBack(doc, librarySettings);
   return doc;
 };
 
@@ -254,12 +266,12 @@ export const generateLibraryCardsPDF = async (students = [], librarySettings = {
     if (i === 0) {
       await drawCardFront(doc, s, librarySettings, options);
       doc.addPage();
-      drawCardBack(doc);
+      drawCardBack(doc, librarySettings);
     } else {
       doc.addPage();
       await drawCardFront(doc, s, librarySettings, options);
       doc.addPage();
-      drawCardBack(doc);
+      drawCardBack(doc, librarySettings);
     }
   }
   return doc;
@@ -362,7 +374,7 @@ export const generateTransactionReceipt = async (transactionData = {}, studentDa
 
   doc.text('Books:', 5, 50);
   doc.text('ISBN', margin + pageWidth - ((pageWidth/3)*2), 50);
-  doc.text('Copy ID:', margin + pageWidth - ((pageWidth/3)), 50);
+  doc.text('Reference ID:', margin + pageWidth - ((pageWidth/3)), 50);
   
   let y = 58;
   booksData.forEach((book, index) => {

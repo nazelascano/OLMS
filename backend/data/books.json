@@ -129,7 +129,7 @@
   {
     "id": "book_1760074423678_t4wrz3dro",
     "title": "1984haslkdaskjadsjldas",
-    "author": "George Orwellakjshkasndkjas",
+    "author": "George Orwellakjshkasndkjas, Jela Fetalver, George Orwellakjshkasndkjas, Jela Fetalver, niel",
     "isbn": "978-0451524935",
     "publisher": "/asljdhaskjdbaskjldbaskjdbask",
     "publishedYear": null,
@@ -137,8 +137,8 @@
     "description": "A dystopian novelasd,asjbdkjabsdibask",
     "coverImage": "",
     "status": "active",
-    "totalCopies": 1,
-    "availableCopies": 0,
+    "totalCopies": 4,
+    "availableCopies": 3,
     "copies": [
       {
         "copyId": "978-0451524935-MGKEV91A-080Q",
@@ -146,15 +146,53 @@
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-10T05:33:43.678Z",
-        "updatedAt": "2025-10-10T05:44:09.482Z",
-        "createdBy": "mgex1wgwp3019"
+        "updatedAt": "2026-01-09T05:16:44.979Z",
+        "createdBy": "mgex1wgwp3019",
+        "updatedBy": "mhildatik9wdo"
+      },
+      {
+        "copyId": "APPROVE-1",
+        "createdAt": "2025-12-14T07:16:56.877Z",
+        "createdBy": "mj21x9tz8681l",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "updatedAt": "2026-01-09T05:23:57.572Z",
+        "updatedBy": "mhildatik9wdo"
+      },
+      {
+        "copyId": "APPROVE-2",
+        "createdAt": "2025-12-14T07:16:56.877Z",
+        "createdBy": "mj21x9tz8681l",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "updatedAt": "2026-01-09T05:16:44.979Z",
+        "updatedBy": "mhildatik9wdo"
+      },
+      {
+        "copyId": "APPROVE-3",
+        "createdAt": "2025-12-14T07:16:56.877Z",
+        "createdBy": "mj21x9tz8681l",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "updatedAt": "2026-01-09T05:16:44.979Z",
+        "updatedBy": "mhildatik9wdo"
       }
     ],
     "createdAt": "2025-10-10T05:33:43.678Z",
-    "updatedAt": "2025-11-23T07:14:46.631Z",
+    "updatedAt": "2026-01-09T05:23:57.573Z",
     "createdBy": "mgex1wgwp3019",
     "_id": "mgkev91a2j3oq",
-    "updatedBy": "mgnhicbwhxfy9"
+    "updatedBy": "mhildatik9wdo",
+    "publicationDate": null,
+    "authors": [
+      "George Orwellakjshkasndkjas",
+      "Jela Fetalver",
+      "George Orwellakjshkasndkjas, Jela Fetalver",
+      "niel"
+    ]
   },
   {
     "id": "book_1760074423807_s5m6stux8",
@@ -205,12 +243,13 @@
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-10T05:33:43.946Z",
-        "updatedAt": "2025-10-10T05:33:43.946Z",
-        "createdBy": "mgex1wgwp3019"
+        "updatedAt": "2025-12-14T06:56:55.900Z",
+        "createdBy": "mgex1wgwp3019",
+        "updatedBy": "mj21x9tz8681l"
       }
     ],
     "createdAt": "2025-10-10T05:33:43.946Z",
-    "updatedAt": "2025-10-10T05:33:43.947Z",
+    "updatedAt": "2025-12-14T06:56:55.902Z",
     "createdBy": "mgex1wgwp3019",
     "_id": "mgkev98ra1koc"
   },
@@ -343,20 +382,21 @@
     "coverImage": "",
     "status": "active",
     "totalCopies": 1,
-    "availableCopies": 1,
+    "availableCopies": 0,
     "copies": [
       {
         "copyId": "978-1599869773-MGKEV9SI-7LKZ",
-        "status": "available",
+        "status": "borrowed",
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-10T05:33:44.658Z",
-        "updatedAt": "2025-10-10T05:33:44.658Z",
-        "createdBy": "mgex1wgwp3019"
+        "updatedAt": "2025-12-14T05:02:05.487Z",
+        "createdBy": "mgex1wgwp3019",
+        "updatedBy": "mgnhicbwhxfy9"
       }
     ],
     "createdAt": "2025-10-10T05:33:44.658Z",
-    "updatedAt": "2025-10-10T05:33:44.658Z",
+    "updatedAt": "2025-12-14T05:02:05.490Z",
     "createdBy": "mgex1wgwp3019",
     "_id": "mgkev9siz638c"
   },
@@ -467,12 +507,13 @@
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-10T05:33:45.325Z",
-        "updatedAt": "2025-10-10T05:33:45.325Z",
-        "createdBy": "mgex1wgwp3019"
+        "updatedAt": "2025-12-14T07:05:53.427Z",
+        "createdBy": "mgex1wgwp3019",
+        "updatedBy": "mj21x9tz8681l"
       }
     ],
     "createdAt": "2025-10-10T05:33:45.325Z",
-    "updatedAt": "2025-10-10T05:33:45.326Z",
+    "updatedAt": "2025-12-14T07:05:53.428Z",
     "createdBy": "mgex1wgwp3019",
     "_id": "mgkevab274pzw"
   },
@@ -488,17 +529,17 @@
     "coverImage": "",
     "status": "active",
     "totalCopies": 21,
-    "availableCopies": 20,
+    "availableCopies": 19,
     "copies": [
       {
         "copyId": "978-0201616224-MGSOUS0A-HFOK",
-        "status": "available",
+        "status": "borrowed",
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-16T00:35:27.178Z",
-        "updatedAt": "2025-10-27T10:22:12.737Z",
+        "updatedAt": "2026-01-09T05:46:22.273Z",
         "createdBy": "mgnhicbwhxfy9",
-        "updatedBy": "mgnhicbwhxfy9"
+        "updatedBy": "mhildatik9wdo"
       },
       {
         "copyId": "978-0201616224-MGSOUS0A-G2OJ",
@@ -683,7 +724,7 @@
       }
     ],
     "createdAt": "2025-10-16T00:35:27.178Z",
-    "updatedAt": "2025-11-25T01:17:30.488Z",
+    "updatedAt": "2026-01-09T05:46:22.274Z",
     "createdBy": "mgnhicbwhxfy9",
     "_id": "mgsous0bcn99t",
     "updatedBy": "mgnhicbwhxfy9"
@@ -708,26 +749,36 @@
   {
     "id": "book-approve-test",
     "title": "Approve Test Book",
-    "author": "Tester",
+    "author": "tester, kjasfhasf, asdasd",
     "isbn": "ISBN-APPROVE-1",
     "copies": [
       {
         "copyId": "APPROVE-COPY-1",
         "status": "available",
-        "location": "Main"
+        "location": "Main",
+        "updatedAt": "2026-01-09T06:27:17.097Z",
+        "updatedBy": "mhildatik9wdo",
+        "condition": "good"
       },
       {
         "copyId": "APPROVE-COPY-2",
-        "status": "borrowed",
-        "location": "Main",
-        "updatedAt": "2025-12-08T06:13:11.502Z",
-        "updatedBy": "mgnhicbwhxfy9"
+        "status": "available",
+        "location": "Main"
       }
     ],
-    "availableCopies": 1,
+    "availableCopies": 2,
     "_id": "mhfkvgnso61c7",
     "createdAt": "2025-11-01T01:02:42.712Z",
-    "updatedAt": "2025-12-08T06:13:11.503Z"
+    "updatedAt": "2026-01-09T06:27:17.098Z",
+    "updatedBy": "mhildatik9wdo",
+    "category": "Religion",
+    "authors": [
+      "tester",
+      "kjasfhasf",
+      "asdasd"
+    ],
+    "publicationDate": null,
+    "totalCopies": 2
   },
   {
     "id": "book-approve-test",
@@ -1603,5 +1654,233 @@
     "_id": "miwowtolm7w3u",
     "createdAt": "2025-12-08T05:07:32.037Z",
     "updatedAt": "2025-12-08T05:07:32.037Z"
+  },
+  {
+    "id": "book_1765695218264_nfb3o5h9e",
+    "title": "Harry potter",
+    "author": "Jela Fetalver",
+    "isbn": "ISBN-APPROVE-3",
+    "publisher": "Ascano",
+    "publishedYear": 2025,
+    "category": "Fiction",
+    "description": "Its good",
+    "coverImage": "",
+    "status": "active",
+    "language": "English",
+    "pages": 5,
+    "deweyDecimal": "",
+    "publicationDate": "2025-12-14",
+    "totalCopies": 1,
+    "availableCopies": 1,
+    "copies": [
+      {
+        "copyId": "ISBN-APPROVE-3-MJ5DCDW8-QCAG",
+        "status": "available",
+        "condition": "good",
+        "location": "main-library",
+        "createdAt": "2025-12-14T06:53:38.264Z",
+        "updatedAt": "2025-12-14T06:53:38.264Z",
+        "createdBy": "mj21x9tz8681l"
+      }
+    ],
+    "createdAt": "2025-12-14T06:53:38.264Z",
+    "updatedAt": "2025-12-14T06:53:38.266Z",
+    "createdBy": "mj21x9tz8681l",
+    "_id": "mj5dcdw9kbnps"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mj5ykzpu9aest",
+    "createdAt": "2025-12-14T16:48:11.730Z",
+    "updatedAt": "2025-12-14T16:48:11.730Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mj5yl10t6luia",
+    "createdAt": "2025-12-14T16:48:13.421Z",
+    "updatedAt": "2025-12-14T16:48:13.421Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mj5ynjquim68m",
+    "createdAt": "2025-12-14T16:50:10.998Z",
+    "updatedAt": "2025-12-14T16:50:10.998Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mj5ynkb044sk9",
+    "createdAt": "2025-12-14T16:50:11.724Z",
+    "updatedAt": "2025-12-14T16:50:11.724Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mjm2q55kjeazw",
+    "createdAt": "2025-12-25T23:28:29.336Z",
+    "updatedAt": "2025-12-25T23:28:29.336Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mjm2q5tvpg1qt",
+    "createdAt": "2025-12-25T23:28:30.211Z",
+    "updatedAt": "2025-12-25T23:28:30.211Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mjm3bs2ufczjr",
+    "createdAt": "2025-12-25T23:45:18.822Z",
+    "updatedAt": "2025-12-25T23:45:18.822Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mjm3bsp39kfwa",
+    "createdAt": "2025-12-25T23:45:19.623Z",
+    "updatedAt": "2025-12-25T23:45:19.623Z"
+  },
+  {
+    "id": "book-approve-test",
+    "title": "Approve Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-APPROVE-1",
+    "copies": [
+      {
+        "copyId": "APPROVE-COPY-1",
+        "status": "available",
+        "location": "Main"
+      },
+      {
+        "copyId": "APPROVE-COPY-2",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 2,
+    "_id": "mjpa3py4cpk85",
+    "createdAt": "2025-12-28T05:18:18.652Z",
+    "updatedAt": "2025-12-28T05:18:18.652Z"
+  },
+  {
+    "id": "book-reject-test",
+    "title": "Reject Test Book",
+    "author": "Tester",
+    "isbn": "ISBN-REJECT-1",
+    "copies": [
+      {
+        "copyId": "reject-copy-1",
+        "status": "available",
+        "location": "Main"
+      }
+    ],
+    "availableCopies": 1,
+    "_id": "mjpa3qu63c3wc",
+    "createdAt": "2025-12-28T05:18:19.806Z",
+    "updatedAt": "2025-12-28T05:18:19.806Z"
   }
 ]

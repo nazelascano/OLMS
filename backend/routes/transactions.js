@@ -1,5 +1,5 @@
 ﻿const express = require('express');
-const { verifyToken, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
+const { verifyToken, requireCirculation, logAction, setAuditContext } = require('../middleware/customAuth');
 const { generateTransactionId, ensureTransactionId } = require('../utils/transactionIds');
 const {
     getSettingsSnapshot,
@@ -7,6 +7,9 @@ const {
     NOTIFICATION_DEFAULTS,
     getNotificationChannelState
 } = require('../utils/settingsCache');
+const { maybeNotifyLowInventory } = require('../utils/inventoryNotifications');
+const { notifyRoles, notifyRecipients } = require('../utils/notificationChannels');
+const { buildBorrowRequestStaffMessage, buildNotePreview, formatCountLabel } = require('../utils/notificationCopy');
 const router = express.Router();
 const DEFAULT_LIBRARY_TIMEZONE = process.env.LIBRARY_TIMEZONE || 'Asia/Manila';
 
@@ -157,14 +160,6 @@ const isWithinOperatingHours = (librarySettings = {}) => {
     return currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
 };
 
-const formatCountLabel = (count, singular, plural) => {
-    const numericValue = Number(count);
-    const resolvedCount = Number.isFinite(numericValue) ? numericValue : 0;
-    const resolvedPlural = plural || `${singular}s`;
-    const label = resolvedCount === 1 ? singular : resolvedPlural;
-    return `${resolvedCount} ${label}`;
-};
-
 const getNotificationSettings = async (req) => {
     try {
         const snapshot = await ensureSettingsSnapshot(req);
@@ -221,6 +216,82 @@ const normalizeStatus = (status) => {
     return status === 'borrowed' ? 'active' : status;
 };
 
+const resolveTransactionDueDate = (transaction = {}) => {
+    if (!transaction || typeof transaction !== 'object') {
+        return null;
+    }
+
+    const directSources = [
+        transaction.dueDate,
+        transaction.metadata?.providedDueDate,
+        transaction.expectedReturnDate,
+        transaction.returnBy
+    ];
+
+    let source = directSources.find(value => Boolean(value)) || null;
+
+    if (!source && Array.isArray(transaction.items)) {
+        for (const item of transaction.items) {
+            if (!item) continue;
+            const itemSource = item.dueDate || item.expectedReturnDate || item.returnBy;
+            if (itemSource) {
+                source = itemSource;
+                break;
+            }
+        }
+    }
+
+    if (!source) {
+        return null;
+    }
+
+    const parsed = new Date(source);
+    if (Number.isNaN(parsed.getTime())) {
+        return null;
+    }
+    return parsed;
+};
+
+const matchesStatusFilter = (transaction = {}, filterValue = '', nowMs = Date.now()) => {
+    const normalizedFilter = String(filterValue || '').trim().toLowerCase();
+    if (!normalizedFilter || normalizedFilter === 'all') {
+        return true;
+    }
+
+    const normalizedStatus = normalizeStatus(transaction.status);
+
+    switch (normalizedFilter) {
+        case 'active':
+        case 'borrowed':
+            return normalizedStatus === 'active';
+        case 'requested':
+        case 'pending':
+            return normalizedStatus === 'requested' || normalizedStatus === 'pending';
+        case 'overdue': {
+            if (normalizedStatus !== 'active') {
+                return false;
+            }
+            const dueDate = resolveTransactionDueDate(transaction);
+            return Boolean(dueDate) && dueDate.getTime() < nowMs;
+        }
+        default:
+            return normalizedStatus === normalizedFilter;
+    }
+};
+
+const matchesTypeFilter = (transaction = {}, filterValue = '') => {
+    const normalizedFilter = String(filterValue || '').trim().toLowerCase();
+    if (!normalizedFilter || normalizedFilter === 'all') {
+        return true;
+    }
+
+    const transactionType = normalizeTransactionType(transaction.type);
+    if (normalizedFilter === 'annual') {
+        return isAnnualType(transactionType);
+    }
+    return transactionType === normalizedFilter;
+};
+
 const buildLookupMap = (records, keysResolver) => {
     const map = new Map();
     records.forEach(record => {
@@ -252,6 +323,34 @@ const buildRecipientList = (...values) => {
                 .map(value => String(value))
         )
     );
+};
+
+const findUserByAnyIdentifier = async (dbAdapter, identifier) => {
+    if (!identifier || !dbAdapter) {
+        return null;
+    }
+
+    const probes = [
+        { id: identifier },
+        { _id: identifier },
+        { userId: identifier },
+        { libraryCardNumber: identifier },
+        { username: identifier },
+        { email: identifier }
+    ];
+
+    for (const query of probes) {
+        try {
+            const user = await dbAdapter.findOneInCollection('users', query);
+            if (user) {
+                return user;
+            }
+        } catch (error) {
+            console.warn('User lookup failed for query', query, error.message || error);
+        }
+    }
+
+    return null;
 };
 
 const findTransactionByIdentifier = async(dbAdapter, identifier) => {
@@ -442,7 +541,8 @@ const processReturnTransaction = async({
     actorId,
     notes = '',
     returnDateOverride = null,
-    borrowingSettings = BORROWING_DEFAULTS
+    borrowingSettings = BORROWING_DEFAULTS,
+    notificationOptions = {}
 }) => {
     if (!transaction) {
         throw new Error('Transaction not found');
@@ -453,6 +553,15 @@ const processReturnTransaction = async({
     if (transaction.status === 'returned') {
         throw new Error('Transaction already returned');
     }
+
+    const {
+        notificationSettings = NOTIFICATION_DEFAULTS,
+        channelState: providedChannelState,
+        actorName = '',
+        enabled = true
+    } = notificationOptions || {};
+    const channelState = providedChannelState || getNotificationChannelState(notificationSettings);
+    const allowReturnNotifications = enabled !== false && notificationSettings?.returnNotifications !== false;
 
     const finePerDay = Number(borrowingSettings?.finePerDay) || BORROWING_DEFAULTS.finePerDay;
     const enableFines = borrowingSettings?.enableFines !== false;
@@ -496,12 +605,18 @@ const processReturnTransaction = async({
                 : c
         );
 
+        const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
         const bookQuery = targetBook.id ? { id: targetBook.id } : { _id: targetBook._id };
         await dbAdapter.updateInCollection('books', bookQuery, {
             copies: updatedCopies,
-            availableCopies: updatedCopies.filter(c => c.status === 'available').length,
+            availableCopies,
             updatedAt: new Date()
         });
+        await maybeNotifyLowInventory(dbAdapter, {
+            ...targetBook,
+            copies: updatedCopies,
+            availableCopies
+        }, { source: 'transaction-return' });
 
         returnedItems++;
     }
@@ -557,6 +672,64 @@ const processReturnTransaction = async({
     }
 
     const daysOverdue = totalFine > 0 && dueDate ? Math.ceil((returnDate - dueDate) / (1000 * 60 * 60 * 24)) : 0;
+    const borrowerRecipients = user
+        ? buildRecipientList(
+            user.id,
+            user._id,
+            user.userId,
+            user.libraryCardNumber,
+            user.email,
+            user.username
+        )
+        : buildRecipientList(transaction.userId);
+    const borrowerName = user ? getBorrowerName(user) : getBorrowerName(transaction.user || {});
+
+    if (
+        allowReturnNotifications &&
+        channelState?.hasActiveChannel &&
+        borrowerRecipients.length > 0 &&
+        returnedItems > 0
+    ) {
+        try {
+            const completionClause = hasOutstandingItems
+                ? 'Some items are still checked out.'
+                : 'All items on this transaction are now returned.';
+            const fineClause = totalFine > 0
+                ? `Return fine: PHP ${totalFine.toFixed(2)}.`
+                : 'No fines were added.';
+            const processedByClause = actorName ? `Processed by ${actorName}.` : '';
+            const messageParts = [
+                `We recorded the return of ${formatCountLabel(returnedItems, 'item')} for transaction ${transaction.id || transaction._id}.`,
+                completionClause,
+                processedByClause,
+                fineClause
+            ].filter(Boolean);
+
+            await dbAdapter.insertIntoCollection('notifications', {
+                title: 'Items returned',
+                message: messageParts.join(' ').replace(/\s+/g, ' ').trim(),
+                type: 'return-processed',
+                transactionId: transaction.id || transaction._id,
+                recipients: borrowerRecipients,
+                meta: {
+                    transactionId: transaction.id || transaction._id,
+                    borrowerName,
+                    returnedItems,
+                    fineAmount: totalFine,
+                    hasOutstandingItems,
+                    returnDate: returnDate.toISOString(),
+                    daysOverdue,
+                    processedBy: actorId,
+                    processedByName: actorName || undefined
+                },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                readBy: []
+            });
+        } catch (notifyError) {
+            console.error('Failed to notify borrower about return processing:', notifyError);
+        }
+    }
 
     return {
         returnedItems,
@@ -565,16 +738,23 @@ const processReturnTransaction = async({
     };
 };
 
-router.get('/', verifyToken, requireStaff, async(req, res) => {
+router.get('/', verifyToken, requireCirculation, async(req, res) => {
     try {
         const { page = 1, limit = 20, status, userId, type, startDate, endDate, search } = req.query;
         const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
         const limitNumber = Math.max(parseInt(limit, 10) || 20, 1);
+        const normalizedStatusFilter = typeof status === 'string' ? status.trim().toLowerCase() : '';
+        const normalizedTypeFilter = typeof type === 'string' ? type.trim().toLowerCase() : '';
 
+        const derivedStatusFilters = new Set(['active', 'overdue', 'requested', 'pending']);
         const filters = {};
-        if (status) filters.status = status === 'active' ? 'borrowed' : status;
         if (userId) filters.userId = userId;
-        if (type) filters.type = type;
+        if (normalizedStatusFilter && !derivedStatusFilters.has(normalizedStatusFilter)) {
+            filters.status = normalizedStatusFilter;
+        }
+        if (normalizedTypeFilter && normalizedTypeFilter !== 'annual') {
+            filters.type = normalizedTypeFilter;
+        }
 
         let transactions = await req.dbAdapter.findInCollection('transactions', filters);
 
@@ -587,6 +767,15 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
                 if (end && transactionDate > end) return false;
                 return true;
             });
+        }
+
+        if (normalizedStatusFilter && normalizedStatusFilter !== 'all') {
+            const nowMs = Date.now();
+            transactions = transactions.filter(transaction => matchesStatusFilter(transaction, normalizedStatusFilter, nowMs));
+        }
+
+        if (normalizedTypeFilter && normalizedTypeFilter !== 'all') {
+            transactions = transactions.filter(transaction => matchesTypeFilter(transaction, normalizedTypeFilter));
         }
 
         transactions.sort((a, b) => new Date(b.createdAt || b.borrowDate) - new Date(a.createdAt || a.borrowDate));
@@ -689,16 +878,16 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Transaction stats (MUST be before /:id)
-router.get('/stats', verifyToken, requireStaff, async(req, res) => {
+router.get('/stats', verifyToken, requireCirculation, async(req, res) => {
     try {
         const transactions = await req.dbAdapter.findInCollection('transactions', {});
+        const borrowedCount = transactions.filter(t => (t.status === 'borrowed' || t.status === 'active')).length;
         const stats = {
             total: transactions.length,
-            active: transactions.filter(t => (t.status === 'borrowed' || t.status === 'active')).length,
+            borrowed: borrowedCount,
             returned: transactions.filter(t => t.status === 'returned').length,
             overdue: transactions.filter(t => (t.status === 'borrowed' || t.status === 'active') && new Date(t.dueDate) < new Date()).length
         };
-        stats.borrowed = stats.active;
         res.json(stats);
     } catch (error) {
         console.error('Get transaction stats error:', error);
@@ -707,7 +896,7 @@ router.get('/stats', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Annual borrowing stats (MUST be before /:id)
-router.get('/annual/stats', verifyToken, requireStaff, async(req, res) => {
+router.get('/annual/stats', verifyToken, requireCirculation, async(req, res) => {
     try {
         const { year } = req.query;
         const targetYear = year || new Date().getFullYear();
@@ -736,7 +925,7 @@ router.get('/annual/stats', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Annual borrowing list (MUST be before /:id)
-router.get('/annual', verifyToken, requireStaff, async(req, res) => {
+router.get('/annual', verifyToken, requireCirculation, async(req, res) => {
     try {
     const { year, curriculum } = req.query;
         const targetYear = year || new Date().getFullYear();
@@ -762,7 +951,7 @@ router.get('/annual', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Overdue list (MUST be before /:id)
-router.get('/overdue/list', verifyToken, requireStaff, async(req, res) => {
+router.get('/overdue/list', verifyToken, requireCirculation, async(req, res) => {
     try {
         const currentDate = new Date();
         const transactions = await req.dbAdapter.findInCollection('transactions', { status: 'borrowed' });
@@ -794,7 +983,7 @@ router.get('/user/:userId', verifyToken, async(req, res) => {
     }
 });
 
-router.get('/borrowed', verifyToken, requireStaff, async(req, res) => {
+router.get('/borrowed', verifyToken, requireCirculation, async(req, res) => {
     try {
         const searchTerm = (req.query.search || '').trim().toLowerCase();
         const transactions = await req.dbAdapter.findInCollection('transactions', {});
@@ -851,7 +1040,7 @@ router.get('/borrowed', verifyToken, requireStaff, async(req, res) => {
     }
 });
 
-router.get('/by-copy', verifyToken, requireStaff, async(req, res) => {
+router.get('/by-copy', verifyToken, requireCirculation, async(req, res) => {
     try {
         const copyId = (req.query.copyId || '').trim();
         if (!copyId) {
@@ -882,7 +1071,7 @@ router.get('/by-copy', verifyToken, requireStaff, async(req, res) => {
             }
         }
 
-        res.status(404).json({ message: 'No active borrowing found for this copy' });
+        res.status(404).json({ message: 'No borrowed record found for this copy' });
     } catch (error) {
         console.error('Borrowed lookup by copy error:', error);
         res.status(500).json({ message: 'Failed to search copy borrowing record' });
@@ -976,7 +1165,7 @@ router.get('/:id/history', verifyToken, async(req, res) => {
     }
 });
 
-router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transaction'), async(req, res) => {
+router.post('/borrow', verifyToken, requireCirculation, logAction('BORROW', 'transaction'), async(req, res) => {
     try {
         const { userId, items, type = 'regular', notes } = req.body;
         const transactionType = normalizeTransactionType(type);
@@ -1117,7 +1306,13 @@ router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transacti
                 return res.status(400).json({ message: `Book copy ${copyId} is not available` });
             }
             const updatedCopies = targetBook.copies.map(c => c.copyId === copyId ? {...c, status: 'borrowed', updatedAt: new Date() } : c);
-            await req.dbAdapter.updateInCollection('books', { id: targetBook.id }, { copies: updatedCopies, availableCopies: updatedCopies.filter(c => c.status === 'available').length, updatedAt: new Date() });
+            const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
+            await req.dbAdapter.updateInCollection('books', { id: targetBook.id }, { copies: updatedCopies, availableCopies, updatedAt: new Date() });
+            await maybeNotifyLowInventory(req.dbAdapter, {
+                ...targetBook,
+                copies: updatedCopies,
+                availableCopies
+            }, { source: 'transaction-borrow' });
             transactionItems.push({ copyId, bookId: targetBook.id, isbn: targetBook.isbn, status: 'borrowed' });
         }
     const transactionId = generateTransactionId('borrow');
@@ -1361,15 +1556,30 @@ router.post('/request', verifyToken, logAction('REQUEST', 'transaction'), async 
 
         // Create a persistent notification for staff about this request
         if (notificationSettings.reservationNotifications !== false && channelState.hasActiveChannel) {
+            const staffRequestMessage = buildBorrowRequestStaffMessage({
+                borrowerName: getBorrowerName(user),
+                transactionId,
+                transactionType,
+                itemCount: transactionItems.length,
+                notes: notes || ''
+            });
+            const requestNotePreview = buildNotePreview(notes);
             try {
                 await req.dbAdapter.insertIntoCollection('notifications', {
                     title: 'New borrow request',
-                    message: `${getBorrowerName(user)} requested ${formatCountLabel(transactionItems.length, 'item')}.`,
+                    message: staffRequestMessage,
                     type: 'request',
                     transactionId,
                     recipients: ['staff','librarian','admin'],
-                    meta: { transactionId },
+                    meta: {
+                        transactionId,
+                        itemCount: transactionItems.length,
+                        borrowerName: getBorrowerName(user),
+                        requestType: transactionType,
+                        notesPreview: requestNotePreview
+                    },
                     createdAt: new Date(),
+                    updatedAt: new Date(),
                     readBy: []
                 });
             } catch (nerr) {
@@ -1463,6 +1673,28 @@ router.post('/cancel/:id', verifyToken, logAction('CANCEL', 'transaction'), asyn
             return res.status(400).json({ message: 'Only pending requests can be cancelled' });
         }
 
+        const notificationSettings = await getNotificationSettings(req);
+        const sendCancellationAlerts = notificationSettings.reservationNotifications !== false;
+        let borrowerUser = null;
+        let borrowerRecipients = [];
+        let borrowerName = 'Borrower';
+        const actorName = getBorrowerName(req.user);
+
+        if (sendCancellationAlerts) {
+            borrowerUser = await findUserByAnyIdentifier(req.dbAdapter, transaction.userId) || transaction.user || null;
+            borrowerRecipients = borrowerUser
+                ? buildRecipientList(
+                    borrowerUser.id,
+                    borrowerUser._id,
+                    borrowerUser.userId,
+                    borrowerUser.libraryCardNumber,
+                    borrowerUser.email,
+                    borrowerUser.username
+                )
+                : buildRecipientList(transaction.userId);
+            borrowerName = borrowerUser ? getBorrowerName(borrowerUser) : borrowerName;
+        }
+
         const updatePayload = {
             status: 'cancelled',
             cancelledAt: new Date(),
@@ -1489,6 +1721,42 @@ router.post('/cancel/:id', verifyToken, logAction('CANCEL', 'transaction'), asyn
             }
         } catch (notifyError) {
             console.error('Failed to mark notifications after cancel:', notifyError);
+        }
+
+        if (sendCancellationAlerts) {
+            try {
+                const reasonSuffix = reason ? ` Reason: ${reason}` : '';
+                if (borrowerRecipients.length > 0) {
+                    await notifyRecipients(req, borrowerRecipients, {
+                        title: 'Borrow request cancelled',
+                        message: `Your borrow request ${transaction.id || transaction._id} was cancelled.${reasonSuffix}`,
+                        type: 'request-cancelled',
+                        severity: 'info',
+                        transactionId: transaction.id || transaction._id,
+                        meta: {
+                            transactionId: transaction.id || transaction._id,
+                            cancelledBy: req.user && req.user.id,
+                            reason: reason || ''
+                        }
+                    });
+                }
+
+                await notifyRoles(req, ['staff', 'librarian', 'admin'], {
+                    title: 'Borrow request cancelled',
+                    message: `${borrowerName} cancelled request ${transaction.id || transaction._id}. ${actorName ? `Handled by ${actorName}.` : ''}${reason ? ` Reason: ${reason}.` : ''}`.trim(),
+                    type: 'request-cancelled-alert',
+                    severity: 'low',
+                    transactionId: transaction.id || transaction._id,
+                    meta: {
+                        transactionId: transaction.id || transaction._id,
+                        actorId: req.user && req.user.id,
+                        borrowerId: transaction.userId,
+                        reason: reason || ''
+                    }
+                });
+            } catch (notificationError) {
+                console.error('Failed to send cancellation notifications:', notificationError);
+            }
         }
 
         setAuditContext(req, {
@@ -1522,7 +1790,7 @@ router.post('/cancel/:id', verifyToken, logAction('CANCEL', 'transaction'), asyn
 });
 
 // Approve a borrow request (staff only) - converts 'requested' -> 'borrowed' and reserves copies
-router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'transaction'), async (req, res) => {
+router.post('/approve/:id', verifyToken, requireCirculation, logAction('APPROVE', 'transaction'), async (req, res) => {
     try {
         const txnIdentifier = req.params.id;
         const transaction = await findTransactionByIdentifier(req.dbAdapter, txnIdentifier);
@@ -1531,6 +1799,8 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
         if (transaction.status !== 'requested') {
             return res.status(400).json({ message: 'Only requested transactions can be approved' });
         }
+
+        const approverName = getBorrowerName(req.user);
 
         const items = Array.isArray(transaction.items)
             ? transaction.items.map(item => ({
@@ -1716,6 +1986,11 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
             const bookQuery = targetBook.id ? { id: targetBook.id } : { _id: targetBook._id };
             const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
             await req.dbAdapter.updateInCollection('books', bookQuery, { copies: updatedCopies, availableCopies, updatedAt: new Date() });
+            await maybeNotifyLowInventory(req.dbAdapter, {
+                ...targetBook,
+                copies: updatedCopies,
+                availableCopies
+            }, { source: 'transaction-approve' });
             updatedBooks.push({ bookId: targetBook.id || targetBook._id, copyId });
         }
 
@@ -1824,7 +2099,7 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                     
                     await req.dbAdapter.insertIntoCollection('notifications', {
                         title: 'Borrow request approved',
-                        message: `Your borrow request ${transaction.id || transaction._id} has been approved. Please pick up your items by ${friendlyPickupDate}. Items are due on ${friendlyDueDate}.`,
+                        message: `Your borrow request ${transaction.id || transaction._id} has been approved${approverName ? ` by ${approverName}` : ''}. Please pick up your items by ${friendlyPickupDate}. Items are due on ${friendlyDueDate}.`,
                         type: 'request-approved',
                         transactionId: transaction.id || transaction._id,
                         recipients: borrowerRecipients,
@@ -1833,7 +2108,9 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
                             dueDate: dueDateIso,
                             reservationExpiresAt: reservationExpiresIso,
                             itemCount: items.length,
-                            status: 'borrowed'
+                            status: 'borrowed',
+                            approvedBy: req.user.id,
+                            approvedByName: approverName
                         },
                         createdAt: new Date(),
                         updatedAt: new Date(),
@@ -1877,7 +2154,7 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
 });
 
 // Reject a borrow request (staff only)
-router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'transaction'), async (req, res) => {
+router.post('/reject/:id', verifyToken, requireCirculation, logAction('REJECT', 'transaction'), async (req, res) => {
     try {
         const txnIdentifier = req.params.id;
         const { reason } = req.body || {};
@@ -1934,7 +2211,7 @@ router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'trans
     }
 });
 
-router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transaction'), async(req, res) => {
+router.post('/return', verifyToken, requireCirculation, logAction('RETURN', 'transaction'), async(req, res) => {
     try {
         const { transactions, returnDate, notes } = req.body || {};
 
@@ -1964,6 +2241,13 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
         }
 
         const borrowingSettings = await getBorrowingSettings(req);
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+        const returnNotificationContext = {
+            notificationSettings,
+            channelState,
+            actorName: getBorrowerName(req.user || {})
+        };
         const results = [];
         let totalReturnedItems = 0;
 
@@ -2014,7 +2298,8 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
                 actorId: req.user.id,
                 notes: notes || '',
                 returnDateOverride: returnDate || null,
-                borrowingSettings
+                borrowingSettings,
+                notificationOptions: returnNotificationContext
             });
 
             totalReturnedItems += result.returnedItems;
@@ -2070,7 +2355,7 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
     }
 });
 
-router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'transaction'), async(req, res) => {
+router.post('/:id/return', verifyToken, requireCirculation, logAction('RETURN', 'transaction'), async(req, res) => {
     try {
         setAuditContext(req, {
             details: {
@@ -2085,6 +2370,13 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
             }
         });
         const borrowingSettings = await getBorrowingSettings(req);
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+        const returnNotificationContext = {
+            notificationSettings,
+            channelState,
+            actorName: getBorrowerName(req.user || {})
+        };
         const transaction = await findTransactionByIdentifier(req.dbAdapter, req.params.id);
         if (!transaction) {
             setAuditContext(req, {
@@ -2116,7 +2408,8 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
             actorId: req.user.id,
             notes: (req.body && req.body.notes) || '',
             returnDateOverride: (req.body && req.body.returnDate) || null,
-            borrowingSettings
+            borrowingSettings,
+            notificationOptions: returnNotificationContext
         });
 
         setAuditContext(req, {
@@ -2163,7 +2456,7 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
     }
 });
 
-router.post('/expire-reservations', verifyToken, requireStaff, logAction('EXPIRE_RESERVATIONS', 'transaction'), async (req, res) => {
+router.post('/expire-reservations', verifyToken, requireCirculation, logAction('EXPIRE_RESERVATIONS', 'transaction'), async (req, res) => {
     try {
         const now = new Date();
         
@@ -2273,124 +2566,6 @@ router.post('/expire-reservations', verifyToken, requireStaff, logAction('EXPIRE
             details: { error: error.message }
         });
         res.status(500).json({ message: 'Failed to expire reservations' });
-    }
-});
-
-router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transaction'), async(req, res) => {
-    const transactionId = req.params.id;
-    const { extensionDays = 14 } = req.body;
-    setAuditContext(req, {
-        details: {
-            transactionId
-        },
-        metadata: {
-            renewalRequest: {
-                transactionId,
-                extensionDays
-            }
-        }
-    });
-    try {
-    const transaction = await req.dbAdapter.findOneInCollection('transactions', { id: transactionId });
-    if (!transaction) {
-        setAuditContext(req, {
-            success: false,
-            status: 'TransactionNotFound',
-            description: `Renew request failed: transaction ${transactionId} not found`,
-            entityId: transactionId
-        });
-        return res.status(404).json({ message: 'Transaction not found' });
-    }
-    if (transaction.status !== 'borrowed') {
-        setAuditContext(req, {
-            success: false,
-            status: 'InvalidStatus',
-            description: `Renew request failed: transaction ${transactionId} is not in borrowed status`,
-            entityId: transactionId,
-            metadata: {
-                transactionStatus: transaction.status
-            }
-        });
-        return res.status(400).json({ message: 'Can only renew borrowed transactions' });
-    }
-    if (!transaction.dueDate) {
-        setAuditContext(req, {
-            success: false,
-            status: 'NoDueDate',
-            description: `Renew request failed: transaction ${transactionId} does not have a due date`,
-            entityId: transactionId
-        });
-        return res.status(400).json({ message: 'Transaction does not have a due date to renew' });
-    }
-    const borrowingSettings = await getBorrowingSettings(req);
-    const maxRenewals = Number(borrowingSettings.maxRenewals) || 0;
-    const currentRenewals = Number(transaction.renewalCount || 0);
-    if (maxRenewals > 0 && currentRenewals >= maxRenewals) {
-        setAuditContext(req, {
-            success: false,
-            status: 'RenewalLimit',
-            description: `Renew request failed: transaction ${transactionId} reached renewal limit`,
-            metadata: {
-                maxRenewals
-            }
-        });
-        return res.status(400).json({ message: 'Maximum number of renewals reached for this transaction' });
-    }
-
-    const allowRenewalsWithOverdue = borrowingSettings.allowRenewalsWithOverdue === true;
-    const currentDueDate = new Date(transaction.dueDate);
-    const isOverdue = Date.now() > currentDueDate.getTime();
-    if (isOverdue && !allowRenewalsWithOverdue) {
-        setAuditContext(req, {
-            success: false,
-            status: 'OverdueRenewalBlocked',
-            description: `Renew request failed: transaction ${transactionId} is overdue`,
-            metadata: {
-                dueDate: currentDueDate.toISOString()
-            }
-        });
-        return res.status(400).json({ message: 'Cannot renew overdue transactions at this time' });
-    }
-
-    const requestedExtension = parseInt(extensionDays, 10);
-    const defaultExtension = resolveBorrowWindowDays(transaction.type, borrowingSettings);
-    const effectiveExtensionDays = Number.isFinite(requestedExtension) && requestedExtension > 0 ? requestedExtension : defaultExtension;
-    const newDueDate = new Date(currentDueDate);
-    newDueDate.setDate(newDueDate.getDate() + effectiveExtensionDays);
-    const nextRenewalCount = currentRenewals + 1;
-    await req.dbAdapter.updateInCollection('transactions', { id: transactionId }, { dueDate: newDueDate, renewalCount: nextRenewalCount, updatedAt: new Date(), renewedBy: req.user.id });
-    setAuditContext(req, {
-        success: true,
-        status: 'Completed',
-        entityId: transactionId,
-        resourceId: transactionId,
-        description: `Renewed transaction ${transactionId} by ${effectiveExtensionDays} day(s)`,
-        metadata: {
-            actorId: req.user.id,
-            extensionDays: effectiveExtensionDays,
-            newDueDate: newDueDate.toISOString()
-        },
-        details: {
-            renewalCount: nextRenewalCount,
-            previousDueDate: currentDueDate.toISOString(),
-            newDueDate: newDueDate.toISOString()
-        }
-    });
-    res.json({ message: 'Transaction renewed successfully', newDueDate: newDueDate.toISOString() });
-    } catch (error) {
-        console.error('Renew transaction error:', error);
-        setAuditContext(req, {
-            success: false,
-            status: 'Error',
-            description: `Renew request failed: ${error.message}`,
-            metadata: {
-                errorName: error.name
-            },
-            details: {
-                error: error.message
-            }
-        });
-        res.status(500).json({ message: 'Failed to renew transaction' });
     }
 });
 

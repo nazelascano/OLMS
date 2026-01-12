@@ -6,6 +6,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { verifyToken, requireRole, requireAdmin, requireLibrarian, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
+const { notifyRoles, formatUserName } = require('../utils/notificationChannels');
+const {
+    DEFAULT_CURRICULA,
+    DEFAULT_GRADE_LEVELS,
+    DEFAULT_GRADE_STRUCTURE,
+    normalizeGradeStructure,
+    normalizeStringList
+} = require('../utils/userAttributes');
 const router = express.Router();
 
 const DEFAULT_SYSTEM_ROLES = ['admin', 'librarian', 'staff', 'student'];
@@ -86,6 +94,34 @@ const resolveAvatarFields = (user) => {
     return {
         avatar: avatarObject || (url ? { url } : null),
         avatarUrl: url
+    };
+};
+
+const loadUserAttributeOptions = async(dbAdapter) => {
+    const [curriculaSetting, gradeLevelsSetting, gradeStructureSetting] = await Promise.all([
+        dbAdapter.findOneInCollection('settings', { id: 'USER_CURRICULA' }),
+        dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_LEVELS' }),
+        dbAdapter.findOneInCollection('settings', { id: 'USER_GRADE_STRUCTURE' })
+    ]);
+
+    const curriculum = normalizeStringList(curriculaSetting?.value, DEFAULT_CURRICULA);
+    const rawStructureSource = Array.isArray(gradeStructureSetting?.value)
+        ? gradeStructureSetting.value
+        : Array.isArray(gradeLevelsSetting?.value)
+            ? gradeLevelsSetting.value
+            : DEFAULT_GRADE_STRUCTURE;
+
+    const gradeStructure = normalizeGradeStructure(rawStructureSource, DEFAULT_GRADE_STRUCTURE);
+    const gradeLevelFallback = gradeStructure.map((entry) => entry.grade);
+    const gradeLevels = normalizeStringList(
+        Array.isArray(gradeLevelsSetting?.value) ? gradeLevelsSetting.value : gradeLevelFallback,
+        gradeLevelFallback.length > 0 ? gradeLevelFallback : DEFAULT_GRADE_LEVELS
+    );
+
+    return {
+        curriculum,
+        gradeLevels,
+        gradeStructure
     };
 };
 
@@ -240,7 +276,7 @@ router.get('/:id/borrowing-status', verifyToken, requireStaff, async(req, res) =
         const identifiers = getUserIdentifiers(user);
         const transactions = await req.dbAdapter.findInCollection('transactions', {});
         const now = new Date();
-        let activeBorrowings = 0;
+        let borrowedCount = 0;
         let overdueBooks = 0;
 
         const relevantTransactions = transactions.filter(transaction => {
@@ -255,7 +291,7 @@ router.get('/:id/borrowing-status', verifyToken, requireStaff, async(req, res) =
             const isTransactionActive = ['borrowed', 'active'].includes(transactionStatus);
 
             if (items.length === 0 && isTransactionActive) {
-                activeBorrowings += 1;
+                borrowedCount += 1;
                 if (dueDate && dueDate < now) {
                     overdueBooks += 1;
                 }
@@ -265,7 +301,7 @@ router.get('/:id/borrowing-status', verifyToken, requireStaff, async(req, res) =
             items.forEach(item => {
                 const itemStatus = item.status || transactionStatus;
                 if (['borrowed', 'active'].includes(itemStatus)) {
-                    activeBorrowings += 1;
+                    borrowedCount += 1;
                     if (dueDate && dueDate < now) {
                         overdueBooks += 1;
                     }
@@ -274,14 +310,14 @@ router.get('/:id/borrowing-status', verifyToken, requireStaff, async(req, res) =
         });
 
         const borrowingStats = user.borrowingStats || {};
-        const resolvedActiveBorrowings = Math.max(activeBorrowings, borrowingStats.currentlyBorrowed || 0);
+        const resolvedBorrowedCount = Math.max(borrowedCount, borrowingStats.currentlyBorrowed || 0);
 
         res.json({
             userId: String(user._id || user.id),
-            activeBorrowings: resolvedActiveBorrowings,
             overdueBooks,
             totalBorrowed: borrowingStats.totalBorrowed || relevantTransactions.length,
-            currentlyBorrowed: resolvedActiveBorrowings,
+            borrowedCount: resolvedBorrowedCount,
+            currentlyBorrowed: resolvedBorrowedCount,
             totalReturned: borrowingStats.totalReturned || 0,
             totalFines: borrowingStats.totalFines || 0,
             borrowingLimit: user.library?.borrowingLimit || 5,
@@ -368,6 +404,17 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
     }
 });
 
+// Get grade/section options for profile editing (all authenticated users)
+router.get('/profile/user-attributes', verifyToken, async(req, res) => {
+    try {
+        const options = await loadUserAttributeOptions(req.dbAdapter);
+        res.json(options);
+    } catch (error) {
+        console.error('Failed to load profile user attributes:', error);
+        res.status(500).json({ message: 'Failed to load user attribute options' });
+    }
+});
+
 // Get current user profile stats (avoid matching /:id)
 router.get('/profile/stats', verifyToken, async(req, res) => {
     try {
@@ -376,7 +423,7 @@ router.get('/profile/stats', verifyToken, async(req, res) => {
 
         const stats = {
             totalBorrowings: transactions.length,
-            activeBorrowings: transactions.filter(t => t.status === 'borrowed').length,
+            currentlyBorrowed: transactions.filter(t => t.status === 'borrowed').length,
             overdueBorrowings: transactions.filter(t => t.status === 'borrowed' && new Date(t.dueDate) < new Date()).length,
             totalFines: transactions.reduce((sum, t) => sum + (t.fine || 0), 0)
         };
@@ -852,13 +899,28 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
             role,
             curriculum,
             gradeLevel,
+            grade,
+            section,
             isActive,
             email
         } = req.body;
 
         const roleProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'role');
+        const gradeLevelProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'gradeLevel');
+        const gradeProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'grade');
+        const sectionProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'section');
         const normalizedRoleInput = typeof role === 'string' ? role.trim() : role;
         const resolvedRole = roleProvided ? (normalizedRoleInput || 'student') : undefined; // fallback to student when role input is blank
+
+        const normalizeTextField = (value) => {
+            if (typeof value === 'string') {
+                return value.trim();
+            }
+            if (value === undefined || value === null) {
+                return '';
+            }
+            return value;
+        };
 
         setAuditContext(req, {
             entityId: userId,
@@ -925,7 +987,19 @@ router.put('/:id', verifyToken, logAction('UPDATE', 'user'), async(req, res) => 
         if (lastName) updateData.lastName = lastName;
         if (roleProvided && req.user.id !== userId) updateData.role = resolvedRole;
     if (curriculum) updateData.curriculum = curriculum;
-        if (gradeLevel) updateData.gradeLevel = gradeLevel;
+        if (gradeLevelProvided) {
+            updateData.gradeLevel = normalizeTextField(gradeLevel);
+        }
+        if (gradeProvided) {
+            const normalizedGrade = normalizeTextField(grade);
+            updateData.grade = normalizedGrade;
+            if (!gradeLevelProvided) {
+                updateData.gradeLevel = normalizedGrade;
+            }
+        }
+        if (sectionProvided) {
+            updateData.section = normalizeTextField(section);
+        }
         if (email) updateData.email = email;
         if (isActive !== undefined && req.user.role !== 'student') updateData.isActive = isActive;
 
@@ -1081,6 +1155,18 @@ router.post('/:id/reset-password', verifyToken, requireLibrarian, logAction('RES
             description: `Reset password for user ${user.username || userId}`,
             metadata: {
                 actorId: req.user.id
+            }
+        });
+
+        await notifyRoles(req, ['admin'], {
+            title: 'Password reset',
+            message: `${formatUserName(req.user)} reset the password for ${formatUserName(user)}.`,
+            type: 'password-reset',
+            severity: 'medium',
+            meta: {
+                targetUserId: userId,
+                actorId: req.user.id,
+                method: 'admin-reset'
             }
         });
 

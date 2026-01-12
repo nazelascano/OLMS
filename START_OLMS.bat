@@ -72,9 +72,11 @@ timeout /t 3 /nobreak >nul
 
 echo.
 echo [6/6] Starting frontend server...
+set "HOST=0.0.0.0"
 set "PORT=3001"
 set "BROWSER=none"
 start /B "OLMS Frontend" cmd /c "cd frontend && npm start"
+set "HOST="
 set "PORT="
 set "BROWSER="
 

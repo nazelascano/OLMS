@@ -14,7 +14,7 @@ const NotificationsPage = () => {
     return user?.id || user?._id || user?.userId || null;
   }, [user]);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (autoMarkRead = true) => {
     try {
       const resp = await api.get('/notifications/persistent');
       const notifications = Array.isArray(resp.data.notifications)
@@ -29,7 +29,29 @@ const NotificationsPage = () => {
             };
           })
         : [];
-      setItems(notifications);
+      if (!autoMarkRead) {
+        setItems(notifications);
+      } else {
+        const unreadIds = [];
+        const normalized = notifications.map((entry) => {
+          if (!entry.read) {
+            const identifier = entry.id || entry._id;
+            if (identifier) {
+              unreadIds.push(identifier);
+              return { ...entry, read: true };
+            }
+          }
+          return entry;
+        });
+        setItems(normalized);
+        if (unreadIds.length > 0) {
+          unreadIds.forEach((identifier) => {
+            notificationsAPI
+              .markRead(identifier, true)
+              .catch((error) => console.error('Auto mark notification failed:', error));
+          });
+        }
+      }
     } catch (err) {
       console.error('Failed to load notifications', err);
       toast.error('Failed to load notifications');
@@ -45,7 +67,7 @@ const NotificationsPage = () => {
         return;
       }
       await notificationsAPI.markRead(identifier, read);
-      fetchNotifications();
+      fetchNotifications(false);
     } catch (err) {
       console.error('Mark read failed', err);
       toast.error('Failed to update notification');

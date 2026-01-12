@@ -83,31 +83,31 @@ const Sidebar = ({ onItemClick }) => {
       label: "Books",
       icon: <MenuBook />,
       path: "/books",
-      roles: ["admin", "librarian", "staff", "student"],
+      roles: ["librarian", "staff", "student"],
     },
     {
       label: "Transactions",
       icon: <SwapHoriz />,
       path: "/transactions",
-      roles: ["admin", "librarian", "staff"],
+      roles: ["librarian", "staff"],
     },
     {
       label: "Reports",
       icon: <Assessment />,
       path: "/reports",
-      roles: ["admin", "librarian", "staff"],
+      roles: ["librarian"],
     },
     {
       label: "Audit Logs",
       icon: <History />,
       path: "/audit-logs",
-      roles: ["admin", "librarian"],
+      roles: ["admin"],
     },
     {
       label: "Settings",
       icon: <Settings />,
       path: "/settings",
-      roles: ["admin"],
+      roles: ["admin", "librarian"],
     },
   ];
 

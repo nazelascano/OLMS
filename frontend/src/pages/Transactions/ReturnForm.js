@@ -47,6 +47,7 @@ import { api, settingsAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import QRScanner from "../../components/QRScanner";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const toNumber = (value, fallback) => {
   const parsed = Number(value);
@@ -67,10 +68,12 @@ const ReturnForm = () => {
   const [borrowingRules, setBorrowingRules] = useState({
     finePerDay: 0.5,
     gracePeriodDays: 0,
+    enableFines: true,
   });
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [totalFine, setTotalFine] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const { finesEnabled } = useSettings();
 
   const scannerBufferRef = useRef("");
   const lastKeyTimeRef = useRef(0);
@@ -84,6 +87,9 @@ const ReturnForm = () => {
     transaction?.dueDate || transaction?.metadata?.providedDueDate || null;
 
   const calculateFine = useCallback((dueDate, candidateReturnDate) => {
+    if (!finesEnabled) {
+      return 0;
+    }
     if (!dueDate) return 0;
 
     const due = new Date(dueDate);
@@ -100,7 +106,7 @@ const ReturnForm = () => {
     const fineDays = Math.max(0, overdueDays - graceDays);
 
     return fineDays * borrowingRules.finePerDay;
-  }, [borrowingRules.gracePeriodDays, borrowingRules.finePerDay]);
+  }, [borrowingRules.gracePeriodDays, borrowingRules.finePerDay, finesEnabled]);
 
   const handleBarcodeScan = useCallback(
     async (rawValue) => {
@@ -121,7 +127,7 @@ const ReturnForm = () => {
           setError("");
           setSuccess("");
         } else {
-          setError("No active borrowing found for this copy");
+          setError("No borrowed record found for this copy");
         }
       } catch (requestError) {
         setError("Failed to find borrowing record");
@@ -138,6 +144,7 @@ const ReturnForm = () => {
       setBorrowingRules({
         finePerDay: toNumber(data.finePerDay, 0.5),
         gracePeriodDays: toNumber(data.gracePeriodDays, 0),
+        enableFines: data.enableFines !== false,
       });
     } catch (fetchError) {
       console.error("Error fetching borrowing rules:", fetchError);
@@ -420,7 +427,7 @@ const ReturnForm = () => {
             <Grid item xs={12} md={8}>
               <TextField
                 fullWidth
-                label="Search by borrower name, copy ID, or book title"
+                label="Search by borrower name, reference ID, or book title"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 onKeyPress={(event) => event.key === "Enter" && searchBorrowedBooks()}
@@ -464,7 +471,7 @@ const ReturnForm = () => {
           </Grid>
         </Paper>
         <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle>Scan Copy Code</DialogTitle>
+          <DialogTitle>Scan Reference Code</DialogTitle>
           <DialogContent>
             <QRScanner
               elementId="return-qr-scanner"
@@ -500,11 +507,11 @@ const ReturnForm = () => {
                     </TableCell>
                     <TableCell>Book Details</TableCell>
                     <TableCell>Borrower</TableCell>
-                    <TableCell>Copy ID</TableCell>
+                    <TableCell>Reference ID</TableCell>
                     <TableCell>Borrow Date</TableCell>
                     <TableCell>Due Date</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Fine</TableCell>
+                    {finesEnabled ? <TableCell>Fine</TableCell> : null}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -576,23 +583,25 @@ const ReturnForm = () => {
                             size="small"
                           />
                         </TableCell>
-                        <TableCell>
-                          <Box display="flex" alignItems="center">
-                            {fine > 0 && (
-                              <CurrencyExchange
-                                color="error"
-                                sx={{ mr: 1, fontSize: 16 }}
-                              />
-                            )}
-                            <Typography
-                              variant="body2"
-                              color={fine > 0 ? "error" : "textSecondary"}
-                              fontWeight={fine > 0 ? "medium" : "normal"}
-                            >
-                                {formatCurrency(fine)}
-                            </Typography>
-                          </Box>
-                        </TableCell>
+                        {finesEnabled ? (
+                          <TableCell>
+                            <Box display="flex" alignItems="center">
+                              {fine > 0 && (
+                                <CurrencyExchange
+                                  color="error"
+                                  sx={{ mr: 1, fontSize: 16 }}
+                                />
+                              )}
+                              <Typography
+                                variant="body2"
+                                color={fine > 0 ? "error" : "textSecondary"}
+                                fontWeight={fine > 0 ? "medium" : "normal"}
+                              >
+                                  {formatCurrency(fine)}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                        ) : null}
                       </TableRow>
                     );
                   })}
@@ -613,22 +622,24 @@ const ReturnForm = () => {
                   label="Return Date & Time"
                   value={returnDate}
                   onChange={(newValue) => setReturnDate(newValue || new Date())}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  slotProps={{ textField: { fullWidth: true } }}
                   maxDate={new Date()}
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" color="error">
-                      Total Fine: {formatCurrency(totalFine)}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Fine rate: {formatCurrency(borrowingRules.finePerDay)}/day
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
+              {finesEnabled ? (
+                <Grid item xs={12} md={6}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="h6" color="error">
+                        Total Fine: {formatCurrency(totalFine)}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Fine rate: {formatCurrency(borrowingRules.finePerDay)}/day
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ) : null}
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -671,7 +682,8 @@ const ReturnForm = () => {
           <DialogTitle>Confirm Book Return</DialogTitle>
           <DialogContent>
             <Alert severity="info" sx={{ mb: 2 }}>
-              You are about to return {selectedReturns.length} book(s) with a total fine of {formatCurrency(totalFine)}
+              You are about to return {selectedReturns.length} book(s)
+              {finesEnabled ? ` with a total fine of ${formatCurrency(totalFine)}` : ""}
             </Alert>
             <List>
               {selectedReturns.map((transaction) => {
@@ -682,10 +694,12 @@ const ReturnForm = () => {
                       <Book />
                     </ListItemIcon>
                     <ListItemText
-                      primary={`${transaction.bookTitle} (Copy: ${transaction.copyId})`}
-                      secondary={`Borrower: ${transaction.borrowerName} | Fine: ${formatCurrency(
-                        fine,
-                      )}`}
+                      primary={`${transaction.bookTitle} (Reference ID: ${transaction.copyId})`}
+                      secondary={
+                        finesEnabled
+                          ? `Borrower: ${transaction.borrowerName} | Fine: ${formatCurrency(fine)}`
+                          : `Borrower: ${transaction.borrowerName}`
+                      }
                     />
                   </ListItem>
                 );

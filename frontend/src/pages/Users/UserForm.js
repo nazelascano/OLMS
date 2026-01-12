@@ -903,6 +903,7 @@ const UserForm = () => {
                       fullWidth
                       label="Password"
                       name="password"
+                      autoComplete="new-password"
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
@@ -929,6 +930,7 @@ const UserForm = () => {
                       fullWidth
                       label="Confirm Password"
                       name="confirmPassword"
+                      autoComplete="new-password"
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleChange}

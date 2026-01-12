@@ -3,7 +3,6 @@ const DEFAULT_CACHE_TTL_MS = parseInt(process.env.SETTINGS_CACHE_TTL_MS, 10) || 
 const BORROWING_DEFAULTS = {
   maxBooksPerTransaction: 10,
   maxBorrowDays: 14,
-  maxRenewals: 2,
   finePerDay: 5,
   gracePeriodDays: 0,
   maxFineAmount: 0,
@@ -11,7 +10,6 @@ const BORROWING_DEFAULTS = {
   enableFines: true,
   annualBorrowingEnabled: true,
   overnightBorrowingEnabled: false,
-  allowRenewalsWithOverdue: false,
 };
 
 const DEFAULT_LIBRARY_TIMEZONE = process.env.LIBRARY_TIMEZONE || 'Asia/Manila';
@@ -36,18 +34,12 @@ const SYSTEM_DEFAULTS = {
 };
 
 const NOTIFICATION_DEFAULTS = {
-  emailNotifications: true,
-  smsNotifications: false,
   dueDateReminders: true,
   overdueNotifications: true,
   reservationNotifications: true,
+  returnNotifications: true,
   reminderDaysBefore: 3,
   maxReminders: 3,
-  emailTemplate: {
-    dueDate: '',
-    overdue: '',
-    reservation: '',
-  },
 };
 
 let cache = {
@@ -111,7 +103,6 @@ const buildBorrowingSettings = (settingsMap) => ({
     BORROWING_DEFAULTS.maxBooksPerTransaction,
   ),
   maxBorrowDays: toNumber(settingsMap.MAX_BORROW_DAYS, BORROWING_DEFAULTS.maxBorrowDays),
-  maxRenewals: toNumber(settingsMap.MAX_RENEWALS, BORROWING_DEFAULTS.maxRenewals),
   finePerDay: toNumber(settingsMap.FINE_PER_DAY, BORROWING_DEFAULTS.finePerDay),
   gracePeriodDays: toNumber(settingsMap.GRACE_PERIOD_DAYS, BORROWING_DEFAULTS.gracePeriodDays),
   maxFineAmount: toNumber(settingsMap.MAX_FINE_AMOUNT, BORROWING_DEFAULTS.maxFineAmount),
@@ -128,23 +119,16 @@ const buildBorrowingSettings = (settingsMap) => ({
     settingsMap.OVERNIGHT_BORROWING_ENABLED,
     BORROWING_DEFAULTS.overnightBorrowingEnabled,
   ),
-  allowRenewalsWithOverdue: toBoolean(
-    settingsMap.ALLOW_RENEWALS_WITH_OVERDUE,
-    BORROWING_DEFAULTS.allowRenewalsWithOverdue,
-  ),
 });
 
 const buildNotificationSettings = (rawValue) => {
   const value = isPlainObject(rawValue) ? rawValue : {};
   return {
     ...NOTIFICATION_DEFAULTS,
-    ...value,
-    emailNotifications: toBoolean(
-      value.emailNotifications,
-      NOTIFICATION_DEFAULTS.emailNotifications,
+    dueDateReminders: toBoolean(
+      value.dueDateReminders,
+      NOTIFICATION_DEFAULTS.dueDateReminders,
     ),
-    smsNotifications: toBoolean(value.smsNotifications, NOTIFICATION_DEFAULTS.smsNotifications),
-    dueDateReminders: toBoolean(value.dueDateReminders, NOTIFICATION_DEFAULTS.dueDateReminders),
     overdueNotifications: toBoolean(
       value.overdueNotifications,
       NOTIFICATION_DEFAULTS.overdueNotifications,
@@ -153,27 +137,23 @@ const buildNotificationSettings = (rawValue) => {
       value.reservationNotifications,
       NOTIFICATION_DEFAULTS.reservationNotifications,
     ),
+    returnNotifications: toBoolean(
+      value.returnNotifications,
+      NOTIFICATION_DEFAULTS.returnNotifications,
+    ),
     reminderDaysBefore: toNumber(
       value.reminderDaysBefore,
       NOTIFICATION_DEFAULTS.reminderDaysBefore,
     ),
     maxReminders: toNumber(value.maxReminders, NOTIFICATION_DEFAULTS.maxReminders),
-    emailTemplate: {
-      ...NOTIFICATION_DEFAULTS.emailTemplate,
-      ...(isPlainObject(value.emailTemplate) ? value.emailTemplate : {}),
-    },
   };
 };
 
-const getNotificationChannelState = (settings = NOTIFICATION_DEFAULTS) => {
-  const normalized = settings || NOTIFICATION_DEFAULTS;
+const getNotificationChannelState = () => {
   const inAppEnabled = true; // In-app notifications are always available inside OLMS
-  const emailEnabled = normalized.emailNotifications !== false;
-  const smsEnabled = normalized.smsNotifications === true;
-  const channels = [];
-  if (inAppEnabled) {
-    channels.push('in-app');
-  }
+  const emailEnabled = true; // Email delivery stays enabled without user-configurable toggles
+  const smsEnabled = false;
+  const channels = ['in-app'];
   if (emailEnabled) {
     channels.push('email');
   }

@@ -42,13 +42,13 @@ import {
   Warning,
   CheckCircle,
   Cancel,
-  Refresh,
   Note,
 } from "@mui/icons-material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import { api } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import ApproveRequestDialog from "../../components/Transactions/ApproveRequestDialog";
@@ -58,6 +58,7 @@ const TransactionDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { finesEnabled } = useSettings();
   const [transaction, setTransaction] = useState(null);
   const [book, setBook] = useState(null);
   const [borrower, setBorrower] = useState(null);
@@ -65,10 +66,8 @@ const TransactionDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [renewDialog, setRenewDialog] = useState(false);
   const [returnDialog, setReturnDialog] = useState(false);
   const [editNotesDialog, setEditNotesDialog] = useState(false);
-  const [newDueDate, setNewDueDate] = useState(null);
   const [returnDate, setReturnDate] = useState(new Date());
   const [notes, setNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -140,25 +139,6 @@ const TransactionDetails = () => {
       fetchBorrower(transaction.userId);
     }
   }, [transaction]);
-
-  const handleRenewTransaction = async () => {
-    try {
-      setActionLoading(true);
-      await api.post(`/transactions/${id}/renew`, {
-        newDueDate: newDueDate?.toISOString(),
-      });
-      setSuccess("Transaction renewed successfully");
-      setRenewDialog(false);
-      fetchTransactionDetails();
-      fetchTransactionHistory();
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (error) {
-      setError(error.response?.data?.message || "Failed to renew transaction");
-      console.error("Error renewing transaction:", error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleReturnBook = async () => {
     try {
@@ -249,6 +229,9 @@ const TransactionDetails = () => {
   };
 
   const calculateFine = () => {
+    if (!finesEnabled) {
+      return 0;
+    }
     const daysOverdue = calculateDaysOverdue();
     return daysOverdue * (transaction?.finePerDay || 0.5);
   };
@@ -321,7 +304,7 @@ const TransactionDetails = () => {
       return (
         <Box>
           {data.bookId && <Typography variant="body2">{`Book ID: ${data.bookId}`}</Typography>}
-          {data.copyId && <Typography variant="body2">{`Copy ID: ${data.copyId}`}</Typography>}
+          {data.copyId && <Typography variant="body2">{`Reference ID: ${data.copyId}`}</Typography>}
           {data.isbn && <Typography variant="body2">{`ISBN: ${data.isbn}`}</Typography>}
         </Box>
       );
@@ -430,31 +413,13 @@ const TransactionDetails = () => {
               Print Receipt{" "}
             </Button>{" "}
             {canManageTransaction && transaction.status === "active" && (
-              <>
-                <Button
-                  variant="outlined"
-                  startIcon={<Schedule />}
-                  onClick={() => {
-                    setNewDueDate(
-                      new Date(
-                        new Date(transaction.dueDate).getTime() +
-                          14 * 24 * 60 * 60 * 1000,
-                      ),
-                    );
-                    setRenewDialog(true);
-                  }}
-                  sx={{ mr: 2 }}
-                >
-                  Renew{" "}
-                </Button>{" "}
-                <Button
-                  variant="contained"
-                  startIcon={<AssignmentReturn />}
-                  onClick={() => setReturnDialog(true)}
-                >
-                  Return Book{" "}
-                </Button>{" "}
-              </>
+              <Button
+                variant="contained"
+                startIcon={<AssignmentReturn />}
+                onClick={() => setReturnDialog(true)}
+              >
+                Return Book{" "}
+              </Button>
             )}{" "}
           </Box>{" "}
         </Box>
@@ -520,7 +485,7 @@ const TransactionDetails = () => {
                           {`by ${book?.author || transaction.author || ''}`}
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
-                          {`Copy ID: ${firstItem?.copyId || transaction.copyId || ''}`}
+                          {`Reference ID: ${firstItem?.copyId || transaction.copyId || ''}`}
                         </Typography>
                       </Box>{" "}
                     </Box>{" "}
@@ -595,7 +560,7 @@ const TransactionDetails = () => {
                     </Typography>{" "}
                   </Grid>{" "}
                 </Grid>
-                {daysOverdue > 0 && (
+                {finesEnabled && daysOverdue > 0 && (
                   <Alert severity="warning" sx={{ mt: 2 }}>
                     <Typography variant="body2">
                       This book is{" "}
@@ -716,18 +681,7 @@ const TransactionDetails = () => {
                       }
                     />{" "}
                   </ListItem>{" "}
-                  {transaction.renewalCount > 0 && (
-                    <ListItem>
-                      <ListItemIcon>
-                        <Refresh />
-                      </ListItemIcon>{" "}
-                      <ListItemText
-                        primary="Renewals"
-                        secondary={`${transaction.renewalCount} times`}
-                      />{" "}
-                    </ListItem>
-                  )}{" "}
-                  {fine > 0 && (
+                  {finesEnabled && fine > 0 && (
                     <ListItem>
                       <ListItemIcon>
                         <CurrencyExchange />
@@ -768,32 +722,14 @@ const TransactionDetails = () => {
                       </Button>
                     )}
                     {transaction.status === "active" && (
-                      <>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          startIcon={<Schedule />}
-                          onClick={() => {
-                            setNewDueDate(
-                              new Date(
-                                new Date(transaction.dueDate).getTime() +
-                                  14 * 24 * 60 * 60 * 1000,
-                              ),
-                            );
-                            setRenewDialog(true);
-                          }}
-                        >
-                          Renew Transaction{" "}
-                        </Button>{" "}
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          startIcon={<AssignmentReturn />}
-                          onClick={() => setReturnDialog(true)}
-                        >
-                          Process Return{" "}
-                        </Button>{" "}
-                      </>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<AssignmentReturn />}
+                        onClick={() => setReturnDialog(true)}
+                      >
+                        Process Return{" "}
+                      </Button>
                     )}{" "}
                   </Box>{" "}
                 </CardContent>{" "}
@@ -801,35 +737,6 @@ const TransactionDetails = () => {
             )}{" "}
           </Grid>{" "}
         </Grid>
-        {/* Renew Dialog */}{" "}
-        <Dialog open={renewDialog} onClose={() => setRenewDialog(false)}>
-          <DialogTitle> Renew Transaction </DialogTitle>{" "}
-          <DialogContent>
-            <Typography gutterBottom>
-              Current due date:{" "}
-              {new Date(transaction.dueDate).toLocaleDateString()}{" "}
-            </Typography>{" "}
-            <DateTimePicker
-              label="New Due Date"
-              value={newDueDate}
-              onChange={(newValue) => setNewDueDate(newValue)}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth margin="normal" />
-              )}
-              minDate={new Date()}
-            />{" "}
-          </DialogContent>{" "}
-          <DialogActions>
-            <Button variant="outlined" onClick={() => setRenewDialog(false)}> Cancel </Button>{" "}
-            <Button
-              onClick={handleRenewTransaction}
-              variant="contained"
-              disabled={actionLoading || !newDueDate}
-            >
-              {actionLoading ? "Renewing..." : "Renew"}{" "}
-            </Button>{" "}
-          </DialogActions>{" "}
-        </Dialog>
         {/* Return Dialog */}{" "}
         <Dialog open={returnDialog} onClose={() => setReturnDialog(false)}>
           <DialogTitle> Return Book </DialogTitle>{" "}
@@ -838,12 +745,15 @@ const TransactionDetails = () => {
               label="Return Date"
               value={returnDate}
               onChange={(newValue) => setReturnDate(newValue)}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth margin="normal" />
-              )}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  margin: "normal",
+                },
+              }}
               maxDate={new Date()}
             />{" "}
-            {fine > 0 && (
+                {finesEnabled && fine > 0 && (
               <Alert severity="warning" sx={{ mt: 2 }}>
                       Late return fine: {formatCurrency(fine)}{" "}
               </Alert>

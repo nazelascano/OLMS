@@ -407,13 +407,23 @@ const IGNORED_CONTROL_KEYS = new Set([
 
 const GLOBAL_SEARCH_INPUT_ID = "global-search-input";
 
+const isElementNode = (node) => typeof Element !== "undefined" && node instanceof Element;
+
+const isValidAnchorElement = (node) => {
+  if (typeof document === "undefined" || !isElementNode(node)) {
+    return false;
+  }
+  return document.body.contains(node);
+};
+
 const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, authToken, logout } = useAuth();
+  const sessionReady = !!authToken && !!user;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -504,7 +514,7 @@ const Layout = () => {
     }
   }, [userNotificationId, readNotificationIds]);
 
-  const markNotificationsRead = useCallback((items) => {
+  const markNotificationsRead = useCallback(async (items) => {
     if (!Array.isArray(items) || items.length === 0) {
       return;
     }
@@ -517,19 +527,21 @@ const Layout = () => {
           )
           .filter((value) => value !== undefined && value !== null)
           .map((value) => String(value).trim())
-          .filter(Boolean)
-      )
+          .filter(Boolean),
+      ),
     );
 
     if (ids.length === 0) {
       return;
     }
 
-    ids.forEach((id) => {
-      notificationsAPI
-        .markRead(id, true)
-        .catch((error) => console.error("Failed to mark notification read:", error));
-    });
+    for (const id of ids) {
+      try {
+        await notificationsAPI.markRead(id, true);
+      } catch (error) {
+        console.error("Failed to mark notification read:", error);
+      }
+    }
   }, []);
 
   const registerReadNotifications = useCallback(
@@ -799,6 +811,11 @@ const Layout = () => {
     setAnchorEl(null);
   };
 
+  const handleProfileNavigate = () => {
+    handleProfileMenuClose();
+    navigate("/profile");
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -951,6 +968,11 @@ const Layout = () => {
   };
 
   const loadNotifications = useCallback(async () => {
+    if (!sessionReady) {
+      setNotifications([]);
+      setNotificationsError("");
+      return;
+    }
     try {
       setNotificationsLoading(true);
       const { data } = await notificationsAPI.getAll({ limit: 10 });
@@ -975,11 +997,14 @@ const Layout = () => {
     } finally {
       setNotificationsLoading(false);
     }
-  }, [readNotificationIdSet]);
+  }, [readNotificationIdSet, sessionReady]);
 
   useEffect(() => {
+    if (!sessionReady) {
+      return;
+    }
     loadNotifications();
-  }, [loadNotifications]);
+  }, [loadNotifications, sessionReady]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -1124,6 +1149,24 @@ const Layout = () => {
   };
 
   useEffect(() => {
+    if (!anchorEl) {
+      return;
+    }
+    if (!isValidAnchorElement(anchorEl)) {
+      setAnchorEl(null);
+    }
+  }, [anchorEl]);
+
+  useEffect(() => {
+    if (!notificationsAnchorEl) {
+      return;
+    }
+    if (!isValidAnchorElement(notificationsAnchorEl)) {
+      setNotificationsAnchorEl(null);
+    }
+  }, [notificationsAnchorEl]);
+
+  useEffect(() => {
     const trimmed = searchValue.trim();
     if (!trimmed) {
       setSearchOpen(false);
@@ -1227,9 +1270,18 @@ const Layout = () => {
     if (user?.email) return user.email;
     return "Account";
   })();
-  const userRoleLabel = user?.role
-    ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+  const rawRoleLabel = user?.roleLabel || user?.role || "";
+  const userRoleLabel = rawRoleLabel
+    ? rawRoleLabel.charAt(0).toUpperCase() + rawRoleLabel.slice(1)
     : "Member";
+
+  const profileMenuAnchor = isValidAnchorElement(anchorEl) ? anchorEl : null;
+  const notificationsMenuAnchor = isValidAnchorElement(notificationsAnchorEl)
+    ? notificationsAnchorEl
+    : null;
+  const searchPopperAnchor = isValidAnchorElement(searchInputRef.current)
+    ? searchInputRef.current
+    : null;
 
   const profileTrigger = isSmall ? (
     <IconButton
@@ -1472,7 +1524,7 @@ const Layout = () => {
                       onClick={handleNotificationsOpen}
                       aria-haspopup="true"
                       aria-controls={
-                        notificationsAnchorEl ? "notifications-menu" : undefined
+                        notificationsMenuAnchor ? "notifications-menu" : undefined
                       }
                       sx={{
                         ...baseNotificationButtonSx,
@@ -1600,7 +1652,7 @@ const Layout = () => {
                     onClick={handleNotificationsOpen}
                     aria-haspopup="true"
                     aria-controls={
-                      notificationsAnchorEl ? "notifications-menu" : undefined
+                      notificationsMenuAnchor ? "notifications-menu" : undefined
                     }
                     sx={{ ...baseNotificationButtonSx }}
                   >
@@ -1626,8 +1678,8 @@ const Layout = () => {
             )}
             {/* Profile Menu */}
             <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
+              anchorEl={profileMenuAnchor}
+              open={Boolean(profileMenuAnchor)}
               onClose={handleProfileMenuClose}
               anchorOrigin={{
                 vertical: "bottom",
@@ -1645,7 +1697,7 @@ const Layout = () => {
                 },
               }}
             >
-              <MenuItem onClick={() => navigate("/profile")}>
+              <MenuItem onClick={handleProfileNavigate}>
                 <AccountCircle sx={{ mr: 2 }} />
                 Profile
               </MenuItem>
@@ -1656,8 +1708,8 @@ const Layout = () => {
             </Menu>
             <Menu
                 id="notifications-menu"
-                anchorEl={notificationsAnchorEl}
-                open={Boolean(notificationsAnchorEl)}
+              anchorEl={notificationsMenuAnchor}
+              open={Boolean(notificationsMenuAnchor)}
                 onClose={handleNotificationsClose}
                 anchorOrigin={{
                   vertical: "bottom",
@@ -1785,8 +1837,8 @@ const Layout = () => {
           </Toolbar>
         </AppBar>
         <Popper
-          open={searchOpen && Boolean(searchInputRef.current)}
-          anchorEl={searchInputRef.current}
+          open={searchOpen && Boolean(searchPopperAnchor)}
+          anchorEl={searchPopperAnchor}
           placement="bottom-start"
           transition
           modifiers={[{ name: "offset", options: { offset: [0, 8] } }]}

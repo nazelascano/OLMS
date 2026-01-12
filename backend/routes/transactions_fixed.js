@@ -1,5 +1,5 @@
 ﻿const express = require('express');
-const { verifyToken, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
+const { verifyToken, requireCirculation, logAction, setAuditContext } = require('../middleware/customAuth');
 const { generateTransactionId, ensureTransactionId } = require('../utils/transactionIds');
 const {
     getSettingsSnapshot,
@@ -439,7 +439,7 @@ const processReturnTransaction = async({
     };
 };
 
-router.get('/', verifyToken, requireStaff, async(req, res) => {
+router.get('/', verifyToken, requireCirculation, async(req, res) => {
     try {
         const { page = 1, limit = 20, status, userId, type, startDate, endDate, search } = req.query;
         const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
@@ -563,16 +563,16 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Transaction stats (MUST be before /:id)
-router.get('/stats', verifyToken, requireStaff, async(req, res) => {
+router.get('/stats', verifyToken, requireCirculation, async(req, res) => {
     try {
         const transactions = await req.dbAdapter.findInCollection('transactions', {});
+        const borrowedCount = transactions.filter(t => (t.status === 'borrowed' || t.status === 'active')).length;
         const stats = {
             total: transactions.length,
-            active: transactions.filter(t => (t.status === 'borrowed' || t.status === 'active')).length,
+            borrowed: borrowedCount,
             returned: transactions.filter(t => t.status === 'returned').length,
             overdue: transactions.filter(t => (t.status === 'borrowed' || t.status === 'active') && new Date(t.dueDate) < new Date()).length
         };
-        stats.borrowed = stats.active;
         res.json(stats);
     } catch (error) {
         console.error('Get transaction stats error:', error);
@@ -581,7 +581,7 @@ router.get('/stats', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Annual borrowing stats (MUST be before /:id)
-router.get('/annual/stats', verifyToken, requireStaff, async(req, res) => {
+router.get('/annual/stats', verifyToken, requireCirculation, async(req, res) => {
     try {
         const { year } = req.query;
         const targetYear = year || new Date().getFullYear();
@@ -610,7 +610,7 @@ router.get('/annual/stats', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Annual borrowing list (MUST be before /:id)
-router.get('/annual', verifyToken, requireStaff, async(req, res) => {
+router.get('/annual', verifyToken, requireCirculation, async(req, res) => {
     try {
     const { year, curriculum } = req.query;
         const targetYear = year || new Date().getFullYear();
@@ -636,7 +636,7 @@ router.get('/annual', verifyToken, requireStaff, async(req, res) => {
 });
 
 // Overdue list (MUST be before /:id)
-router.get('/overdue/list', verifyToken, requireStaff, async(req, res) => {
+router.get('/overdue/list', verifyToken, requireCirculation, async(req, res) => {
     try {
         const currentDate = new Date();
         const transactions = await req.dbAdapter.findInCollection('transactions', { status: 'borrowed' });
@@ -668,7 +668,7 @@ router.get('/user/:userId', verifyToken, async(req, res) => {
     }
 });
 
-router.get('/borrowed', verifyToken, requireStaff, async(req, res) => {
+router.get('/borrowed', verifyToken, requireCirculation, async(req, res) => {
     try {
         const searchTerm = (req.query.search || '').trim().toLowerCase();
         const transactions = await req.dbAdapter.findInCollection('transactions', {});
@@ -725,7 +725,7 @@ router.get('/borrowed', verifyToken, requireStaff, async(req, res) => {
     }
 });
 
-router.get('/by-copy', verifyToken, requireStaff, async(req, res) => {
+router.get('/by-copy', verifyToken, requireCirculation, async(req, res) => {
     try {
         const copyId = (req.query.copyId || '').trim();
         if (!copyId) {
@@ -756,7 +756,7 @@ router.get('/by-copy', verifyToken, requireStaff, async(req, res) => {
             }
         }
 
-        res.status(404).json({ message: 'No active borrowing found for this copy' });
+        res.status(404).json({ message: 'No borrowed record found for this copy' });
     } catch (error) {
         console.error('Borrowed lookup by copy error:', error);
         res.status(500).json({ message: 'Failed to search copy borrowing record' });
@@ -850,7 +850,7 @@ router.get('/:id/history', verifyToken, async(req, res) => {
     }
 });
 
-router.post('/borrow', verifyToken, requireStaff, logAction('BORROW', 'transaction'), async(req, res) => {
+router.post('/borrow', verifyToken, requireCirculation, logAction('BORROW', 'transaction'), async(req, res) => {
     try {
         const { userId, items, type = 'regular', notes } = req.body;
         const transactionType = normalizeTransactionType(type);
@@ -1353,7 +1353,7 @@ router.post('/cancel/:id', verifyToken, logAction('CANCEL', 'transaction'), asyn
 });
 
 // Approve a borrow request (staff only) - converts 'requested' -> 'borrowed' and reserves copies
-router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'transaction'), async (req, res) => {
+router.post('/approve/:id', verifyToken, requireCirculation, logAction('APPROVE', 'transaction'), async (req, res) => {
     try {
         const txnIdentifier = req.params.id;
         const transaction = await findTransactionByIdentifier(req.dbAdapter, txnIdentifier);
@@ -1661,7 +1661,7 @@ router.post('/approve/:id', verifyToken, requireStaff, logAction('APPROVE', 'tra
 });
 
 // Reject a borrow request (staff only)
-router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'transaction'), async (req, res) => {
+router.post('/reject/:id', verifyToken, requireCirculation, logAction('REJECT', 'transaction'), async (req, res) => {
     try {
         const txnIdentifier = req.params.id;
         const { reason } = req.body || {};
@@ -1718,7 +1718,7 @@ router.post('/reject/:id', verifyToken, requireStaff, logAction('REJECT', 'trans
     }
 });
 
-router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transaction'), async(req, res) => {
+router.post('/return', verifyToken, requireCirculation, logAction('RETURN', 'transaction'), async(req, res) => {
     try {
         const { transactions, returnDate, notes } = req.body || {};
 
@@ -1854,7 +1854,7 @@ router.post('/return', verifyToken, requireStaff, logAction('RETURN', 'transacti
     }
 });
 
-router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'transaction'), async(req, res) => {
+router.post('/:id/return', verifyToken, requireCirculation, logAction('RETURN', 'transaction'), async(req, res) => {
     try {
         setAuditContext(req, {
             details: {
@@ -1944,124 +1944,6 @@ router.post('/:id/return', verifyToken, requireStaff, logAction('RETURN', 'trans
             return res.status(404).json({ message: error.message });
         }
         res.status(500).json({ message: 'Failed to return transaction' });
-    }
-});
-
-router.post('/:id/renew', verifyToken, requireStaff, logAction('RENEW', 'transaction'), async(req, res) => {
-    try {
-        const transactionId = req.params.id;
-        const { extensionDays = 14 } = req.body;
-        setAuditContext(req, {
-            details: {
-                transactionId
-            },
-            metadata: {
-                renewalRequest: {
-                    transactionId,
-                    extensionDays
-                }
-            }
-        });
-        const transaction = await req.dbAdapter.findOneInCollection('transactions', { id: transactionId });
-        if (!transaction) {
-            setAuditContext(req, {
-                success: false,
-                status: 'TransactionNotFound',
-                description: `Renew request failed: transaction ${transactionId} not found`,
-                entityId: transactionId
-            });
-            return res.status(404).json({ message: 'Transaction not found' });
-        }
-        if (transaction.status !== 'borrowed') {
-            setAuditContext(req, {
-                success: false,
-                status: 'InvalidStatus',
-                description: `Renew request failed: transaction ${transactionId} is not in borrowed status`,
-                entityId: transactionId,
-                metadata: {
-                    transactionStatus: transaction.status
-                }
-            });
-            return res.status(400).json({ message: 'Can only renew borrowed transactions' });
-        }
-        if (!transaction.dueDate) {
-            setAuditContext(req, {
-                success: false,
-                status: 'NoDueDate',
-                description: `Renew request failed: transaction ${transactionId} does not have a due date`,
-                entityId: transactionId
-            });
-            return res.status(400).json({ message: 'Transaction does not have a due date to renew' });
-        }
-        const borrowingSettings = await getBorrowingSettings(req);
-        const maxRenewals = Number(borrowingSettings.maxRenewals) || 0;
-        const currentRenewals = Number(transaction.renewalCount || 0);
-        if (maxRenewals > 0 && currentRenewals >= maxRenewals) {
-            setAuditContext(req, {
-                success: false,
-                status: 'RenewalLimit',
-                description: `Renew request failed: transaction ${transactionId} reached renewal limit`,
-                metadata: {
-                    maxRenewals
-                }
-            });
-            return res.status(400).json({ message: 'Maximum number of renewals reached for this transaction' });
-        }
-
-        const allowRenewalsWithOverdue = borrowingSettings.allowRenewalsWithOverdue === true;
-        const currentDueDate = new Date(transaction.dueDate);
-        const isOverdue = Date.now() > currentDueDate.getTime();
-        if (isOverdue && !allowRenewalsWithOverdue) {
-            setAuditContext(req, {
-                success: false,
-                status: 'OverdueRenewalBlocked',
-                description: `Renew request failed: transaction ${transactionId} is overdue`,
-                metadata: {
-                    dueDate: currentDueDate.toISOString()
-                }
-            });
-            return res.status(400).json({ message: 'Cannot renew overdue transactions at this time' });
-        }
-
-        const requestedExtension = parseInt(extensionDays, 10);
-        const defaultExtension = resolveBorrowWindowDays(transaction.type, borrowingSettings);
-        const effectiveExtensionDays = Number.isFinite(requestedExtension) && requestedExtension > 0 ? requestedExtension : defaultExtension;
-        const newDueDate = new Date(currentDueDate);
-        newDueDate.setDate(newDueDate.getDate() + effectiveExtensionDays);
-        const nextRenewalCount = currentRenewals + 1;
-        await req.dbAdapter.updateInCollection('transactions', { id: transactionId }, { dueDate: newDueDate, renewalCount: nextRenewalCount, updatedAt: new Date(), renewedBy: req.user.id });
-        setAuditContext(req, {
-            success: true,
-            status: 'Completed',
-            entityId: transactionId,
-            resourceId: transactionId,
-            description: `Renewed transaction ${transactionId} by ${effectiveExtensionDays} day(s)`,
-            metadata: {
-                actorId: req.user.id,
-                extensionDays: effectiveExtensionDays,
-                newDueDate: newDueDate.toISOString()
-            },
-            details: {
-                renewalCount: nextRenewalCount,
-                previousDueDate: currentDueDate.toISOString(),
-                newDueDate: newDueDate.toISOString()
-            }
-        });
-        res.json({ message: 'Transaction renewed successfully', newDueDate: newDueDate.toISOString() });
-    } catch (error) {
-        console.error('Renew transaction error:', error);
-        setAuditContext(req, {
-            success: false,
-            status: 'Error',
-            description: `Renew request failed: ${error.message}`,
-            metadata: {
-                errorName: error.name
-            },
-            details: {
-                error: error.message
-            }
-        });
-        res.status(500).json({ message: 'Failed to renew transaction' });
     }
 });
 

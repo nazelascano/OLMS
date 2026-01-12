@@ -112,7 +112,7 @@ describe('QR and identifier search flows', () => {
     expect(match).toBeDefined();
   });
 
-  test('Transactions search matches scanned copy IDs', async () => {
+  test('Transactions search matches scanned reference IDs', async () => {
     const res = await request(app)
       .get('/api/transactions')
       .query({ search: TEST_COPY_ID, page: 1, limit: 10 });

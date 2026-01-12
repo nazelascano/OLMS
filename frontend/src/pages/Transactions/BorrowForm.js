@@ -13,17 +13,13 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  FormControl,
   Grid,
   IconButton,
   InputAdornment,
-  InputLabel,
   List,
   ListItem,
   ListItemText,
-  MenuItem,
   Paper,
-  Select,
   TextField,
   Typography,
 } from "@mui/material";
@@ -199,7 +195,6 @@ const BorrowForm = () => {
   const [scannerOpen, setScannerOpen] = useState(false);
 
   const [selectedBooks, setSelectedBooks] = useState([]);
-  const [transactionType, setTransactionType] = useState("regular");
   const [notes, setNotes] = useState("");
 
   const [rules, setRules] = useState({
@@ -348,6 +343,62 @@ const BorrowForm = () => {
       window.clearInterval(intervalId);
     };
   }, [isStudentMode, libraryProfile]);
+
+  useEffect(() => {
+    if (!isStudentMode) {
+      return;
+    }
+
+    const state = location.state;
+    const prefillBook = state?.prefillBook;
+    if (!prefillBook) {
+      return;
+    }
+
+    const bookId = prefillBook.bookId || prefillBook.id || prefillBook._id;
+    if (!bookId) {
+      return;
+    }
+
+    const normalizedBook = {
+      bookId,
+      title: prefillBook.title || "Untitled",
+      author: prefillBook.author || "",
+      isbn: prefillBook.isbn || "",
+      category: prefillBook.category || "",
+      publisher: prefillBook.publisher || "",
+      availableCopies: prefillBook.availableCopies ?? null,
+    };
+
+    setSelectedBooks((prev) => {
+      if (prev.some((book) => (book.bookId || book.id || book._id) === bookId)) {
+        return prev;
+      }
+
+      if (maxBooksPerTransaction > 0 && prev.length >= maxBooksPerTransaction) {
+        setBookSearchError(
+          "Borrow limit reached for this transaction. Remove a book to add another.",
+        );
+        return prev;
+      }
+
+      return [...prev, normalizedBook];
+    });
+
+    if (state) {
+      const nextState = { ...state };
+      delete nextState.prefillBook;
+      const cleanedState =
+        Object.keys(nextState).length > 0 ? nextState : undefined;
+      navigate(location.pathname, { replace: true, state: cleanedState });
+    }
+  }, [
+    isStudentMode,
+    location.state,
+    location.pathname,
+    navigate,
+    maxBooksPerTransaction,
+  ]);
 
   useEffect(() => {
     if (isStudentMode) {
@@ -531,7 +582,6 @@ const BorrowForm = () => {
     setBookQuery("");
     setBookOptions([]);
     setBookSearchError("");
-    setTransactionType("regular");
     setNotes("");
     setBorrowerSearchError("");
   }, [isStudentMode]);
@@ -706,7 +756,6 @@ const BorrowForm = () => {
 
     try {
       const payload = {
-        type: transactionType,
         items: selectedBooks.map((book) =>
           isStudentMode
             ? { bookId: book.bookId || book.id || book._id }
@@ -737,7 +786,6 @@ const BorrowForm = () => {
         try {
           const transactionData = response.data.transaction || {
             id: response.data.transactionId,
-            type: transactionType,
             createdAt: new Date(),
             dueDate: new Date(
               Date.now() + borrowDays * 24 * 60 * 60 * 1000,
@@ -880,7 +928,7 @@ const BorrowForm = () => {
                     <Box display="flex" flexWrap="wrap" gap={1}>
                       <Chip
                         icon={<Assignment fontSize="small" />}
-                        label={`Active: ${
+                        label={`Borrowed: ${
                           authUser.borrowingStats.currentlyBorrowed || 0
                         }`}
                         size="small"
@@ -1016,7 +1064,7 @@ const BorrowForm = () => {
                           <Box display="flex" flexWrap="wrap" gap={1}>
                             <Chip
                               icon={<Assignment fontSize="small" />}
-                              label={`Active: ${
+                              label={`Borrowed: ${
                                 borrowerStatus.currentlyBorrowed || 0
                               }`}
                               size="small"
@@ -1144,7 +1192,7 @@ const BorrowForm = () => {
                         {option.title}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Copy ID: {option.copyId}
+                        Reference ID: {option.copyId}
                         {option.isbn ? ` • ISBN ${option.isbn}` : ""}
                         {option.author ? ` • ${option.author}` : ""}
                       </Typography>
@@ -1208,11 +1256,11 @@ const BorrowForm = () => {
                     startIcon={<QrCodeScanner />}
                     onClick={() => setScannerOpen(true)}
                   >
-                    Scan Copy QR
+                    Scan Reference QR
                   </Button>
                 </Box>
                 <MobileScanButton
-                  label="Scan Copy QR"
+                  label="Scan Reference QR"
                   onClick={() => setScannerOpen(true)}
                 />
               </>
@@ -1225,7 +1273,7 @@ const BorrowForm = () => {
                 maxWidth="xs"
                 fullWidth
               >
-                <DialogTitle>Scan Copy QR</DialogTitle>
+                <DialogTitle>Scan Reference QR</DialogTitle>
                 <DialogContent>
                   <QRScanner
                     elementId="borrow-qr-scanner"
@@ -1313,7 +1361,7 @@ const BorrowForm = () => {
                                   variant="body2"
                                   color="text.secondary"
                                 >
-                                  Copy ID: {book.copyId}
+                                  Reference ID: {book.copyId}
                                   {book.isbn ? ` • ISBN ${book.isbn}` : ""}
                                   {book.author ? ` • ${book.author}` : ""}
                                   {book.location ? ` • ${book.location}` : ""}
@@ -1335,24 +1383,7 @@ const BorrowForm = () => {
 
           <Paper elevation={1} sx={{ p: 3 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="transaction-type-label">
-                    Transaction Type
-                  </InputLabel>
-                  <Select
-                    labelId="transaction-type-label"
-                    label="Transaction Type"
-                    value={transactionType}
-                    onChange={(event) => setTransactionType(event.target.value)}
-                  >
-                    <MenuItem value="regular">Regular</MenuItem>
-                    <MenuItem value="overnight">Overnight</MenuItem>
-                    <MenuItem value="reference">Reference</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Box
                   display="flex"
                   flexDirection="column"
@@ -1450,7 +1481,7 @@ const BorrowForm = () => {
                   );
                 }
               } else {
-                details.push(`Copy ID: ${book.copyId}`);
+                details.push(`Reference ID: ${book.copyId}`);
                 if (book.isbn) details.push(`ISBN ${book.isbn}`);
                 if (book.author) details.push(book.author);
                 if (book.location) details.push(book.location);

@@ -57,6 +57,7 @@ import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
 import { addActionButtonSx, importActionButtonSx } from "../../theme/actionButtons";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -80,6 +81,7 @@ const StudentsList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchScannerOpen, setSearchScannerOpen] = useState(false);
   const searchInputId = "students-search-input";
+  const { finesEnabled } = useSettings();
 
   // Menu state for per-row actions (three-dot vertical menu)
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -144,6 +146,12 @@ const StudentsList = () => {
       return availableSections.includes(previous) ? previous : "";
     });
   }, [availableSections]);
+
+  useEffect(() => {
+    if (!finesEnabled) {
+      setPaymentDialogOpen(false);
+    }
+  }, [finesEnabled]);
 
   useEffect(() => {
     let isMounted = true;
@@ -533,9 +541,11 @@ const StudentsList = () => {
                 <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
                   Contact
                 </TableCell>
-                <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
-                  Dues
-                </TableCell>
+                {finesEnabled ? (
+                  <TableCell scope="col" sx={{ fontWeight: 600, color: "#475569" }}>
+                    Dues
+                  </TableCell>
+                ) : null}
                 <TableCell scope="col" align="right" sx={{ fontWeight: 600, color: "#475569" }}>
                   Action
                 </TableCell>
@@ -650,14 +660,16 @@ const StudentsList = () => {
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={formatCurrency(student.dues)}
-                      size="small"
-                      color={getDuesColor(student.dues)}
-                      variant={student.dues === 0 ? "outlined" : "filled"}
-                    />
-                  </TableCell>
+                  {finesEnabled ? (
+                    <TableCell>
+                      <Chip
+                        label={formatCurrency(student.dues)}
+                        size="small"
+                        color={getDuesColor(student.dues)}
+                        variant={student.dues === 0 ? "outlined" : "filled"}
+                      />
+                    </TableCell>
+                  ) : null}
                   <TableCell align="right">
                     <Box display="flex" justifyContent="flex-end">
                       <IconButton
@@ -684,7 +696,7 @@ const StudentsList = () => {
                         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                         transformOrigin={{ vertical: "top", horizontal: "right" }}
                       >
-                        {student.dues > 0 && (
+                        {finesEnabled && student.dues > 0 && (
                           <MenuItem
                             onClick={() => {
                               setSelectedStudent(student);
@@ -798,25 +810,27 @@ const StudentsList = () => {
         </DialogActions>{" "}
       </Dialog>
   {/* Payment Confirmation Dialog */}
-      <Dialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-      >
-        <DialogTitle> Pay Dues </DialogTitle>{" "}
-        <DialogContent>
-          <Typography>
-            Confirm payment of {formatCurrency(selectedStudent?.dues)}
-            for student "{selectedStudent?.firstName}{" "}
-            {selectedStudent?.lastName}" ?
-          </Typography>{" "}
-        </DialogContent>{" "}
-        <DialogActions>
-          <Button variant="outlined" onClick={() => setPaymentDialogOpen(false)}> Cancel </Button>{" "}
-          <Button onClick={handlePayDues} color="success" variant="contained">
-            Pay Dues{" "}
-          </Button>{" "}
-        </DialogActions>{" "}
-      </Dialog>
+      {finesEnabled ? (
+        <Dialog
+          open={paymentDialogOpen}
+          onClose={() => setPaymentDialogOpen(false)}
+        >
+          <DialogTitle> Pay Dues </DialogTitle>{" "}
+          <DialogContent>
+            <Typography>
+              Confirm payment of {formatCurrency(selectedStudent?.dues)}
+              for student "{selectedStudent?.firstName}{" "}
+              {selectedStudent?.lastName}" ?
+            </Typography>{" "}
+          </DialogContent>{" "}
+          <DialogActions>
+            <Button variant="outlined" onClick={() => setPaymentDialogOpen(false)}> Cancel </Button>{" "}
+            <Button onClick={handlePayDues} color="success" variant="contained">
+              Pay Dues{" "}
+            </Button>{" "}
+          </DialogActions>{" "}
+        </Dialog>
+      ) : null}
   {/* Import Students Dialog */}
       <StudentImportDialog
         open={importDialogOpen}

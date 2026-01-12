@@ -224,7 +224,7 @@ const ApproveRequestDialog = ({
 
   const openAssignScannerForItem = (itemKey, label) => {
     if (!itemKey) return;
-    setAssignScanner({ open: true, targetKey: itemKey, label: label || "Copy ID" });
+    setAssignScanner({ open: true, targetKey: itemKey, label: label || "Reference ID" });
   };
 
   const closeAssignScannerDialog = () => {
@@ -234,7 +234,7 @@ const ApproveRequestDialog = ({
   const handleAssignmentScanDetected = (value) => {
     const trimmed = String(value || "").trim();
     if (!trimmed) {
-      toast.error("QR code did not contain a copy ID");
+      toast.error("QR code did not contain a reference ID");
       return;
     }
     if (!assignScanner.targetKey) {
@@ -242,7 +242,7 @@ const ApproveRequestDialog = ({
       return;
     }
     setAssignments((prev) => ({ ...prev, [assignScanner.targetKey]: trimmed }));
-    toast.success("Copy ID captured");
+    toast.success("Reference ID captured");
     closeAssignScannerDialog();
   };
 
@@ -408,8 +408,8 @@ const ApproveRequestDialog = ({
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label="Copy ID"
-                              placeholder="Search or scan copy ID"
+                              label="Reference ID"
+                              placeholder="Search or scan reference ID"
                               InputProps={{
                                 ...params.InputProps,
                                 endAdornment: (
@@ -472,7 +472,7 @@ const ApproveRequestDialog = ({
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Scan Copy ID</DialogTitle>
+        <DialogTitle>Scan Reference ID</DialogTitle>
         <DialogContent>
           {assignScanner.open && (
             <QRScanner

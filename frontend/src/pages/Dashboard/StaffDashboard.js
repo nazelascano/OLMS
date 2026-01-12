@@ -1,8 +1,8 @@
 import React from "react";
-import AdminDashboard from "./AdminDashboard";
+import LibrarianDashboard from "./LibrarianDashboard";
 
 const StaffDashboard = () => {
-  return <AdminDashboard />;
+  return <LibrarianDashboard />;
 };
 
 export default StaffDashboard;

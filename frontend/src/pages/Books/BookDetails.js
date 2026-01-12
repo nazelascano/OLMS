@@ -37,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
+import { extractUniqueAuthors, formatAuthorsList } from "../../utils/authorDisplay";
 
 const BookDetails = () => {
   const { id } = useParams();
@@ -202,6 +203,8 @@ const BookDetails = () => {
     );
   }
 
+  const authorsList = extractUniqueAuthors(book);
+
   return (
     <Box>
       <Box display="flex" alignItems="center" mb={3}>
@@ -228,9 +231,17 @@ const BookDetails = () => {
                 <Typography variant="subtitle2" color="textSecondary">
                   Author
                 </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {book.author}
-                </Typography>
+                {authorsList.length > 0 ? (
+                  <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
+                    {authorsList.map((author) => (
+                      <Chip key={author} label={author} size="small" />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body1" gutterBottom>
+                    {formatAuthorsList(book)}
+                  </Typography>
+                )}
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="textSecondary">
@@ -291,7 +302,7 @@ const BookDetails = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Copy ID</TableCell>
+                      <TableCell>Reference ID</TableCell>
                       <TableCell>Borrower</TableCell>
                       <TableCell>Borrowed Date</TableCell>
                       <TableCell>Due Date</TableCell>
@@ -438,7 +449,7 @@ const BookDetails = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Copy ID"
+            label="Reference ID"
             fullWidth
             variant="outlined"
             value={newCopy.copyId}

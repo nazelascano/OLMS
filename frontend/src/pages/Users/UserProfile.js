@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -31,6 +31,7 @@ import {
   Tooltip,
   LinearProgress,
   Slider,
+  MenuItem,
 } from "@mui/material";
 import {
   Person,
@@ -51,8 +52,10 @@ import {
 } from "@mui/icons-material";
 import Cropper from "react-easy-crop";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import { api, usersAPI, booksAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
+import { ensureUserAttributes, getSectionsForGrade } from "../../utils/userAttributes";
 import { useNavigate, useParams } from "react-router-dom";
 
 const createImage = (url) =>
@@ -127,19 +130,67 @@ const withSanitizedPhone = (data = {}) => {
   };
 };
 
+const hydrateProfileData = (data = {}) => {
+  const sanitized = withSanitizedPhone(data);
+  const resolvedGrade =
+    sanitized.grade ||
+    sanitized.gradeLevel ||
+    sanitized.student?.grade ||
+    "";
+  const resolvedSection =
+    sanitized.section ||
+    sanitized.student?.section ||
+    sanitized.studentProfile?.section ||
+    "";
+
+  return {
+    ...sanitized,
+    grade: resolvedGrade,
+    gradeLevel: resolvedGrade || sanitized.gradeLevel || "",
+    section: resolvedSection,
+  };
+};
+
+const PASSWORD_MIN_LENGTH = 6;
+
+const createPasswordFormState = () => ({
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+
+const createPasswordErrorState = () => ({
+  current: "",
+  new: "",
+  confirm: "",
+  general: "",
+});
+
+const derivePasswordChangeError = (error) => {
+  const fallback = "Failed to change password. Please try again.";
+  if (!error) {
+    return fallback;
+  }
+  if (error.response) {
+    return error.response.data?.message || fallback;
+  }
+  if (error.request) {
+    return "Unable to reach the server. Please check your connection and try again.";
+  }
+  return error.message || fallback;
+};
+
 const UserProfile = () => {
   const { user, updateUserData } = useAuth();
+  const { finesEnabled } = useSettings();
   const { id } = useParams();
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState({});
   const [borrowingHistory, setBorrowingHistory] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [changePasswordDialog, setChangePasswordDialog] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const [passwordData, setPasswordData] = useState(() => createPasswordFormState());
+  const [passwordErrors, setPasswordErrors] = useState(() => createPasswordErrorState());
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -150,7 +201,7 @@ const UserProfile = () => {
   const [success, setSuccess] = useState("");
   const [stats, setStats] = useState({
     totalBorrowings: 0,
-    activeBorrowings: 0,
+    currentlyBorrowed: 0,
     overdueBorrowings: 0,
     totalFines: 0,
   });
@@ -168,6 +219,11 @@ const UserProfile = () => {
   const [bookLookups, setBookLookups] = useState(null);
   const [booksLoading, setBooksLoading] = useState(false);
   const [booksError, setBooksError] = useState("");
+  const [attributeOptions, setAttributeOptions] = useState(() => ensureUserAttributes());
+  const [attributeLoading, setAttributeLoading] = useState(false);
+  const [attributeError, setAttributeError] = useState("");
+  const resolvedProfileRole = (profileData?.role || user?.role || "").toLowerCase();
+  const isStudentProfileView = resolvedProfileRole === "student";
 
   useEffect(() => {
     if (!avatarPreviewUrl) {
@@ -240,7 +296,7 @@ const UserProfile = () => {
     const now = new Date();
     return {
       totalBorrowings: history.length,
-      activeBorrowings: history.filter((t) => t.status === "borrowed").length,
+      currentlyBorrowed: history.filter((t) => t.status === "borrowed").length,
       overdueBorrowings: history.filter((t) => {
         if (t.status !== "borrowed") return false;
         if (!t.dueDate) return false;
@@ -333,6 +389,43 @@ const UserProfile = () => {
       setBooksLoading(false);
     }
   }, [bookLookups]);
+
+  const loadStudentAttributeOptions = useCallback(async () => {
+    try {
+      setAttributeLoading(true);
+      setAttributeError("");
+      const response = await usersAPI.getProfileAttributes();
+      const normalized = ensureUserAttributes(response.data);
+      setAttributeOptions(normalized);
+      setProfileData((prev) => {
+        if (!prev || typeof prev !== "object") {
+          return prev;
+        }
+
+        const rawGrade = prev.grade || prev.gradeLevel || "";
+        const normalizedGrade = typeof rawGrade === "string" ? rawGrade.trim() : "";
+        const gradeExists = normalized.gradeStructure.some((entry = {}) => {
+          const gradeName = typeof entry.grade === "string" ? entry.grade.trim().toLowerCase() : "";
+          return gradeName && normalizedGrade && gradeName === normalizedGrade.toLowerCase();
+        });
+        const nextGrade = gradeExists ? normalizedGrade : "";
+        const availableSections = getSectionsForGrade(normalized.gradeStructure, nextGrade);
+        const sectionExists = availableSections.includes(prev.section);
+
+        return {
+          ...prev,
+          grade: nextGrade,
+          gradeLevel: nextGrade || prev.gradeLevel || "",
+          section: sectionExists ? prev.section : "",
+        };
+      });
+    } catch (error) {
+      console.error("Failed to load profile attribute options", error);
+      setAttributeError("Unable to load grade and section options.");
+    } finally {
+      setAttributeLoading(false);
+    }
+  }, []);
 
   const resolveBookDetailsFromTransaction = (transaction = {}, lookups = null) => {
     const fallbackTitle =
@@ -447,7 +540,7 @@ const UserProfile = () => {
       }
 
       if (viewingSelf) {
-        setProfileData(withSanitizedPhone(user));
+        setProfileData(hydrateProfileData(user));
         const history = await fetchBorrowingHistory(currentUserId, true);
         await fetchUserStats(currentUserId, true, history);
       } else {
@@ -459,11 +552,18 @@ const UserProfile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, id]);
 
+  useEffect(() => {
+    if (!user || !isStudentProfileView) {
+      return;
+    }
+    loadStudentAttributeOptions();
+  }, [user, isStudentProfileView, loadStudentAttributeOptions]);
+
   const loadProfileById = async (targetUserId) => {
     try {
       setProfileLoading(true);
-  const response = await api.get(`/users/${targetUserId}`);
-  setProfileData(withSanitizedPhone(response.data));
+      const response = await api.get(`/users/${targetUserId}`);
+      setProfileData(hydrateProfileData(response.data));
       await fetchBorrowingHistory(targetUserId, false);
     } catch (err) {
       console.error("Error loading user profile:", err);
@@ -519,6 +619,47 @@ const UserProfile = () => {
     }
   };
 
+  const availableGradeOptions = useMemo(() => {
+    const structureGrades = (attributeOptions.gradeStructure || [])
+      .map((entry = {}) => entry.grade)
+      .filter(Boolean);
+    if (structureGrades.length > 0) {
+      return structureGrades;
+    }
+    return attributeOptions.gradeLevels || [];
+  }, [attributeOptions]);
+
+  const selectedGrade = profileData.grade || "";
+  const availableSections = useMemo(
+    () => getSectionsForGrade(attributeOptions.gradeStructure, selectedGrade),
+    [attributeOptions, selectedGrade]
+  );
+  const hasGradeOptions = availableGradeOptions.length > 0;
+  const hasSectionOptions = availableSections.length > 0;
+  const shouldRenderSectionSelect = Boolean(selectedGrade) && hasSectionOptions;
+  const selectedSection = profileData.section || "";
+
+  const handleGradeSelectChange = (value) => {
+    const normalizedValue = typeof value === "string" ? value : "";
+    setProfileData((prev) => {
+      const allowedSections = getSectionsForGrade(attributeOptions.gradeStructure, normalizedValue);
+      const nextSection = normalizedValue && allowedSections.includes(prev.section) ? prev.section : "";
+      return {
+        ...prev,
+        grade: normalizedValue,
+        gradeLevel: normalizedValue,
+        section: nextSection,
+      };
+    });
+  };
+
+  const handleSectionSelectChange = (value) => {
+    setProfileData((prev) => ({
+      ...prev,
+      section: typeof value === "string" ? value : "",
+    }));
+  };
+
   const handleProfileUpdate = async () => {
     if (!isSelfProfile) return;
 
@@ -537,11 +678,52 @@ const UserProfile = () => {
         address: profileData.address,
       };
 
+      if (isStudentProfileView) {
+        const hasGradeField = Object.prototype.hasOwnProperty.call(profileData || {}, "grade");
+        const hasSectionField = Object.prototype.hasOwnProperty.call(profileData || {}, "section");
+
+        if (hasGradeField) {
+          const trimmedGrade =
+            typeof profileData.grade === "string"
+              ? profileData.grade.trim()
+              : profileData.grade ?? "";
+          updatePayload.grade = trimmedGrade;
+          updatePayload.gradeLevel = trimmedGrade;
+        }
+
+        if (hasSectionField) {
+          const trimmedSection =
+            typeof profileData.section === "string"
+              ? profileData.section.trim()
+              : profileData.section ?? "";
+          updatePayload.section = trimmedSection;
+        }
+      }
+
       await api.put(`/users/${targetId}`, updatePayload);
       setSuccess("Profile updated successfully");
-      setProfileData((prev) => ({ ...prev, ...updatePayload }));
+      setProfileData((prev) => ({
+        ...prev,
+        ...updatePayload,
+        gradeLevel:
+          updatePayload.grade !== undefined
+            ? updatePayload.grade
+            : prev?.gradeLevel,
+      }));
       if (isSelfProfile) {
-        updateUserData((prev) => ({ ...(prev || {}), ...updatePayload }));
+        updateUserData((prev) => {
+          const base = prev || {};
+          return {
+            ...base,
+            ...updatePayload,
+            gradeLevel:
+              updatePayload.grade !== undefined ? updatePayload.grade : base.gradeLevel,
+            grade:
+              updatePayload.grade !== undefined ? updatePayload.grade : base.grade,
+            section:
+              updatePayload.section !== undefined ? updatePayload.section : base.section,
+          };
+        });
       }
       setEditMode(false);
       setTimeout(() => setSuccess(""), 3000);
@@ -553,35 +735,87 @@ const UserProfile = () => {
     }
   };
 
+  const resetPasswordDialogState = useCallback(() => {
+    setPasswordData(createPasswordFormState());
+    setPasswordErrors(createPasswordErrorState());
+  }, []);
+
+  const handlePasswordFieldChange = (field) => (event) => {
+    const value = event.target.value;
+    setPasswordData((prev) => ({ ...prev, [field]: value }));
+    setPasswordErrors((prev) => {
+      const next = { ...prev, general: "" };
+      if (field === "currentPassword") {
+        next.current = "";
+      } else if (field === "newPassword") {
+        next.new = "";
+      } else {
+        next.confirm = "";
+      }
+      return next;
+    });
+  };
+
+  const handlePasswordDialogOpen = () => {
+    resetPasswordDialogState();
+    setChangePasswordDialog(true);
+  };
+
+  const handlePasswordDialogClose = () => {
+    setChangePasswordDialog(false);
+    resetPasswordDialogState();
+  };
+
   const handlePasswordChange = async () => {
     if (!isSelfProfile) return;
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError("New passwords do not match");
-      return;
+    const trimmedCurrent = passwordData.currentPassword.trim();
+    const trimmedNew = passwordData.newPassword.trim();
+    const trimmedConfirm = passwordData.confirmPassword.trim();
+
+    const nextErrors = createPasswordErrorState();
+
+    if (!trimmedCurrent) {
+      nextErrors.current = "Current password is required.";
     }
 
-    if (passwordData.newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!trimmedNew) {
+      nextErrors.new = "New password is required.";
+    }
+
+    if (!trimmedConfirm) {
+      nextErrors.confirm = "Please confirm the new password.";
+    }
+
+    if (!nextErrors.new && trimmedNew.length < PASSWORD_MIN_LENGTH) {
+      nextErrors.new = `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
+    }
+
+    if (!nextErrors.confirm && trimmedNew && trimmedConfirm && trimmedNew !== trimmedConfirm) {
+      nextErrors.confirm = "New passwords do not match.";
+    }
+
+    if (nextErrors.current || nextErrors.new || nextErrors.confirm) {
+      setPasswordErrors(nextErrors);
       return;
     }
 
     try {
       setLoading(true);
       await api.post("/auth/change-password", {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
+        currentPassword: trimmedCurrent,
+        newPassword: trimmedNew,
       });
       setSuccess("Password changed successfully");
       setChangePasswordDialog(false);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      resetPasswordDialogState();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to change password");
+      const derivedMessage = derivePasswordChangeError(err);
+      setPasswordErrors((prev) => ({
+        ...prev,
+        general: derivedMessage,
+      }));
       console.error("Error changing password:", err);
     } finally {
       setLoading(false);
@@ -744,6 +978,11 @@ const UserProfile = () => {
   };
 
   const avatarUrl = getAvatarUrl(profileData);
+  const isPasswordSubmitDisabled =
+    loading ||
+    !passwordData.currentPassword.trim() ||
+    !passwordData.newPassword.trim() ||
+    !passwordData.confirmPassword.trim();
 
   return (
     <Box>
@@ -751,7 +990,7 @@ const UserProfile = () => {
         <IconButton aria-label="Go back" onClick={() => navigate(-1)}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
+        <Typography variant="h4" gutterBottom sx={{ mb: 0 ,color: 'white'}}>
           {isSelfProfile ? "My Profile" : "User Profile"} {" "}
         </Typography>
       </Box>
@@ -975,7 +1214,7 @@ const UserProfile = () => {
                       fullWidth
                       variant="outlined"
                       startIcon={<Security />}
-                      onClick={() => setChangePasswordDialog(true)}
+                      onClick={handlePasswordDialogOpen}
                     >
                       Change Password{" "}
                     </Button>{" "}
@@ -997,74 +1236,68 @@ const UserProfile = () => {
                 )}
               </Box>{" "}
             </CardContent>{" "}
-          </Card>{" "}
+          </Card>
         </Grid>
-        {/* Statistics and Activity */}{" "}
+        {/* Statistics and Activity */}
         <Grid item xs={12} md={8}>
-          {" "}
-          {/* Statistics Cards */}{" "}
+          {/* Statistics Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={6} md={3}>
               <Card>
                 <CardContent sx={{ textAlign: "center" }}>
-                  <LibraryBooks color="primary" sx={{ fontSize: 40, mb: 1 }} />{" "}
-                  <Typography variant="h6">
-                    {" "}
-                    {stats.totalBorrowings}{" "}
-                  </Typography>{" "}
+                  <LibraryBooks color="primary" sx={{ fontSize: 40, mb: 1 }} />
+                  <Typography variant="h6">{stats.totalBorrowings}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Total Borrowed{" "}
-                  </Typography>{" "}
-                </CardContent>{" "}
-              </Card>{" "}
-            </Grid>{" "}
+                    Total Borrowed
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
             <Grid item xs={6} md={3}>
               <Card>
                 <CardContent sx={{ textAlign: "center" }}>
-                  <Assignment color="info" sx={{ fontSize: 40, mb: 1 }} />{" "}
-                  <Typography variant="h6">
-                    {" "}
-                    {stats.activeBorrowings}{" "}
-                  </Typography>{" "}
+                  <Assignment color="info" sx={{ fontSize: 40, mb: 1 }} />
+                  <Typography variant="h6">{stats.currentlyBorrowed}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Currently Borrowed{" "}
-                  </Typography>{" "}
-                </CardContent>{" "}
-              </Card>{" "}
-            </Grid>{" "}
-            <Grid item xs={6} md={3}>
-              <Card>
-                <CardContent sx={{ textAlign: "center" }}>
-                  <Warning color="error" sx={{ fontSize: 40, mb: 1 }} />{" "}
-                  <Typography variant="h6">
-                    {" "}
-                    {stats.overdueBorrowings}{" "}
-                  </Typography>{" "}
-                  <Typography variant="body2" color="textSecondary">
-                    Overdue{" "}
-                  </Typography>{" "}
-                </CardContent>{" "}
-              </Card>{" "}
-            </Grid>{" "}
-            <Grid item xs={6} md={3}>
-              <Card>
-                <CardContent sx={{ textAlign: "center" }}>
-                  <Typography variant="h6" color="error">
-                    {formatCurrency(stats.totalFines)}{" "}
-                  </Typography>{" "}
-                  <Typography variant="body2" color="textSecondary">
-                    Total Fines{" "}
-                  </Typography>{" "}
-                </CardContent>{" "}
-              </Card>{" "}
-            </Grid>{" "}
+                    Currently Borrowed
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            {finesEnabled ? (
+              <Grid item xs={6} md={3}>
+                <Card>
+                  <CardContent sx={{ textAlign: "center" }}>
+                    <Warning color="error" sx={{ fontSize: 40, mb: 1 }} />
+                    <Typography variant="h6">{stats.overdueBorrowings}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Overdue
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ) : null}
+            {finesEnabled ? (
+              <Grid item xs={6} md={3}>
+                <Card>
+                  <CardContent sx={{ textAlign: "center" }}>
+                    <Typography variant="h6" color="error">
+                      {formatCurrency(stats.totalFines)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Total Fines
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ) : null}
           </Grid>
-          {/* Borrowing History */}{" "}
+          {/* Borrowing History */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Recent Borrowing History{" "}
-              </Typography>{" "}
+                Recent Borrowing History
+              </Typography>
               {booksLoading && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
                   Resolving book titles...
@@ -1079,63 +1312,55 @@ const UserProfile = () => {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell> Book Title </TableCell>{" "}
-                      <TableCell> Borrow Date </TableCell>{" "}
-                      <TableCell> Due Date </TableCell>{" "}
-                      <TableCell> Status </TableCell>{" "}
-                    </TableRow>{" "}
-                  </TableHead>{" "}
+                      <TableCell>Book Title</TableCell>
+                      <TableCell>Borrow Date</TableCell>
+                      <TableCell>Due Date</TableCell>
+                      <TableCell>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
                   <TableBody>
-                    {" "}
                     {borrowingHistory.slice(0, 10).map((transaction) => (
                       <TableRow key={transaction._id}>
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
-                            {" "}
-                            {transaction.bookTitle || "Unknown Book"}{" "}
-                          </Typography>{" "}
+                            {transaction.bookTitle || "Unknown Book"}
+                          </Typography>
                           {transaction.author && (
                             <Typography variant="caption" color="textSecondary">
                               {transaction.author}
                             </Typography>
-                          )}{" "}
-                        </TableCell>{" "}
+                          )}
+                        </TableCell>
                         <TableCell>
-                          {" "}
-                          {new Date(
-                            transaction.borrowDate,
-                          ).toLocaleDateString()}{" "}
-                        </TableCell>{" "}
+                          {new Date(transaction.borrowDate).toLocaleDateString()}
+                        </TableCell>
                         <TableCell>
-                          {" "}
-                          {new Date(
-                            transaction.dueDate,
-                          ).toLocaleDateString()}{" "}
-                        </TableCell>{" "}
+                          {new Date(transaction.dueDate).toLocaleDateString()}
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={transaction.status}
                             color={getStatusColor(transaction.status)}
                             size="small"
                           />
-                        </TableCell>{" "}
+                        </TableCell>
                       </TableRow>
-                    ))}{" "}
-                  </TableBody>{" "}
-                </Table>{" "}
-              </TableContainer>{" "}
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               {borrowingHistory.length === 0 && (
                 <Typography
                   textAlign="center"
                   color="textSecondary"
                   sx={{ py: 3 }}
                 >
-                  No borrowing history found{" "}
+                  No borrowing history found
                 </Typography>
-              )}{" "}
-            </CardContent>{" "}
-          </Card>{" "}
-        </Grid>{" "}
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
       {isSelfProfile && (
         <>
@@ -1231,6 +1456,11 @@ const UserProfile = () => {
           >
             <DialogTitle> Edit Profile </DialogTitle>
             <DialogContent>
+              {isStudentProfileView && attributeError && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {attributeError}
+                </Alert>
+              )}
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -1275,6 +1505,82 @@ const UserProfile = () => {
                     inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 11 }}
                   />
                 </Grid>
+                {isStudentProfileView && (
+                  <>
+                    <Grid item xs={12} sm={6}>
+                      {hasGradeOptions ? (
+                        <TextField
+                          select
+                          fullWidth
+                          label="Grade Level"
+                          value={selectedGrade}
+                          onChange={(e) => handleGradeSelectChange(e.target.value)}
+                          margin="normal"
+                          disabled={attributeLoading}
+                        >
+                          <MenuItem value="">
+                            <em>Select grade</em>
+                          </MenuItem>
+                          {availableGradeOptions.map((gradeOption) => (
+                            <MenuItem key={gradeOption} value={gradeOption}>
+                              {gradeOption}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label="Grade Level"
+                          value={selectedGrade}
+                          onChange={(e) => handleGradeSelectChange(e.target.value)}
+                          margin="normal"
+                          disabled={attributeLoading}
+                          helperText="Enter grade level"
+                        />
+                      )}
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      {shouldRenderSectionSelect ? (
+                        <TextField
+                          select
+                          fullWidth
+                          label="Section"
+                          value={selectedSection}
+                          onChange={(e) => handleSectionSelectChange(e.target.value)}
+                          margin="normal"
+                          disabled={attributeLoading}
+                        >
+                          <MenuItem value="">
+                            <em>Select section</em>
+                          </MenuItem>
+                          {availableSections.map((sectionOption) => (
+                            <MenuItem key={sectionOption} value={sectionOption}>
+                              {sectionOption}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label="Section"
+                          value={selectedSection}
+                          onChange={(e) => handleSectionSelectChange(e.target.value)}
+                          margin="normal"
+                          disabled={
+                            attributeLoading || (hasSectionOptions && !selectedGrade)
+                          }
+                          helperText={
+                            !selectedGrade && hasSectionOptions
+                              ? "Select a grade to choose a section"
+                              : selectedGrade && !hasSectionOptions
+                              ? "No sections configured for this grade"
+                              : "Enter section"
+                          }
+                        />
+                      )}
+                    </Grid>
+                  </>
+                )}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -1310,24 +1616,27 @@ const UserProfile = () => {
           {/* Change Password Dialog */}
           <Dialog
             open={changePasswordDialog}
-            onClose={() => setChangePasswordDialog(false)}
+            onClose={handlePasswordDialogClose}
             maxWidth="sm"
             fullWidth
           >
             <DialogTitle> Change Password </DialogTitle>
             <DialogContent>
+              {passwordErrors.general && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {passwordErrors.general}
+                </Alert>
+              )}
               <TextField
                 fullWidth
                 label="Current Password"
+                autoComplete="off"
                 type={showPasswords.current ? "text" : "password"}
                 value={passwordData.currentPassword}
-                onChange={(e) =>
-                  setPasswordData({
-                    ...passwordData,
-                    currentPassword: e.target.value,
-                  })
-                }
+                onChange={handlePasswordFieldChange("currentPassword")}
                 margin="normal"
+                error={Boolean(passwordErrors.current)}
+                helperText={passwordErrors.current || " "}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -1344,15 +1653,16 @@ const UserProfile = () => {
               <TextField
                 fullWidth
                 label="New Password"
+                autoComplete="new-password"
                 type={showPasswords.new ? "text" : "password"}
                 value={passwordData.newPassword}
-                onChange={(e) =>
-                  setPasswordData({
-                    ...passwordData,
-                    newPassword: e.target.value,
-                  })
-                }
+                onChange={handlePasswordFieldChange("newPassword")}
                 margin="normal"
+                error={Boolean(passwordErrors.new)}
+                helperText={
+                  passwordErrors.new ||
+                  `Minimum of ${PASSWORD_MIN_LENGTH} characters.`
+                }
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -1369,15 +1679,13 @@ const UserProfile = () => {
               <TextField
                 fullWidth
                 label="Confirm New Password"
+                autoComplete="new-password"
                 type={showPasswords.confirm ? "text" : "password"}
                 value={passwordData.confirmPassword}
-                onChange={(e) =>
-                  setPasswordData({
-                    ...passwordData,
-                    confirmPassword: e.target.value,
-                  })
-                }
+                onChange={handlePasswordFieldChange("confirmPassword")}
                 margin="normal"
+                error={Boolean(passwordErrors.confirm)}
+                helperText={passwordErrors.confirm || "Must match the new password."}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -1394,7 +1702,7 @@ const UserProfile = () => {
             </DialogContent>
             <DialogActions>
               <Button
-                onClick={() => setChangePasswordDialog(false)}
+                onClick={handlePasswordDialogClose}
                 startIcon={<Cancel />}
               >
                 Cancel
@@ -1402,12 +1710,7 @@ const UserProfile = () => {
               <Button
                 onClick={handlePasswordChange}
                 variant="contained"
-                disabled={
-                  loading ||
-                  !passwordData.currentPassword ||
-                  !passwordData.newPassword ||
-                  !passwordData.confirmPassword
-                }
+                disabled={isPasswordSubmitDisabled}
                 startIcon={<Save />}
               >
                 {loading ? "Changing..." : "Change Password"}

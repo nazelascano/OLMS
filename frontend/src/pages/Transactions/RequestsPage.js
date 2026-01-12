@@ -109,6 +109,35 @@ const RequestsPage = () => {
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
+  const shouldFallbackToAssignments = (errorResponse) => {
+    if (!errorResponse) return false;
+    const message = String(errorResponse.message || '').toLowerCase();
+    const hasMessageMatch = message && (
+      message.includes('copy assignments') ||
+      message.includes('missing copy') ||
+      message.includes('missing-copy') ||
+      message.includes('copy-not-found') ||
+      message.includes('copy-unavailable') ||
+      message.includes('requested copies are missing')
+    );
+
+    const detailReasons = Array.isArray(errorResponse.details)
+      ? errorResponse.details
+      : Array.isArray(errorResponse.details?.validationFailures)
+        ? errorResponse.details.validationFailures
+        : [];
+
+    const hasDetailMatch = detailReasons.some((entry) => {
+      const reason = String(entry?.reason || '').toLowerCase();
+      return reason && (
+        reason.includes('copy') ||
+        reason.includes('missing')
+      );
+    });
+
+    return hasMessageMatch || hasDetailMatch;
+  };
+
   const approveWithoutAssignments = async (tx) => {
     const id = resolveTransactionId(tx);
     if (!id) return;
@@ -119,7 +148,14 @@ const RequestsPage = () => {
       fetchRequests();
     } catch (err) {
       console.error('Approve failed', err);
-      toast.error(err.response?.data?.message || 'Approve failed');
+      const status = err.response?.status;
+      const message = err.response?.data?.message || 'Approve failed';
+      if (status === 400 && shouldFallbackToAssignments(err.response?.data)) {
+        toast.error(`${message}. Please assign copies manually.`);
+        openApproveDialog(tx);
+        return;
+      }
+      toast.error(message);
     }
   };
 
@@ -232,7 +268,7 @@ const RequestsPage = () => {
 
   const openScannerForItem = (itemKey, label) => {
     if (!itemKey) return;
-    setScannerConfig({ open: true, targetKey: itemKey, label: label || 'Copy ID' });
+    setScannerConfig({ open: true, targetKey: itemKey, label: label || 'Reference ID' });
   };
 
   const closeScannerDialog = () => {
@@ -242,7 +278,7 @@ const RequestsPage = () => {
   const handleScannerDetected = (value) => {
     const trimmed = String(value || '').trim();
     if (!trimmed) {
-      toast.error('QR code did not contain a copy ID');
+      toast.error('QR code did not contain a reference ID');
       return;
     }
     if (!scannerConfig.targetKey) {
@@ -250,7 +286,7 @@ const RequestsPage = () => {
       return;
     }
     setApproveAssignments((prev) => ({ ...prev, [scannerConfig.targetKey]: trimmed }));
-    toast.success('Copy ID captured');
+    toast.success('Reference ID captured');
     closeScannerDialog();
   };
 
@@ -593,8 +629,8 @@ const RequestsPage = () => {
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="Copy ID"
-                                placeholder="Search or scan copy ID"
+                                label="Reference ID"
+                                placeholder="Search or scan reference ID"
                                 InputProps={{
                                   ...params.InputProps,
                                   endAdornment: (
@@ -657,7 +693,7 @@ const RequestsPage = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Scan Copy ID</DialogTitle>
+        <DialogTitle>Scan Reference ID</DialogTitle>
         <DialogContent>
           {scannerConfig.open && (
             <QRScanner

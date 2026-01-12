@@ -403,7 +403,7 @@ const BookCopies = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell> Copy ID </TableCell> <TableCell> Status </TableCell>{" "}
+                <TableCell> Reference ID </TableCell> <TableCell> Status </TableCell>{" "}
                 <TableCell> Condition </TableCell>{" "}
                 <TableCell> Location </TableCell>{" "}
                 <TableCell> Acquisition Date </TableCell>{" "}
@@ -555,12 +555,12 @@ const BookCopies = () => {
                 <Box display="flex" gap={1} alignItems="center">
                   <TextField
                     fullWidth
-                    label="Copy ID"
+                    label="Reference ID"
                     value={copyForm.copyId}
                     onChange={(e) => setCopyForm({ ...copyForm, copyId: e.target.value })}
                     margin="normal"
                     required
-                    disabled={editingCopy} // Can't change copy ID when editing
+                    disabled={editingCopy} // Can't change reference ID when editing
                   />
                   {/* Scanner dialog inline - will be mounted when user requests via Scan QR button */}
                   <Button
@@ -660,16 +660,16 @@ const BookCopies = () => {
           </Button>{" "}
         </DialogActions>{" "}
       </Dialog>{" "}
-      {/* QR Scanner Dialog for scanning copy IDs into the Add/Edit form */}
+      {/* QR Scanner Dialog for scanning reference IDs into the Add/Edit form */}
       <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Scan Copy QR</DialogTitle>
+        <DialogTitle>Scan Reference QR</DialogTitle>
         <DialogContent>
           <QRScanner
             onDetected={(decodedText) => {
               // populate the copyId field and close scanner
               setCopyForm((prev) => ({ ...prev, copyId: decodedText }));
               setScannerOpen(false);
-              setSuccess("Scanned copy ID populated");
+              setSuccess("Scanned reference ID populated");
               setTimeout(() => setSuccess(""), 2500);
             }}
           />

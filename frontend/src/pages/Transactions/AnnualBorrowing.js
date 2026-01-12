@@ -25,7 +25,7 @@ import {
   Menu,
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
-import Autocomplete from "@mui/material/Autocomplete";
+import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import {
   Add as AddIcon,
   AddCircleOutline as AddCircleOutlineIcon,
@@ -55,6 +55,26 @@ const emptySetForm = {
   description: "",
   books: [],
 };
+
+const buildStudentSearchValue = (student = {}) =>
+  [
+    student.name,
+    student.grade,
+    student.section,
+    student.curriculum,
+    student.libraryCardNumber,
+    student.studentNumber,
+    student.studentId,
+    student.cardNumber,
+    student.lrn,
+    student.lrNumber,
+    student.id,
+    student.email,
+  ]
+    .filter((value) => value !== undefined && value !== null)
+    .map((value) => String(value).trim())
+    .filter(Boolean)
+    .join(" ");
 
 const buildFilterOptionsFromSets = (sets = []) => {
   const academicYears = new Set();
@@ -110,6 +130,18 @@ const AnnualBorrowing = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [sets, setSets] = useState([]);
+  const studentFilterOptions = useMemo(
+    () =>
+      createFilterOptions({
+        stringify: buildStudentSearchValue,
+        trim: true,
+        ignoreAccents: true,
+        ignoreCase: true,
+        matchFrom: "any",
+        limit: 500,
+      }),
+    []
+  );
   const [filters, setFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
   const [filterOptions, setFilterOptions] = useState({
@@ -978,7 +1010,7 @@ const AnnualBorrowing = () => {
                         variant="outlined"
                       />
                       <Chip
-                        label={`Active: ${set.activeIssues || 0}`}
+                        label={`Borrowed: ${set.activeIssues || 0}`}
                         variant="outlined"
                       />
                     </Stack>
@@ -1065,6 +1097,7 @@ const AnnualBorrowing = () => {
                     }}
                     loading={issueLoading && Boolean(issueContext)}
                     loadingText="Searching students..."
+                    filterOptions={studentFilterOptions}
                     getOptionLabel={(option) =>
                       option?.name
                         ? `${option.name}${option.grade ? ` · ${option.grade}` : ""}${
@@ -1073,13 +1106,13 @@ const AnnualBorrowing = () => {
                         : ""
                     }
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                    getOptionDisabled={(option) => option.hasActiveBorrowing || option.isActive === false}
+                    getOptionDisabled={(option) => option.hasBorrowedSet || option.isActive === false}
                     renderOption={(props, option) => (
                       <li {...props} key={option.id}>
                         <Stack spacing={0.5} sx={{ width: "100%" }}>
                           <Typography variant="body2">
                             {option.name}
-                            {option.hasActiveBorrowing ? " (Active)" : ""}
+                            {option.hasBorrowedSet ? " (Borrowed)" : ""}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {option.grade || ""} {option.section || ""}
@@ -1111,9 +1144,9 @@ const AnnualBorrowing = () => {
                       No matching students found for this set.
                     </Typography>
                   )}
-                  {issueStudent?.hasActiveBorrowing && (
+                  {issueStudent?.hasBorrowedSet && (
                     <Alert sx={{ mt: 1 }} severity="warning">
-                      This student already has an active issuance for this set.
+                      This student already borrowed this set.
                     </Alert>
                   )}
                 </Box>
@@ -1135,7 +1168,7 @@ const AnnualBorrowing = () => {
                   variant="outlined"
                 />
                 <Chip
-                  label={`Active outstanding: ${issueContext.metrics?.activeIssues || 0}`}
+                  label={`Borrowed outstanding: ${issueContext.metrics?.activeIssues || 0}`}
                   color="primary"
                   variant="outlined"
                 />
@@ -1152,10 +1185,10 @@ const AnnualBorrowing = () => {
                 }}
               >
                 <TextField
-                  label="Scan Copy Barcode"
+                  label="Scan Reference Barcode"
                   value={scanValue}
                   onChange={(event) => setScanValue(event.target.value)}
-                  placeholder="Focus here and scan a copy barcode"
+                  placeholder="Focus here and scan a reference barcode"
                   inputRef={scanFieldRef}
                   autoComplete="off"
                   sx={{ flexGrow: 1, minWidth: 260 }}
@@ -1306,7 +1339,7 @@ const AnnualBorrowing = () => {
               issueLoading ||
               !issueContext ||
               !issueStudent?.id ||
-              issueStudent?.hasActiveBorrowing ||
+              issueStudent?.hasBorrowedSet ||
               missingRequiredSelections ||
               selectedCopyCount === 0
             }

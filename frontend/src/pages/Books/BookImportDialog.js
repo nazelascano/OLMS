@@ -26,6 +26,7 @@ import {
 } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { booksAPI, downloadFile } from "../../utils/api";
+import { formatAuthorsList } from "../../utils/authorDisplay";
 
 const sanitizeFilename = (value, fallback) => {
   if (!value) {
@@ -58,6 +59,39 @@ const extractFilename = (disposition, fallback) => {
   return fallback;
 };
 
+const normalizeAuthorsInput = (value) => {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((author) => (typeof author === "string" ? author.trim() : ""))
+      .filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/[,;|]/)
+      .map((author) => author.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const mergeAuthors = (...sources) => {
+  const seen = new Set();
+  const list = [];
+  sources.forEach((source) => {
+    normalizeAuthorsInput(source).forEach((author) => {
+      const key = author.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(author);
+      }
+    });
+  });
+  return list;
+};
+
 const normalizeHeader = (header) =>
   header.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -78,6 +112,7 @@ const csvToBooks = (text) => {
       rowIndex: index + 2,
       title: "",
       author: "",
+      authors: [],
       isbn: "",
       publisher: "",
       publishedYear: "",
@@ -95,6 +130,9 @@ const csvToBooks = (text) => {
           break;
         case "author":
           book.author = value;
+          break;
+        case "authors":
+          book.authors = mergeAuthors(book.authors, value);
           break;
         case "isbn":
           book.isbn = value;
@@ -122,6 +160,10 @@ const csvToBooks = (text) => {
       }
     });
 
+    if (book.authors.length === 0 && book.author) {
+      book.authors = mergeAuthors(book.author);
+    }
+
     return book;
   });
 };
@@ -131,6 +173,7 @@ const validateBook = (book, existingBooksByIsbn, isbnCounts) => {
   const warnings = [];
   const normalizedIsbn = (book.isbn || "").trim().toLowerCase();
   const existingBook = normalizedIsbn ? existingBooksByIsbn[normalizedIsbn] : null;
+  const hasAuthorData = (Array.isArray(book.authors) && book.authors.length > 0) || Boolean(book.author);
 
   if (!book.isbn) {
     errors.push("ISBN required");
@@ -140,7 +183,7 @@ const validateBook = (book, existingBooksByIsbn, isbnCounts) => {
     if (!book.title) {
       errors.push("Title required");
     }
-    if (!book.author) {
+    if (!hasAuthorData) {
       errors.push("Author required");
     }
   } else {
@@ -203,7 +246,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
   };
 
   const downloadTemplate = () => {
-    const template = `title,author,isbn,publisher,publishedYear,category,description,numberOfCopies,location\nThe Pragmatic Programmer,Andrew Hunt,978-0201616224,Addison-Wesley,1999,Software Development,"Classic developer book",3,main-library`;
+    const template = `title,author,authors,isbn,publisher,publishedYear,category,description,numberOfCopies,location\nThe Pragmatic Programmer,Andrew Hunt,"Andrew Hunt|David Thomas",978-0201616224,Addison-Wesley,1999,Software Development,"Classic developer book",3,main-library`;
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -230,7 +273,21 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
 
     try {
       const existingResponse = await booksAPI.getAll({ limit: 5000 });
-      const existing = existingResponse.data.books || [];
+      const existing = (existingResponse.data.books || []).map((record) => {
+        if (Array.isArray(record?.authors) && record.authors.length > 0) {
+          return record;
+        }
+        if (record?.author) {
+          return {
+            ...record,
+            authors: mergeAuthors(record.authors, record.author),
+          };
+        }
+        return {
+          ...record,
+          authors: Array.isArray(record?.authors) ? record.authors : [],
+        };
+      });
       setExistingBooks(existing);
 
       const reader = new FileReader();
@@ -284,9 +341,17 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
         const existingBook = normalizedIsbn
           ? existingBooksByIsbn[normalizedIsbn]
           : null;
+        const requestedAuthors = mergeAuthors(book.authors, book.author);
+        const fallbackAuthors = existingBook
+          ? mergeAuthors(existingBook.authors, existingBook.author)
+          : [];
+        const authors = requestedAuthors.length > 0 ? requestedAuthors : fallbackAuthors;
+        const authorDisplay = authors.join(", ");
+
         const payload = {
           title: book.title || existingBook?.title || "",
-          author: book.author || existingBook?.author || "",
+          author: authorDisplay || existingBook?.author || "",
+          authors,
           isbn: book.isbn,
           publisher: book.publisher || existingBook?.publisher || "",
           publishedYear: book.publishedYear || existingBook?.publishedYear || null,
@@ -520,7 +585,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
           <TableHead>
             <TableRow>
               <TableCell>Title</TableCell>
-              <TableCell>Author</TableCell>
+              <TableCell>Authors</TableCell>
               <TableCell>ISBN</TableCell>
               <TableCell>Copies</TableCell>
               <TableCell>Status</TableCell>
@@ -551,7 +616,7 @@ const BookImportDialog = ({ open, onClose, onImportComplete }) => {
               return (
                 <TableRow key={`${book.isbn}-${index}`}>
                   <TableCell>{book.title}</TableCell>
-                  <TableCell>{book.author}</TableCell>
+                  <TableCell>{formatAuthorsList(book, "—")}</TableCell>
                   <TableCell>{book.isbn}</TableCell>
                   <TableCell>{book.numberOfCopies || 1}</TableCell>
                   <TableCell>

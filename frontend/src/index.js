@@ -7,6 +7,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { Toaster } from "react-hot-toast";
 import App from "./App";
 import { AuthProvider } from "./contexts/AuthContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 import "./index.css";
 
 // Create a query client
@@ -42,17 +43,19 @@ root.render(
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <AuthProvider>
-            <App />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: "#363636",
-                  color: "#fff",
-                },
-              }}
-            />{" "}
+            <SettingsProvider>
+              <App />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: "#363636",
+                    color: "#fff",
+                  },
+                }}
+              />{" "}
+            </SettingsProvider>
           </AuthProvider>{" "}
         </ThemeProvider>{" "}
       </QueryClientProvider>{" "}

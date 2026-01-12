@@ -41,6 +41,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, settingsAPI } from "../../utils/api";
+import { SETTINGS_UPDATED_EVENT } from "../../contexts/SettingsContext";
 import {
   ensureUserAttributes,
   normalizeStringList,
@@ -117,15 +118,11 @@ const mergeLibrarySettings = (data = {}) => ({
 const createDefaultBorrowingRules = () => ({
   maxBooksPerTransaction: 10,
   maxBorrowDays: 14,
-  maxRenewals: 2,
   finePerDay: 5,
   gracePeriodDays: 0,
   maxFineAmount: 0,
-  reservationPeriodDays: 3,
   enableFines: true,
   annualBorrowingEnabled: true,
-  overnightBorrowingEnabled: false,
-  allowRenewalsWithOverdue: false,
 });
 
 const mergeBorrowingRules = (data = {}) => {
@@ -137,56 +134,30 @@ const mergeBorrowingRules = (data = {}) => {
       base.maxBooksPerTransaction,
     ),
     maxBorrowDays: normalizeNumber(data.maxBorrowDays, base.maxBorrowDays),
-    maxRenewals: normalizeNumber(data.maxRenewals, base.maxRenewals),
     finePerDay: normalizeNumber(data.finePerDay, base.finePerDay),
     gracePeriodDays: normalizeNumber(
       data.gracePeriodDays,
       base.gracePeriodDays,
     ),
     maxFineAmount: normalizeNumber(data.maxFineAmount, base.maxFineAmount),
-    reservationPeriodDays: normalizeNumber(
-      data.reservationPeriodDays,
-      base.reservationPeriodDays,
-    ),
     enableFines: normalizeBoolean(data.enableFines, base.enableFines),
     annualBorrowingEnabled: normalizeBoolean(
       data.annualBorrowingEnabled,
       base.annualBorrowingEnabled,
     ),
-    overnightBorrowingEnabled: normalizeBoolean(
-      data.overnightBorrowingEnabled,
-      base.overnightBorrowingEnabled,
-    ),
-    allowRenewalsWithOverdue: normalizeBoolean(
-      data.allowRenewalsWithOverdue,
-      base.allowRenewalsWithOverdue,
-    ),
   };
 };
 
 const createDefaultNotificationSettings = () => ({
-  emailNotifications: true,
-  smsNotifications: false,
   dueDateReminders: true,
   overdueNotifications: true,
-  reservationNotifications: true,
   reminderDaysBefore: 3,
   maxReminders: 3,
-  emailTemplate: {
-    dueDate: "",
-    overdue: "",
-    reservation: "",
-  },
 });
 
 const mergeNotificationSettings = (data = {}) => {
   const base = createDefaultNotificationSettings();
   return {
-    emailNotifications: normalizeBoolean(
-      data.emailNotifications,
-      base.emailNotifications,
-    ),
-    smsNotifications: normalizeBoolean(data.smsNotifications, base.smsNotifications),
     dueDateReminders: normalizeBoolean(
       data.dueDateReminders,
       base.dueDateReminders,
@@ -195,19 +166,11 @@ const mergeNotificationSettings = (data = {}) => {
       data.overdueNotifications,
       base.overdueNotifications,
     ),
-    reservationNotifications: normalizeBoolean(
-      data.reservationNotifications,
-      base.reservationNotifications,
-    ),
     reminderDaysBefore: normalizeNumber(
       data.reminderDaysBefore,
       base.reminderDaysBefore,
     ),
     maxReminders: normalizeNumber(data.maxReminders, base.maxReminders),
-    emailTemplate: {
-      ...base.emailTemplate,
-      ...(data.emailTemplate || {}),
-    },
   };
 };
 
@@ -333,6 +296,13 @@ const SettingsPage = () => {
       setLoading(true);
       await api.put(`/settings/${settingType}`, data);
       setSuccess("Settings saved successfully");
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(
+          new CustomEvent(SETTINGS_UPDATED_EVENT, {
+            detail: { category: settingType },
+          }),
+        );
+      }
       setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
       setError("Failed to save settings");
@@ -592,13 +562,22 @@ const SettingsPage = () => {
     }
   };
 
-  const isAdmin = user?.role === "admin";
+  const role = user?.role || "";
+  const isAdmin = role === "admin";
+  const isLibrarian = role === "librarian";
+  const canAccessSettings = isAdmin || isLibrarian;
 
-  if (!isAdmin) {
+  useEffect(() => {
+    if (!isAdmin && currentTab === 3) {
+      setCurrentTab(0);
+    }
+  }, [isAdmin, currentTab]);
+
+  if (!canAccessSettings) {
     return (
       <Box>
         <Alert severity="error">
-          Access denied. Only administrators can access system settings.
+          Access denied. Only administrators and librarians can access settings.
         </Alert>
       </Box>
     );
@@ -613,26 +592,28 @@ const SettingsPage = () => {
         mb={3}
       >
         <Typography variant="h4" color={"white"}>System Settings</Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<Backup />}
-            onClick={handleBackup}
-            sx={{ mr: 2 }}
-            disabled={loading}
-          >
-            Create Backup
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Restore />}
-            onClick={handleRestore}
-            color="warning"
-            disabled={loading}
-          >
-            Restore Backup
-          </Button>
-        </Box>
+        {isAdmin && (
+          <Box>
+            <Button
+              variant="outlined"
+              startIcon={<Backup />}
+              onClick={handleBackup}
+              sx={{ mr: 2 }}
+              disabled={loading}
+            >
+              Create Backup
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Restore />}
+              onClick={handleRestore}
+              color="warning"
+              disabled={loading}
+            >
+              Restore Backup
+            </Button>
+          </Box>
+        )}
       </Box>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -654,7 +635,12 @@ const SettingsPage = () => {
           <Tab label="Library Info" icon={<LibraryBooks />} />
           <Tab label="Borrowing Rules" icon={<Schedule />} />
           <Tab label="Notifications" icon={<Notifications />} />
-          <Tab label="System" icon={<Computer />} />
+          <Tab
+            label="System"
+            icon={<Computer />}
+            disabled={!isAdmin}
+            sx={{ display: isAdmin ? "inline-flex" : "none" }}
+          />
           <Tab label="User Fields" icon={<Group />} />
           <Tab label="Categories" icon={<Edit />} />
         </Tabs>
@@ -870,7 +856,7 @@ const SettingsPage = () => {
               <Card elevation={1}>
                 <CardHeader
                   title="Borrowing Limits"
-                  subheader="Control how many books and renewals each patron gets"
+                  subheader="Control how many books each patron gets"
                 />
                 <CardContent>
                   <Stack spacing={2}>
@@ -898,32 +884,6 @@ const SettingsPage = () => {
                         setBorrowingRules({
                           ...borrowingRules,
                           maxBorrowDays: parseInt(e.target.value, 10) || 0,
-                        })
-                      }
-                    />
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Renewal Limit"
-                      type="number"
-                      value={borrowingRules.maxRenewals}
-                      onChange={(e) =>
-                        setBorrowingRules({
-                          ...borrowingRules,
-                          maxRenewals: parseInt(e.target.value, 10) || 0,
-                        })
-                      }
-                    />
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Reservation Hold (Days)"
-                      type="number"
-                      value={borrowingRules.reservationPeriodDays}
-                      onChange={(e) =>
-                        setBorrowingRules({
-                          ...borrowingRules,
-                          reservationPeriodDays: parseInt(e.target.value, 10) || 0,
                         })
                       }
                     />
@@ -1032,34 +992,6 @@ const SettingsPage = () => {
                       }
                       label="Enable Annual Borrowing"
                     />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={borrowingRules.overnightBorrowingEnabled}
-                          onChange={(e) =>
-                            setBorrowingRules({
-                              ...borrowingRules,
-                              overnightBorrowingEnabled: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Allow Overnight Borrowing"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={borrowingRules.allowRenewalsWithOverdue}
-                          onChange={(e) =>
-                            setBorrowingRules({
-                              ...borrowingRules,
-                              allowRenewalsWithOverdue: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Allow Renewals When Overdue"
-                    />
                   </Stack>
                 </CardContent>
               </Card>
@@ -1081,46 +1013,6 @@ const SettingsPage = () => {
 
         <TabPanel value={currentTab} index={2}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card elevation={1}>
-                <CardHeader
-                  title="Notification Channels"
-                  subheader="Choose how patrons receive alerts"
-                />
-                <CardContent>
-                  <Stack spacing={1.5}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationSettings.emailNotifications}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              emailNotifications: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Email Notifications"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationSettings.smsNotifications}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              smsNotifications: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="SMS Notifications"
-                    />
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
             <Grid item xs={12} md={6}>
               <Card elevation={1}>
                 <CardHeader
@@ -1156,20 +1048,6 @@ const SettingsPage = () => {
                         />
                       }
                       label="Overdue Notices"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notificationSettings.reservationNotifications}
-                          onChange={(e) =>
-                            setNotificationSettings({
-                              ...notificationSettings,
-                              reservationNotifications: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="Reservation Updates"
                     />
                   </Stack>
                 </CardContent>
@@ -1213,69 +1091,6 @@ const SettingsPage = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <Card elevation={1}>
-                <CardHeader
-                  title="Email Templates"
-                  subheader="Personalize the tone of automated emails"
-                />
-                <CardContent>
-                  <Stack spacing={2}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Due Date Template"
-                      multiline
-                      minRows={2}
-                      value={notificationSettings.emailTemplate.dueDate}
-                      onChange={(e) =>
-                        setNotificationSettings({
-                          ...notificationSettings,
-                          emailTemplate: {
-                            ...notificationSettings.emailTemplate,
-                            dueDate: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Overdue Template"
-                      multiline
-                      minRows={2}
-                      value={notificationSettings.emailTemplate.overdue}
-                      onChange={(e) =>
-                        setNotificationSettings({
-                          ...notificationSettings,
-                          emailTemplate: {
-                            ...notificationSettings.emailTemplate,
-                            overdue: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label="Reservation Template"
-                      multiline
-                      minRows={2}
-                      value={notificationSettings.emailTemplate.reservation}
-                      onChange={(e) =>
-                        setNotificationSettings({
-                          ...notificationSettings,
-                          emailTemplate: {
-                            ...notificationSettings.emailTemplate,
-                            reservation: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
                 <Button
@@ -1292,8 +1107,9 @@ const SettingsPage = () => {
         </TabPanel>
 
         <TabPanel value={currentTab} index={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+          {isAdmin ? (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
               <Card elevation={1}>
                 <CardHeader
                   title="Access & Availability"
@@ -1442,7 +1258,12 @@ const SettingsPage = () => {
                 </Button>
               </Box>
             </Grid>
-          </Grid>
+            </Grid>
+          ) : (
+            <Alert severity="warning">
+              System configuration is restricted to administrators.
+            </Alert>
+          )}
         </TabPanel>
 
         <TabPanel value={currentTab} index={4}>

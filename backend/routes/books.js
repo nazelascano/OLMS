@@ -3,9 +3,37 @@ const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const QRCode = require('qrcode');
 const { ObjectId } = require('mongodb');
 const { verifyToken, requireStaff, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
+const { maybeNotifyLowInventory } = require('../utils/inventoryNotifications');
 const router = express.Router();
 
 const allowedCopyStatuses = new Set(['available', 'borrowed', 'lost', 'damaged', 'maintenance']);
+
+const toFiniteNumber = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed !== '') {
+            const parsed = Number(trimmed);
+            if (Number.isFinite(parsed)) {
+                return parsed;
+            }
+        }
+    }
+    return null;
+};
+
+const notifyInventoryState = async (req, bookSnapshot, source) => {
+    if (!req || !bookSnapshot) {
+        return;
+    }
+    try {
+        await maybeNotifyLowInventory(req.dbAdapter, bookSnapshot, { source });
+    } catch (error) {
+        console.error('Inventory notification error:', error.message || error);
+    }
+};
 
 const computePublishedYear = (explicitYear, dateValue) => {
     if (explicitYear !== undefined && explicitYear !== null && String(explicitYear).trim() !== '') {
@@ -64,6 +92,93 @@ const normalizeString = (value) => {
 const availableCopiesCount = (copies = []) =>
     copies.filter((copy) => normalizeString(copy.status) === 'available').length;
 
+const getAvailableQuantity = (book = {}) => {
+    if (!book || typeof book !== 'object') {
+        return 0;
+    }
+    const directValue = toFiniteNumber(
+        book.availableCopiesCount !== undefined ? book.availableCopiesCount : book.availableCopies
+    );
+    if (directValue !== null && directValue >= 0) {
+        return directValue;
+    }
+    if (Array.isArray(book.copies)) {
+        return availableCopiesCount(book.copies);
+    }
+    return 0;
+};
+
+const sanitizeAuthorName = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+    const normalized = String(value).replace(/\s+/g, ' ').trim();
+    return normalized || null;
+};
+
+const splitDelimitedAuthors = (value) => {
+    if (typeof value !== 'string') {
+        return [];
+    }
+    if (/[;,|]/.test(value)) {
+        return value.split(/[,;|]/).map(sanitizeAuthorName).filter(Boolean);
+    }
+    const normalized = sanitizeAuthorName(value);
+    return normalized ? [normalized] : [];
+};
+
+const mergeAuthorSources = (...sources) => {
+    const seen = new Set();
+    const authors = [];
+    sources.forEach((source) => {
+        if (source === undefined || source === null) {
+            return;
+        }
+        if (Array.isArray(source)) {
+            source.forEach((entry) => {
+                const normalized = sanitizeAuthorName(entry);
+                if (normalized && !seen.has(normalized.toLowerCase())) {
+                    seen.add(normalized.toLowerCase());
+                    authors.push(normalized);
+                }
+            });
+            return;
+        }
+        if (typeof source === 'string') {
+            splitDelimitedAuthors(source).forEach((entry) => {
+                if (entry && !seen.has(entry.toLowerCase())) {
+                    seen.add(entry.toLowerCase());
+                    authors.push(entry);
+                }
+            });
+        }
+    });
+    return authors;
+};
+
+const deriveAuthorsFromPayload = (payload = {}) => {
+    const authors = mergeAuthorSources(payload.authors, payload.author);
+    return {
+        authors,
+        authorDisplay: authors.length > 0 ? authors.join(', ') : '',
+        hasAuthors: authors.length > 0
+    };
+};
+
+const ensureAuthorMetadata = (record) => {
+    if (!record || typeof record !== 'object') {
+        return record;
+    }
+    const merged = mergeAuthorSources(record.authors, record.author);
+    record.authors = merged;
+    if (merged.length > 0) {
+        record.author = merged.join(', ');
+    } else if (typeof record.author !== 'string') {
+        record.author = '';
+    }
+    return record;
+};
+
 const matchesBookSearch = (book, term) => {
     if (!term) return true;
     if (typeof term === 'string' && term.trim() === '') return true;
@@ -81,6 +196,10 @@ const matchesBookSearch = (book, term) => {
     ];
 
     if (fields.some((field) => normalizeString(field).includes(searchTerm))) {
+        return true;
+    }
+
+    if (Array.isArray(book.authors) && book.authors.some((author) => normalizeString(author).includes(searchTerm))) {
         return true;
     }
 
@@ -116,6 +235,7 @@ const buildBookSummary = (book) => {
         _id: book._id,
         title: book.title || 'Untitled',
         author: book.author || 'Unknown Author',
+        authors: Array.isArray(book.authors) ? book.authors : [],
         isbn: book.isbn || '',
         category: book.category || '',
         publisher: book.publisher || '',
@@ -194,7 +314,7 @@ const findBookByIdentifier = async (req, identifier) => {
         try {
             const book = await req.dbAdapter.findOneInCollection('books', filter);
             if (book) {
-                return book;
+                return ensureAuthorMetadata(book);
             }
         } catch (error) {
             console.warn(`Book lookup failed for filter ${JSON.stringify(filter)}`, error.message);
@@ -476,19 +596,47 @@ const buildBarcodePdf = async({
 
 router.get('/', verifyToken, async(req, res) => {
     try {
-        const { page = 1, limit = 20, search, category, status, sortBy = 'title', sortOrder = 'asc' } = req.query;
+        const {
+            page = 1,
+            limit = 20,
+            search,
+            category,
+            status,
+            sortBy = 'title',
+            sortOrder = 'asc'
+        } = req.query;
         let filters = {};
         if (category) filters.category = category;
         if (status) filters.status = status;
         let books = await req.dbAdapter.findInCollection('books', filters);
+        books = books.map((book) => {
+            const normalized = ensureAuthorMetadata(book);
+            const copiesArray = Array.isArray(normalized.copies) ? normalized.copies : [];
+            const availableCount = getAvailableQuantity(normalized);
+            return {
+                ...normalized,
+                copiesCount: copiesArray.length,
+                availableCopiesCount: availableCount
+            };
+        });
         if (search) {
             books = books.filter(book => matchesBookSearch(book, search));
         }
+        const resolvedSortBy = sortBy || 'title';
+        const resolvedSortOrder = sortOrder === 'desc' ? 'desc' : 'asc';
+        const isNumeric = (value) => typeof value === 'number' && Number.isFinite(value);
         books.sort((a, b) => {
-            const aVal = a[sortBy] || '';
-            const bVal = b[sortBy] || '';
-            if (sortOrder === 'desc') return String(bVal).localeCompare(String(aVal));
-            return String(aVal).localeCompare(String(bVal));
+            const aVal = a[resolvedSortBy];
+            const bVal = b[resolvedSortBy];
+            let comparison = 0;
+            if (isNumeric(aVal) && isNumeric(bVal)) {
+                comparison = aVal - bVal;
+            } else {
+                const aStr = aVal === undefined || aVal === null ? '' : String(aVal);
+                const bStr = bVal === undefined || bVal === null ? '' : String(bVal);
+                comparison = aStr.localeCompare(bStr, undefined, { sensitivity: 'base' });
+            }
+            return resolvedSortOrder === 'desc' ? -comparison : comparison;
         });
         const totalBooks = books.length;
         const normalizedPage = Math.max(parseInt(page, 10) || 1, 1);
@@ -498,7 +646,14 @@ router.get('/', verifyToken, async(req, res) => {
         const startIndex = wantsAll ? 0 : (normalizedPage - 1) * resolvedLimit;
         const endIndex = wantsAll ? totalBooks : startIndex + resolvedLimit;
         const paginatedBooks = wantsAll ? books : books.slice(startIndex, endIndex);
-        const booksWithCopies = paginatedBooks.map(book => ({...book, copiesCount: book.copies?.length || 0, availableCopiesCount: book.copies?.filter(c => c.status === 'available').length || 0 }));
+        const booksWithCopies = paginatedBooks.map((book) => {
+            const copiesArray = Array.isArray(book.copies) ? book.copies : [];
+            return {
+                ...book,
+                copiesCount: copiesArray.length,
+                availableCopiesCount: getAvailableQuantity(book)
+            };
+        });
         const totalPages = wantsAll ? (totalBooks > 0 ? 1 : 0) : Math.ceil(totalBooks / resolvedLimit);
         res.json({
             books: booksWithCopies,
@@ -534,6 +689,7 @@ router.get('/search', verifyToken, async(req, res) => {
         }
 
         const books = await req.dbAdapter.findInCollection('books', {});
+        books.forEach(ensureAuthorMetadata);
         const onlyAvailable = String(available).toLowerCase() === 'true';
         const limitNumber = Math.max(parseInt(limit, 10) || 20, 1);
 
@@ -577,6 +733,7 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
         }
 
         const allExistingBooks = await req.dbAdapter.findInCollection('books', {});
+        allExistingBooks.forEach(ensureAuthorMetadata);
         const existingBooksByIsbn = new Map(
             allExistingBooks.map(book => [(book.isbn || '').toLowerCase(), book])
         );
@@ -615,12 +772,16 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
 
             const rawTitle = typeof bookData?.title === 'string' ? bookData.title.trim() : bookData?.title;
             const rawAuthor = typeof bookData?.author === 'string' ? bookData.author.trim() : bookData?.author;
+            const authorMeta = deriveAuthorsFromPayload({
+                author: rawAuthor,
+                authors: bookData?.authors
+            });
 
             if (!existingBook) {
                 if (!rawTitle) {
                     validationIssues.push('Title is required for new books');
                 }
-                if (!rawAuthor) {
+                if (!authorMeta.hasAuthors) {
                     validationIssues.push('Author is required for new books');
                 }
             }
@@ -681,7 +842,13 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                         updatedBy: req.user.id
                     };
 
+                    if (authorMeta.hasAuthors) {
+                        updatePayload.author = authorMeta.authorDisplay;
+                        updatePayload.authors = authorMeta.authors;
+                    }
+
                     await req.dbAdapter.updateInCollection('books', { id: existingBook.id }, updatePayload);
+                    await notifyInventoryState(req, { ...existingBook, ...updatePayload }, 'book-bulk-import');
 
                     existingBooksByIsbn.set(normalizedIsbn, {
                         ...existingBook,
@@ -700,7 +867,6 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                 }
 
                 const title = rawTitle;
-                const author = rawAuthor;
                 const bookId = `book_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
                 const copies = [];
@@ -720,7 +886,8 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                 const newBook = {
                     id: bookId,
                     title,
-                    author,
+                    author: authorMeta.authorDisplay,
+                    authors: authorMeta.authors,
                     isbn,
                     publisher: bookData?.publisher || '',
                     publishedYear: parsedPublishedYear,
@@ -737,6 +904,7 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
                 };
 
                 await req.dbAdapter.insertIntoCollection('books', newBook);
+                await notifyInventoryState(req, newBook, 'book-bulk-import');
                 existingBooksByIsbn.set(normalizedIsbn, newBook);
                 results.successful.push({
                     ...baseRecord,
@@ -842,7 +1010,8 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
     try {
         const {
             title,
-            author,
+            author: authorValue,
+            authors: authorsValue,
             isbn,
             publisher,
             publishedYear,
@@ -859,12 +1028,14 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
             publicationDate
         } = req.body;
 
+        const authorMeta = deriveAuthorsFromPayload({ author: authorValue, authors: authorsValue });
+
         setAuditContext(req, {
             metadata: {
                 createRequest: {
                     isbn: isbn || null,
                     title: title || null,
-                    author: author || null,
+                    author: authorMeta.authorDisplay || null,
                     incomingCopies: Array.isArray(incomingCopies) ? incomingCopies.length : 0,
                     numberOfCopies: numberOfCopies
                 }
@@ -896,6 +1067,9 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
         const publishedYearMeta = computePublishedYear(publishedYear, publicationDate);
 
         const existingBook = await req.dbAdapter.findOneInCollection('books', { isbn });
+        if (existingBook) {
+            ensureAuthorMetadata(existingBook);
+        }
 
         const baseLocation = location || 'main-library';
 
@@ -910,7 +1084,7 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
             for (const raw of rawCopies) {
                 const copyId = (raw.copyId || generateCopyId(isbn)).toUpperCase();
                 if (seenCopyIds.has(copyId)) {
-                    throw new Error(`Duplicate copy ID ${copyId} in request payload`);
+                    throw new Error(`Duplicate reference ID ${copyId} in request payload`);
                 }
                 seenCopyIds.add(copyId);
 
@@ -961,12 +1135,12 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
                     setAuditContext(req, {
                         success: false,
                         status: 'Conflict',
-                        description: `Create book failed: duplicate copy ID ${copy.copyId}`,
+                        description: `Create book failed: duplicate reference ID ${copy.copyId}`,
                         metadata: {
                             copyId: copy.copyId
                         }
                     });
-                    return res.status(400).json({ message: `Copy ID ${copy.copyId} already exists for this book` });
+                    return res.status(400).json({ message: `Reference ID ${copy.copyId} already exists for this book` });
                 }
                 existingCopyIds.add(copy.copyId);
             }
@@ -982,7 +1156,6 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
 
             const updatableFields = {
                 title,
-                author,
                 publisher,
                 category,
                 description,
@@ -1007,7 +1180,13 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
                 }
             });
 
+            if (authorMeta.hasAuthors) {
+                updatePayload.author = authorMeta.authorDisplay;
+                updatePayload.authors = authorMeta.authors;
+            }
+
             await req.dbAdapter.updateInCollection('books', { id: existingBook.id }, updatePayload);
+            await notifyInventoryState(req, { ...existingBook, ...updatePayload }, 'book-create-append');
 
             setAuditContext(req, {
                 entityId: existingBook.id,
@@ -1033,7 +1212,7 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
             });
         }
 
-        if (!title || !author) {
+        if (!title || !authorMeta.hasAuthors) {
             setAuditContext(req, {
                 success: false,
                 status: 'ValidationError',
@@ -1046,7 +1225,8 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
         const newBook = {
             id: bookId,
             title,
-            author,
+            author: authorMeta.authorDisplay,
+            authors: authorMeta.authors,
             isbn,
             publisher: publisher || '',
             publishedYear: publishedYearMeta.shouldUpdate ? publishedYearMeta.value : null,
@@ -1067,6 +1247,7 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
         };
 
         await req.dbAdapter.insertIntoCollection('books', newBook);
+        await notifyInventoryState(req, newBook, 'book-create');
 
         setAuditContext(req, {
             entityId: bookId,
@@ -1074,7 +1255,7 @@ router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(r
             description: `Created book ${title}`,
             details: {
                 isbn,
-                author,
+                author: authorMeta.authorDisplay,
                 totalCopies: newBook.totalCopies,
             },
             metadata: {
@@ -1139,12 +1320,21 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
 
         const hasField = (field) => Object.prototype.hasOwnProperty.call(payload, field);
         const updateData = { updatedAt: new Date(), updatedBy: req.user.id };
-        const stringFields = ['title', 'author', 'publisher', 'category', 'description', 'coverImage', 'status', 'language', 'deweyDecimal'];
+        const stringFields = ['title', 'publisher', 'category', 'description', 'coverImage', 'status', 'language', 'deweyDecimal'];
         stringFields.forEach((field) => {
             if (hasField(field)) {
                 updateData[field] = payload[field];
             }
         });
+
+        if (hasField('authors') || hasField('author')) {
+            const authorMeta = deriveAuthorsFromPayload({
+                authors: hasField('authors') ? payload.authors : book.authors,
+                author: hasField('author') ? payload.author : book.author,
+            });
+            updateData.authors = authorMeta.authors;
+            updateData.author = authorMeta.authorDisplay;
+        }
 
         if (hasField('publicationDate')) {
             updateData.publicationDate = payload.publicationDate || null;
@@ -1201,10 +1391,10 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
                 payload.copies.forEach((raw) => {
                     const normalizedId = String(raw?.copyId || '').trim().toUpperCase();
                     if (!normalizedId) {
-                        throw new Error('Copy ID is required for each copy');
+                        throw new Error('Reference ID is required for each copy');
                     }
                     if (seenIds.has(normalizedId)) {
-                        throw new Error(`Duplicate copy ID ${normalizedId}`);
+                        throw new Error(`Duplicate reference ID ${normalizedId}`);
                     }
                     seenIds.add(normalizedId);
 
@@ -1284,6 +1474,12 @@ router.put('/:id', verifyToken, requireStaff, logAction('UPDATE', 'book'), async
         }
 
         await req.dbAdapter.updateInCollection('books', persistenceFilter, updateData);
+
+        const touchesInventory = Object.prototype.hasOwnProperty.call(updateData, 'copies') ||
+            Object.prototype.hasOwnProperty.call(updateData, 'availableCopies');
+        if (touchesInventory) {
+            await notifyInventoryState(req, { ...book, ...updateData }, 'book-update');
+        }
 
         const auditDetails = {
             updatedFields: updatedFields.filter((field) => field !== 'copies'),
@@ -1413,12 +1609,14 @@ router.post('/:id/copies', verifyToken, requireStaff, logAction('ADD_COPIES', 'b
             return res.status(500).json({ message: 'Failed to add book copies' });
         }
 
+        const availableCopies = updatedCopies.filter(c => c.status === 'available').length;
         await req.dbAdapter.updateInCollection('books', persistenceFilter, {
             copies: updatedCopies,
             totalCopies: updatedCopies.length,
-            availableCopies: updatedCopies.filter(c => c.status === 'available').length,
+            availableCopies,
             updatedAt: new Date()
         });
+        await notifyInventoryState(req, { ...book, copies: updatedCopies, availableCopies }, 'book-add-copies');
 
         setAuditContext(req, {
             entityId: book.id || book._id || req.params.id,
@@ -1508,6 +1706,7 @@ router.delete('/:id/copies/:copyId', verifyToken, requireStaff, logAction('DELET
             availableCopies,
             updatedAt: new Date(),
         });
+        await notifyInventoryState(req, { ...book, copies: updatedCopies, availableCopies }, 'book-delete-copy');
 
         setAuditContext(req, {
             entityId: book.id || book._id || id,
@@ -1579,12 +1778,12 @@ router.get('/:id/copies/barcodes', verifyToken, requireStaff, logAction('GENERAT
                 setAuditContext(req, {
                     success: false,
                     status: 'CopiesNotFound',
-                    description: `Generate barcodes failed: requested copy IDs not found for book ${req.params.id}`,
+                    description: `Generate barcodes failed: requested reference IDs not found for book ${req.params.id}`,
                     details: {
                         requested: Array.from(requestedSet),
                     },
                 });
-                return res.status(404).json({ message: 'Requested copy IDs not found for this book' });
+                return res.status(404).json({ message: 'Requested reference IDs not found for this book' });
             }
         }
 
@@ -1816,22 +2015,26 @@ router.get('/search/advanced', verifyToken, async(req, res) => {
         if (!q) return res.status(400).json({ message: 'Search query required' });
         const searchLower = q.toLowerCase();
         const allBooks = await req.dbAdapter.findInCollection('books', {});
+        allBooks.forEach(ensureAuthorMetadata);
         const results = [];
         for (const book of allBooks) {
             let matches = false;
+            const authorMatches = () =>
+                (Array.isArray(book.authors) && book.authors.some((author) => author?.toLowerCase().includes(searchLower))) ||
+                (book.author && book.author.toLowerCase().includes(searchLower));
             switch (type) {
                 case 'title':
                     matches = book.title?.toLowerCase().includes(searchLower);
                     break;
                 case 'author':
-                    matches = book.author?.toLowerCase().includes(searchLower);
+                    matches = authorMatches();
                     break;
                 case 'isbn':
                     matches = book.isbn?.toLowerCase().includes(searchLower);
                     break;
                 case 'all':
                 default:
-                    matches = book.title?.toLowerCase().includes(searchLower) || book.author?.toLowerCase().includes(searchLower) || book.isbn?.toLowerCase().includes(searchLower) || book.publisher?.toLowerCase().includes(searchLower) || book.category?.toLowerCase().includes(searchLower);
+                    matches = book.title?.toLowerCase().includes(searchLower) || authorMatches() || book.isbn?.toLowerCase().includes(searchLower) || book.publisher?.toLowerCase().includes(searchLower) || book.category?.toLowerCase().includes(searchLower);
                     break;
             }
             if (matches) results.push(book);

@@ -1,6 +1,7 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/customAuth');
 const { getSettingsSnapshot, NOTIFICATION_DEFAULTS, getNotificationChannelState } = require('../utils/settingsCache');
+const { buildBorrowRequestStaffMessage, buildNotePreview } = require('../utils/notificationCopy');
 
 const router = express.Router();
 
@@ -267,7 +268,24 @@ const collectUserIdentifiers = (user) => {
   return identifiers;
 };
 
-const normalizeRole = (role) => (role ? String(role).trim().toLowerCase() : '');
+const normalizeRole = (role) => {
+  if (!role && role !== 0) {
+    return '';
+  }
+  const value = String(role).trim().toLowerCase();
+  if (!value) {
+    return '';
+  }
+  switch (value) {
+    case 'super admin':
+    case 'super-admin':
+    case 'superadmin':
+    case 'administrator':
+      return 'admin';
+    default:
+      return value;
+  }
+};
 
 const buildRoleTargets = (role) => {
   const normalized = normalizeRole(role);
@@ -430,6 +448,17 @@ const buildTransactionSummary = (transaction, context) => {
     dueDate: toDate(transaction.dueDate),
     dueIso: toIsoString(transaction.dueDate),
     status: (transaction.status || '').toLowerCase(),
+    itemCount: Array.isArray(transaction.items) ? transaction.items.length : 0,
+    requestId:
+      transaction.id ||
+      transaction._id ||
+      transaction.transactionCode ||
+      transaction.referenceNumber ||
+      transaction.recordId ||
+      transaction.borrowingId ||
+      null,
+    requestType: transaction.type || '',
+    notes: typeof transaction.notes === 'string' ? transaction.notes : '',
     timestamp:
       toIsoString(transaction.updatedAt) ||
       toIsoString(transaction.dueDate) ||
@@ -696,15 +725,28 @@ router.get('/', verifyToken, async (req, res) => {
         if (!reservationEnabled) {
           return;
         }
+        const staffRequestMessage = buildBorrowRequestStaffMessage({
+          borrowerName: summary.borrower || 'A borrower',
+          transactionId: summary.requestId || transaction.id || transaction._id,
+          transactionType: summary.requestType || transaction.type,
+          itemCount: summary.itemCount || (Array.isArray(transaction.items) ? transaction.items.length : 0),
+          notes: summary.notes || transaction.notes || ''
+        });
         registerNotification({
           id: `request-${baseId}`,
           type: 'request',
           title: summary.title || 'Borrow request',
-          message: `${summary.borrower || 'A borrower'} requested this item.`,
+          message: staffRequestMessage,
           timestamp: summary.timestamp || toIsoString(now),
           severity: 'info',
           link,
-          meta,
+          meta: {
+            ...meta,
+            transactionId: summary.requestId || transaction.id || transaction._id,
+            itemCount: summary.itemCount || (Array.isArray(transaction.items) ? transaction.items.length : 0),
+            requestType: summary.requestType || transaction.type || 'regular',
+            notesPreview: buildNotePreview(summary.notes || transaction.notes || '')
+          },
         });
         return;
       }

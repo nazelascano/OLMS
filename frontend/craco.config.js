@@ -1,12 +1,9 @@
+const devServerHost = process.env.HOST || '0.0.0.0';
+
 module.exports = {
   devServer: {
-    host: '127.0.0.1',
+    host: devServerHost,
     allowedHosts: 'all',
-    client: {
-      webSocketURL: {
-        hostname: '127.0.0.1',
-      },
-    },
   },
   webpack: {
     configure: (webpackConfig) => {

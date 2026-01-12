@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { verifyToken, requireRole, requireAdmin, requireLibrarian, requireStaff, logAction, setAuditContext } = require('../middleware/customAuth');
+const { notifyRoles, formatUserName } = require('../utils/notificationChannels');
 const router = express.Router();
 
 // Determine the current academic cycle in YYYY-YYYY format.
@@ -21,6 +22,41 @@ const resolveSchoolYear = (payload = {}) => {
 const resolveLibraryCardNumber = (student = {}) => {
     return student.libraryCardNumber || student.library?.cardNumber || '';
 };
+
+const determineCrossRoleRecipients = (role = '') => {
+    const normalized = String(role || '').toLowerCase();
+    if (normalized === 'admin') {
+        return ['librarian'];
+    }
+    if (normalized === 'librarian') {
+        return ['admin'];
+    }
+    return ['admin', 'librarian'];
+};
+
+const formatStudentName = (student = {}) => {
+    const parts = [student.firstName, student.middleName, student.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+    if (parts) {
+        return parts;
+    }
+    return student.username || student.lrn || student.libraryCardNumber || 'Student';
+};
+
+const buildGradeSectionLabel = (student = {}) => {
+    const grade = student.grade || student.gradeLevel || '';
+    const section = student.section || '';
+    const segments = [grade, section].filter(Boolean);
+    return segments.length ? segments.join(' - ') : null;
+};
+
+const buildStudentMeta = (student = {}) => ({
+    studentId: student._id || student.id || student.userId || null,
+    grade: student.grade || student.gradeLevel || null,
+    section: student.section || null
+});
 
 // Helper function to generate library card number
 const generateLibraryCardNumber = async(dbAdapter) => {
@@ -308,6 +344,23 @@ router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'student'), 
         // Create student using database adapter
         const student = await req.dbAdapter.createUser(studentData);
 
+        const crossRoleRecipients = determineCrossRoleRecipients(req.user.role);
+        const gradeSectionLabel = buildGradeSectionLabel(student);
+        const studentDescriptor = gradeSectionLabel
+            ? `${formatStudentName(student)} (${gradeSectionLabel})`
+            : formatStudentName(student);
+        if (crossRoleRecipients.length > 0) {
+            await notifyRoles(req, crossRoleRecipients, {
+                title: 'Student profile created',
+                message: `${formatUserName(req.user)} added ${studentDescriptor}.`,
+                type: 'student-created',
+                meta: {
+                    ...buildStudentMeta(student),
+                    createdBy: req.user.id
+                }
+            });
+        }
+
         setAuditContext(req, {
             entityId: student._id,
             resourceId: student._id,
@@ -385,6 +438,18 @@ router.put('/:id', verifyToken, requireLibrarian, logAction('UPDATE', 'student')
             },
             success: true,
             status: 'Updated'
+        });
+
+        const updatedFields = Object.keys(req.body || {});
+        await notifyRoles(req, ['admin', 'librarian'], {
+            title: 'Student profile updated',
+            message: `${formatUserName(req.user)} updated ${formatStudentName(student)}'s profile.`,
+            type: 'student-updated',
+            meta: {
+                ...buildStudentMeta(student),
+                updatedFields,
+                actorId: req.user.id
+            }
         });
 
         res.json({
@@ -729,6 +794,28 @@ router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPOR
                 actorId: req.user.id
             }
         });
+
+        if (successCount > 0) {
+            const crossRoleRecipients = determineCrossRoleRecipients(req.user.role);
+            if (crossRoleRecipients.length > 0) {
+                const sampleCards = results.successful
+                    .map(entry => entry.libraryCardNumber)
+                    .filter(Boolean)
+                    .slice(0, 3);
+                await notifyRoles(req, crossRoleRecipients, {
+                    title: 'Students imported',
+                    message: `${formatUserName(req.user)} imported ${successCount} student${successCount === 1 ? '' : 's'}${failureCount ? ` (${failureCount} failed)` : ''}.`,
+                    type: 'student-import',
+                    severity: failureCount > 0 ? 'medium' : 'info',
+                    meta: {
+                        successCount,
+                        failureCount,
+                        sampleLibraryCardNumbers: sampleCards,
+                        actorId: req.user.id
+                    }
+                });
+            }
+        }
 
         res.status(statusCode).json({
             message: `Bulk import completed. ${successCount} successful, ${failureCount} failed.`,

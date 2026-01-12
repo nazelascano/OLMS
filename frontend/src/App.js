@@ -222,7 +222,7 @@ function App() {
           <Route
             path="books"
             element={
-                <ProtectedRoute roles={["admin", "librarian", "staff", "student"]}>
+                <ProtectedRoute roles={["librarian", "staff", "student"]}>
                 <BooksList />
               </ProtectedRoute>
             }
@@ -230,7 +230,7 @@ function App() {
           <Route
             path="books/new"
             element={
-              <ProtectedRoute roles={["admin", "librarian"]}>
+              <ProtectedRoute roles={["librarian"]}>
                 <BookForm />
               </ProtectedRoute>
             }
@@ -238,7 +238,7 @@ function App() {
           <Route
             path="books/:id/edit"
             element={
-              <ProtectedRoute roles={["admin", "librarian"]}>
+              <ProtectedRoute roles={["librarian"]}>
                 <BookForm />
               </ProtectedRoute>
             }
@@ -246,7 +246,7 @@ function App() {
           <Route
             path="books/:id"
             element={
-                <ProtectedRoute roles={["admin", "librarian", "staff", "student"]}>
+                <ProtectedRoute roles={["librarian", "staff", "student"]}>
                 <BookDetails />
               </ProtectedRoute>
             }
@@ -254,7 +254,7 @@ function App() {
           <Route
             path="books/:id/copies"
             element={
-              <ProtectedRoute roles={["admin", "librarian"]}>
+              <ProtectedRoute roles={["librarian"]}>
                 <BookCopies />
               </ProtectedRoute>
             }
@@ -320,7 +320,7 @@ function App() {
           <Route
             path="reports"
             element={
-              <ProtectedRoute roles={["admin", "librarian", "staff"]}>
+              <ProtectedRoute roles={["librarian", "staff"]}>
                 <ReportsPage />
               </ProtectedRoute>
             }
@@ -345,7 +345,7 @@ function App() {
           <Route
             path="settings"
             element={
-              <ProtectedRoute roles={["admin"]}>
+              <ProtectedRoute roles={["admin", "librarian"]}>
                 <SettingsPage />
               </ProtectedRoute>
             }

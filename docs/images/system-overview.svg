@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" width="960" height="360" role="img" aria-label="OLMS system overview diagram">
+  <style>
+    .box { fill: #f5f7fb; stroke: #1f3b73; stroke-width: 2; rx: 12; ry: 12; }
+    .label { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 18px; fill: #13294b; }
+    .subtitle { font-size: 14px; fill: #465975; }
+    .cylinder { fill: #e9f2ff; stroke: #1f3b73; stroke-width: 2; }
+    .arrow { stroke: #1f3b73; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    .note { font-size: 14px; fill: #1f3b73; font-style: italic; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1f3b73" />
+    </marker>
+  </defs>
+
+  <rect class="box" x="60" y="120" width="220" height="120" />
+  <text class="label" x="170" y="170" text-anchor="middle">React SPA</text>
+  <text class="subtitle" x="170" y="195" text-anchor="middle">frontend/</text>
+
+  <rect class="box" x="360" y="120" width="220" height="120" />
+  <text class="label" x="470" y="170" text-anchor="middle">Express API</text>
+  <text class="subtitle" x="470" y="195" text-anchor="middle">backend/app.js</text>
+
+  <rect class="box" x="660" y="60" width="220" height="100" />
+  <text class="label" x="770" y="105" text-anchor="middle">MongoDB Adapter</text>
+  <text class="subtitle" x="770" y="130" text-anchor="middle">MongoAdapter.js</text>
+
+  <rect class="box" x="660" y="200" width="220" height="100" />
+  <text class="label" x="770" y="245" text-anchor="middle">Offline JSON Adapter</text>
+  <text class="subtitle" x="770" y="270" text-anchor="middle">OfflineMongoAdapter.js</text>
+
+  <path class="arrow" d="M280 180 H360" />
+  <path class="arrow" d="M580 180 Q640 140 660 140" />
+  <path class="arrow" d="M580 180 Q640 220 660 220" />
+
+  <rect class="box" x="660" y="140" width="220" height="80" opacity="0" />
+  <text class="note" x="470" y="90" text-anchor="middle">HTTPS requests</text>
+  <text class="note" x="830" y="170" text-anchor="start">MongoDB Atlas</text>
+  <text class="note" x="830" y="310" text-anchor="start">backend/data/*.json</text>
+  <text class="note" x="470" y="315" text-anchor="middle">Adapter decides storage per env</text>
+</svg>

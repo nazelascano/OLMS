@@ -102,5 +102,35 @@
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mh9aqg4rg1teh"
+  },
+  {
+    "id": "annual_1765696978843_zzg2b6",
+    "name": "Grade 10 Section A 2025",
+    "gradeLevel": "Grade 10",
+    "section": "A",
+    "curriculum": "Junior High",
+    "academicYear": "2025-2026",
+    "description": "",
+    "books": [
+      {
+        "bookId": "book-approve-test",
+        "quantity": 2,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      },
+      {
+        "bookId": "book_1760074423678_t4wrz3dro",
+        "quantity": 1,
+        "copyIds": [],
+        "required": true,
+        "notes": ""
+      }
+    ],
+    "createdAt": "2025-12-14T07:22:58.843Z",
+    "updatedAt": "2025-12-14T07:22:58.845Z",
+    "createdBy": "mj5e5cydi651b",
+    "updatedBy": "mj5e5cydi651b",
+    "_id": "mj5ee4d9nhlpj"
   }
 ]

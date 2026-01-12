@@ -4,11 +4,13 @@ import { School, Email, Phone, Badge, Close } from "@mui/icons-material";
 import toast from "react-hot-toast";
 import { api, authAPI, transactionsAPI } from "../../utils/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import { useNavigate } from "react-router-dom";
 import { resolveEntityAvatar } from "../../utils/media";
 
 const StudentDashboard = () => {
   const { user, updateUserData } = useAuth();
+  const { finesEnabled } = useSettings();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [cancelingId, setCancelingId] = useState(null);
@@ -44,7 +46,7 @@ const StudentDashboard = () => {
     return String(status).toLowerCase();
   };
 
-  const isActiveBorrowStatus = (status) => {
+  const isBorrowedStatus = (status) => {
     const normalized = normalizeStatus(status);
     return normalized === "borrowed" || normalized === "active";
   };
@@ -109,13 +111,13 @@ const StudentDashboard = () => {
     }
   };
 
-  const currentBorrows = transactions.filter(t => isActiveBorrowStatus(t.status));
+  const currentBorrows = transactions.filter(t => isBorrowedStatus(t.status));
   const requests = transactions.filter(t => isPendingRequestStatus(t.status));
   const overdue = transactions.filter(t => {
     try {
       if (!t.dueDate) return false;
       const due = new Date(t.dueDate);
-      return isActiveBorrowStatus(t.status) && due < new Date();
+      return isBorrowedStatus(t.status) && due < new Date();
     } catch (e) { return false; }
   });
 
@@ -125,6 +127,10 @@ const StudentDashboard = () => {
   }).length;
   const currentlyBorrowed = user?.borrowingStats?.currentlyBorrowed ?? currentBorrows.length;
   const pendingRequestsCount = requests.length;
+  const pendingCardLabel = finesEnabled ? "Pending / Overdue" : "Pending Requests";
+  const pendingDisplayValue = finesEnabled
+    ? pendingRequestsCount + overdue.length
+    : pendingRequestsCount;
 
   const handleCancelRequest = async (transactionId) => {
     if (!transactionId) return;
@@ -283,7 +289,7 @@ const StudentDashboard = () => {
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.5, sm: 3 }} divider={<Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' }, borderStyle: 'dashed', borderColor: 'primary.light' }} />}>
                 <Box>
                   <Typography variant="caption" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <School fontSize="inherit" /> Active Borrows
+                    <School fontSize="inherit" /> Borrowed Items
                   </Typography>
                   <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }}>
                     {currentlyBorrowed || 0}
@@ -297,14 +303,16 @@ const StudentDashboard = () => {
                     {pendingRequestsCount}
                   </Typography>
                 </Box>
-                <Box>
-                  <Typography variant="caption" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    Overdue Items
-                  </Typography>
-                  <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }} color={overdue.length > 0 ? 'error.main' : 'text.primary'}>
-                    {overdue.length}
-                  </Typography>
-                </Box>
+                {finesEnabled ? (
+                  <Box>
+                    <Typography variant="caption" color="primary.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      Overdue Items
+                    </Typography>
+                    <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }} color={overdue.length > 0 ? 'error.main' : 'text.primary'}>
+                      {overdue.length}
+                    </Typography>
+                  </Box>
+                ) : null}
               </Stack>
             </Box>
           </Grid>
@@ -334,8 +342,8 @@ const StudentDashboard = () => {
             <Grid item xs={6} sm={4}>
               <Card>
                 <CardContent>
-                  <Typography variant="subtitle2" color="textSecondary">Pending / Overdue</Typography>
-                  <Typography variant="h5">{pendingRequestsCount + overdue.length}</Typography>
+                  <Typography variant="subtitle2" color="textSecondary">{pendingCardLabel}</Typography>
+                  <Typography variant="h5">{pendingDisplayValue}</Typography>
                 </CardContent>
               </Card>
             </Grid>

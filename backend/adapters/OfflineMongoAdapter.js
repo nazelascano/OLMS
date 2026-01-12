@@ -1,6 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 class OfflineMongoAdapter {
   constructor() {
     this.dataDir = path.join(__dirname, '../data');
@@ -15,6 +17,7 @@ class OfflineMongoAdapter {
       annualSets: 'annualSets.json'
     };
     this.initialized = false;
+    this.collectionLocks = new Map();
   }
 
   async connect() {
@@ -116,27 +119,89 @@ class OfflineMongoAdapter {
     }
   }
 
+  async withCollectionLock(collectionName, handler) {
+    if (typeof handler !== 'function') {
+      throw new Error('withCollectionLock requires a handler function');
+    }
+
+    const key = this.collections[collectionName] || collectionName;
+    const previous = this.collectionLocks.get(key) || Promise.resolve();
+    const runPromise = previous
+      .catch(() => {})
+      .then(() => handler());
+
+    const trackingPromise = runPromise
+      .catch(() => {})
+      .finally(() => {
+        if (this.collectionLocks.get(key) === trackingPromise) {
+          this.collectionLocks.delete(key);
+        }
+      });
+
+    this.collectionLocks.set(key, trackingPromise);
+    return runPromise;
+  }
+
   // Collection operations
   async readCollection(collectionName) {
     const fileName = this.collections[collectionName];
     if (!fileName) throw new Error(`Unknown collection: ${collectionName}`);
-    
+
     const filePath = path.join(this.dataDir, fileName);
     try {
-      const data = await fs.readFile(filePath, 'utf8');
-      return JSON.parse(data);
+      return await this.readJsonFileSafely(filePath);
     } catch (error) {
       console.error(`Error reading collection ${collectionName}:`, error);
       return [];
     }
   }
 
+  async readJsonFileSafely(filePath, attempts = 4, initialDelayMs = 10) {
+    let lastError = null;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        const raw = await fs.readFile(filePath, 'utf8');
+        const trimmed = typeof raw === 'string' ? raw.trim() : '';
+        if (!trimmed) {
+          return [];
+        }
+        return JSON.parse(trimmed);
+      } catch (error) {
+        lastError = error;
+        if (error && error.code === 'ENOENT') {
+          return [];
+        }
+        const isParseError = error instanceof SyntaxError || /JSON/i.test(error?.message || '');
+        if (!isParseError || attempt === attempts - 1) {
+          throw error;
+        }
+        const delay = initialDelayMs * (attempt + 1);
+        await sleep(delay);
+      }
+    }
+    throw lastError;
+  }
+
   async writeCollection(collectionName, data) {
     const fileName = this.collections[collectionName];
     if (!fileName) throw new Error(`Unknown collection: ${collectionName}`);
-    
+
     const filePath = path.join(this.dataDir, fileName);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+    const tempPath = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+    const payload = JSON.stringify(data, null, 2);
+
+    try {
+      await fs.writeFile(tempPath, payload, 'utf8');
+      await fs.rename(tempPath, filePath);
+    } catch (error) {
+      console.error(`Error writing collection ${collectionName}:`, error);
+      try {
+        await fs.unlink(tempPath);
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+      throw error;
+    }
   }
 
   // MongoDB-like operations
@@ -169,65 +234,68 @@ class OfflineMongoAdapter {
   }
 
   async insertIntoCollection(collectionName, document) {
-    const data = await this.readCollection(collectionName);
-    
-    // Add _id if not present
-    if (!document._id) {
-      document._id = this.generateObjectId();
-    }
-    
-    // Add timestamps
-    document.createdAt = document.createdAt || new Date();
-    document.updatedAt = new Date();
-    
-    data.push(document);
-    await this.writeCollection(collectionName, data);
-    
-    return document;
+    return this.withCollectionLock(collectionName, async () => {
+      const data = await this.readCollection(collectionName);
+
+      if (!document._id) {
+        document._id = this.generateObjectId();
+      }
+
+      document.createdAt = document.createdAt || new Date();
+      document.updatedAt = new Date();
+
+      data.push(document);
+      await this.writeCollection(collectionName, data);
+
+      return document;
+    });
   }
 
   async updateInCollection(collectionName, query, update) {
-    const data = await this.readCollection(collectionName);
-    let updated = null;
-    
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      const matches = Object.keys(query).every(key => item[key] === query[key]);
-      
-      if (matches) {
-        // Merge update into existing item
-        data[i] = { ...item, ...update, updatedAt: new Date() };
-        updated = data[i];
-        break;
+    return this.withCollectionLock(collectionName, async () => {
+      const data = await this.readCollection(collectionName);
+      let updated = null;
+
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        const matches = Object.keys(query).every(key => item[key] === query[key]);
+
+        if (matches) {
+          data[i] = { ...item, ...update, updatedAt: new Date() };
+          updated = data[i];
+          break;
+        }
       }
-    }
-    
-    if (updated) {
-      await this.writeCollection(collectionName, data);
-    }
-    
-    return updated;
+
+      if (updated) {
+        await this.writeCollection(collectionName, data);
+      }
+
+      return updated;
+    });
   }
 
   async deleteFromCollection(collectionName, query) {
-    const data = await this.readCollection(collectionName);
-    let deleted = null;
-    
-    for (let i = 0; i < data.length; i++) {
-      const item = data[i];
-      const matches = Object.keys(query).every(key => item[key] === query[key]);
-      
-      if (matches) {
-        deleted = data.splice(i, 1)[0];
-        break;
+    return this.withCollectionLock(collectionName, async () => {
+      const data = await this.readCollection(collectionName);
+      let deleted = null;
+
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        const matches = Object.keys(query).every(key => item[key] === query[key]);
+
+        if (matches) {
+          deleted = data.splice(i, 1)[0];
+          break;
+        }
       }
-    }
-    
-    if (deleted) {
-      await this.writeCollection(collectionName, data);
-    }
-    
-    return deleted;
+
+      if (deleted) {
+        await this.writeCollection(collectionName, data);
+      }
+
+      return deleted;
+    });
   }
 
   // User-specific methods (for compatibility with existing code)
@@ -286,17 +354,19 @@ class OfflineMongoAdapter {
     };
 
     // Keep most recent 1000 entries to avoid runaway file growth
-    const logs = await this.readCollection('audit');
-    logs.push(entry);
+    return this.withCollectionLock('audit', async () => {
+      const logs = await this.readCollection('audit');
+      logs.push(entry);
 
-    logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    const MAX_LOGS = 1000;
-    const trimmed = logs.slice(-MAX_LOGS);
+      const MAX_LOGS = 1000;
+      const trimmed = logs.slice(-MAX_LOGS);
 
-    await this.writeCollection('audit', trimmed);
+      await this.writeCollection('audit', trimmed);
 
-    return entry;
+      return entry;
+    });
   }
 
   async testConnection() {

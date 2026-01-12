@@ -33,6 +33,7 @@ import {
   FilterList,
   CloudUpload,
   QrCode2,
+  Sort,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -43,6 +44,7 @@ import { PageLoading } from "../../components/Loading";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
 import { addActionButtonSx, importActionButtonSx, floatingAddFabSx } from "../../theme/actionButtons";
+import { formatAuthorsList } from "../../utils/authorDisplay";
 
 const sanitizeFilename = (value, fallback) => {
   if (!value) {
@@ -102,6 +104,17 @@ const BooksList = () => {
 
   const [categories, setCategories] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [sortByField, setSortByField] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
+
+  const sortOptions = [
+    { value: "title", label: "Title" },
+    { value: "availableCopiesCount", label: "Available Copies" },
+  ];
+
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
 
   const computeAvailableCopies = useCallback((book) => {
     if (Array.isArray(book?.copies) && book.copies.length > 0) {
@@ -120,6 +133,8 @@ const BooksList = () => {
     return 0;
   }, []);
 
+  const getAuthorsDisplay = useCallback((book) => formatAuthorsList(book), []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -130,11 +145,14 @@ const BooksList = () => {
   const fetchBooks = useCallback(
     async (override = {}) => {
       const pageToFetch = override.page ?? page;
-  const limitToFetch = override.limit ?? rowsPerPage;
-  const limitValue = typeof limitToFetch === "string" ? limitToFetch.toLowerCase() : limitToFetch;
-  const isAllMode = limitValue === "all" || limitValue === -1;
+      const limitToFetch = override.limit ?? rowsPerPage;
+      const limitValue =
+        typeof limitToFetch === "string" ? limitToFetch.toLowerCase() : limitToFetch;
+      const isAllMode = limitValue === "all" || limitValue === -1;
       const categoryToFetch = override.category ?? categoryFilter;
       const searchToFetch = override.search ?? debouncedSearchTerm;
+      const sortByToFetch = override.sortBy ?? sortByField;
+      const sortOrderToFetch = override.sortOrder ?? sortOrder;
 
       try {
         setLoading(true);
@@ -144,6 +162,8 @@ const BooksList = () => {
         };
         if (categoryToFetch) params.category = categoryToFetch;
         if (searchToFetch) params.search = searchToFetch;
+        if (sortByToFetch) params.sortBy = sortByToFetch;
+        if (sortOrderToFetch) params.sortOrder = sortOrderToFetch;
 
         const response = await booksAPI.getAll(params);
         const payload = response.data || {};
@@ -159,7 +179,7 @@ const BooksList = () => {
         setLoading(false);
       }
     },
-    [page, rowsPerPage, categoryFilter, debouncedSearchTerm]
+    [page, rowsPerPage, categoryFilter, debouncedSearchTerm, sortByField, sortOrder]
   );
 
   const fetchCategories = async () => {
@@ -248,9 +268,36 @@ const BooksList = () => {
     await downloadBarcodesForBook(bookToDownload);
   };
 
+  const handleStudentBorrowRequest = useCallback(
+    (book) => {
+      if (!book) return;
+      const bookId = book.id || book._id;
+      if (!bookId) {
+        toast.error("Unable to identify the selected book");
+        return;
+      }
+
+      navigate("/transactions/request", {
+        state: {
+          from: "/books",
+          prefillBook: {
+            bookId,
+            title: book.title || "Untitled",
+            author: getAuthorsDisplay(book),
+            isbn: book.isbn || "",
+            category: book.category || "",
+            publisher: book.publisher || "",
+            availableCopies: computeAvailableCopies(book),
+          },
+        },
+      });
+    },
+    [navigate, computeAvailableCopies, getAuthorsDisplay],
+  );
+
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearchTerm, categoryFilter]);
+  }, [debouncedSearchTerm, categoryFilter, sortByField, sortOrder]);
 
   useEffect(() => {
     if (!loading && books.length === 0 && totalBooks > 0 && page > 0) {
@@ -338,8 +385,43 @@ const BooksList = () => {
                 </Select>
               </FormControl>
 
+              <FormControl fullWidth size="small">
+                <InputLabel>Sort By</InputLabel>
+                <Select
+                  label="Sort By"
+                  value={sortByField}
+                  onChange={(event) => setSortByField(event.target.value)}
+                >
+                  {sortOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Sort />}
+                onClick={toggleSortOrder}
+                sx={{ textTransform: "none" }}
+              >
+                {sortOrder === "asc" ? "Ascending" : "Descending"}
+              </Button>
+
               <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
-                <Button size="small" onClick={() => { setCategoryFilter(""); handleCloseFilters(); }}>Clear</Button>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setCategoryFilter("");
+                    setSortByField("title");
+                    setSortOrder("asc");
+                    handleCloseFilters();
+                  }}
+                >
+                  Clear
+                </Button>
                 <Button size="small" variant="contained" onClick={handleCloseFilters}>Apply</Button>
               </Box>
             </Box>
@@ -396,7 +478,7 @@ const BooksList = () => {
                         </IconButton>
                       ) : null}
                     </Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>by {book.author}</Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>by {getAuthorsDisplay(book)}</Typography>
                     <Typography variant="body2" gutterBottom>ISBN: {book.isbn}</Typography>
                     <Typography variant="body2" gutterBottom>Category: {book.category}</Typography>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
@@ -406,8 +488,17 @@ const BooksList = () => {
                       </Typography>
                     </Box>
                   </CardContent>
-                  <CardActions>
+                  <CardActions sx={{ justifyContent: "space-between", alignItems: "center", gap: 1 }}>
                     <Button size="small" startIcon={<Visibility />} onClick={() => navigate(`/books/${book.id}`)}>View Details</Button>
+                    {isStudent && availableCopies > 0 && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => handleStudentBorrowRequest(book)}
+                      >
+                        Request Borrow
+                      </Button>
+                    )}
                   </CardActions>
                 </Card>
               </Grid>

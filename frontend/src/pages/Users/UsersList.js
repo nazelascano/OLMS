@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -29,6 +29,7 @@ import {
   Select,
   Avatar,
   ListItemIcon,
+  Alert,
 } from "@mui/material";
 import {
   Search,
@@ -43,7 +44,7 @@ import {
   Person,
   LockReset,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, usersAPI } from "../../utils/api";
 import { resolveEntityAvatar } from "../../utils/media";
@@ -52,14 +53,41 @@ import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
 import { addActionButtonSx, floatingAddFabSx } from "../../theme/actionButtons";
 
+const MIN_PASSWORD_LENGTH = 6;
+const ROLE_OPTIONS = ["admin", "librarian", "staff", "student"];
+
+const deriveRoleFilterFromSearch = (search) => {
+  if (typeof search !== "string") {
+    return "";
+  }
+  const params = new URLSearchParams(search);
+  const rawRole = (params.get("role") || "").toLowerCase();
+  return ROLE_OPTIONS.includes(rawRole) ? rawRole : "";
+};
+
+const deriveResetPasswordError = (error) => {
+  const fallback = "Failed to reset password. Please try again.";
+  if (!error) {
+    return fallback;
+  }
+  if (error.response) {
+    return error.response.data?.message || fallback;
+  }
+  if (error.request) {
+    return "Unable to reach the server. Please check your connection.";
+  }
+  return error.message || fallback;
+};
+
 const UsersList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission, hasRole } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState(() => deriveRoleFilterFromSearch(location.search));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -74,8 +102,24 @@ const UsersList = () => {
   const [passwordDialogUser, setPasswordDialogUser] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordDialogErrors, setPasswordDialogErrors] = useState(() => ({
+    field: "",
+    general: "",
+  }));
+
+  const resetPasswordDialogState = useCallback(() => {
+    setPasswordDialogErrors({ field: "", general: "" });
+    setNewPassword("");
+  }, []);
+
+  const closePasswordDialog = useCallback(() => {
+    setPasswordDialogOpen(false);
+    setPasswordDialogUser(null);
+    resetPasswordDialogState();
+  }, [resetPasswordDialogState]);
 
   const [menuAnchor, setMenuAnchor] = useState(null);
+  const queryInitializedRef = useRef(false);
 
   // Compact filter menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
@@ -83,14 +127,48 @@ const UsersList = () => {
   const openFilters = (e) => setFilterAnchorEl(e.currentTarget);
   const closeFilters = () => setFilterAnchorEl(null);
 
-  const roles = ["admin", "librarian", "staff", "student"];
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
     }, 400);
     return () => clearTimeout(handler);
   }, [searchTerm]);
+
+  useEffect(() => {
+    const nextRole = deriveRoleFilterFromSearch(location.search);
+    setRoleFilter((prev) => (prev === nextRole ? prev : nextRole));
+    queryInitializedRef.current = true;
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!queryInitializedRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(location.search || "");
+    let changed = false;
+
+    if (!roleFilter) {
+      if (params.has("role")) {
+        params.delete("role");
+        changed = true;
+      }
+    } else if (params.get("role") !== roleFilter) {
+      params.set("role", roleFilter);
+      changed = true;
+    }
+
+    if (changed) {
+      const nextSearch = params.toString();
+      navigate(
+        {
+          pathname: location.pathname,
+          search: nextSearch ? `?${nextSearch}` : "",
+        },
+        { replace: true },
+      );
+    }
+  }, [roleFilter, location.pathname, location.search, navigate]);
 
   const loadUsers = useCallback(
     async (override = {}) => {
@@ -132,6 +210,24 @@ const UsersList = () => {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  // Close user action menu if its anchor is no longer part of the DOM (e.g., during data reloads)
+  useEffect(() => {
+    if (!menuAnchor) return;
+    const anchorDisconnected = typeof menuAnchor.isConnected === "boolean" && !menuAnchor.isConnected;
+    if (loading || anchorDisconnected) {
+      setMenuAnchor(null);
+    }
+  }, [loading, menuAnchor]);
+
+  // Clear filter menu anchor whenever it becomes detached for the same reason as above
+  useEffect(() => {
+    if (!filterAnchorEl) return;
+    const anchorDisconnected = typeof filterAnchorEl.isConnected === "boolean" && !filterAnchorEl.isConnected;
+    if (loading || anchorDisconnected) {
+      setFilterAnchorEl(null);
+    }
+  }, [loading, filterAnchorEl]);
 
   const getUserId = (user) => user?._id || user?.id || user?.userId || null;
 
@@ -274,13 +370,21 @@ const UsersList = () => {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
             PaperProps={{ sx: { p: 2, minWidth: 220 } }}
+            disableAutoFocus
+            disableAutoFocusItem
+            disableEnforceFocus
           >
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Role</InputLabel>
-                <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} label="Role">
+                <Select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  label="Role"
+                  MenuProps={{ disablePortal: true, disableScrollLock: true }}
+                >
                   <MenuItem value="">All Roles</MenuItem>
-                  {roles.map((role) => (
+                  {ROLE_OPTIONS.map((role) => (
                     <MenuItem key={role} value={role}>
                       {role.charAt(0).toUpperCase() + role.slice(1)}
                     </MenuItem>
@@ -461,7 +565,7 @@ const UsersList = () => {
             onClick={() => {
               if (selectedUser) {
                 setPasswordDialogUser(selectedUser);
-                setNewPassword("");
+                resetPasswordDialogState();
                 setPasswordDialogOpen(true);
               }
               handleMenuClose(false);
@@ -520,35 +624,39 @@ const UsersList = () => {
 
       <Dialog
         open={passwordDialogOpen}
-        onClose={() => {
-          setPasswordDialogOpen(false);
-          setPasswordDialogUser(null);
-          setNewPassword("");
-        }}
+        onClose={closePasswordDialog}
       >
         <DialogTitle>Reset Password</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Enter a new password for {passwordDialogUser?.firstName} {passwordDialogUser?.lastName}. The user will be required to use this password on next login.
           </Typography>
+          {passwordDialogErrors.general && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {passwordDialogErrors.general}
+            </Alert>
+          )}
           <TextField
             autoFocus
             fullWidth
             type="password"
             label="New Password"
             value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            helperText="Minimum of 6 characters."
+            onChange={(event) => {
+              setNewPassword(event.target.value);
+              setPasswordDialogErrors({ field: "", general: "" });
+            }}
+            error={Boolean(passwordDialogErrors.field)}
+            helperText={
+              passwordDialogErrors.field ||
+              `Minimum of ${MIN_PASSWORD_LENGTH} characters.`
+            }
             disabled={passwordSaving}
           />
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => {
-              setPasswordDialogOpen(false);
-              setPasswordDialogUser(null);
-              setNewPassword("");
-            }}
+            onClick={closePasswordDialog}
             disabled={passwordSaving}
           >
             Cancel
@@ -558,26 +666,29 @@ const UsersList = () => {
               const targetUser = passwordDialogUser || selectedUser;
               const userId = getUserId(targetUser);
               if (!userId) {
-                setPasswordDialogOpen(false);
-                setPasswordDialogUser(null);
+                closePasswordDialog();
                 return;
               }
               const trimmed = newPassword.trim();
-              if (trimmed.length < 6) {
-                toast.error("Password must be at least 6 characters long.");
+              if (trimmed.length < MIN_PASSWORD_LENGTH) {
+                setPasswordDialogErrors({
+                  field: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
+                  general: "",
+                });
                 return;
               }
               try {
                 setPasswordSaving(true);
+                setPasswordDialogErrors({ field: "", general: "" });
                 await usersAPI.resetPassword(userId, trimmed);
                 toast.success("Password reset successfully.");
-                setPasswordDialogOpen(false);
-                setPasswordDialogUser(null);
+                closePasswordDialog();
                 setSelectedUser(null);
-                setNewPassword("");
               } catch (error) {
                 console.error("Failed to reset password:", error);
-                toast.error("Failed to reset password");
+                const message = deriveResetPasswordError(error);
+                toast.error(message);
+                setPasswordDialogErrors({ field: "", general: message });
               } finally {
                 setPasswordSaving(false);
               }

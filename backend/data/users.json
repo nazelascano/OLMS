@@ -20,15 +20,15 @@
       "fineBalance": 0
     },
     "borrowingStats": {
-      "totalBorrowed": 18,
-      "currentlyBorrowed": 17,
+      "totalBorrowed": 22,
+      "currentlyBorrowed": 21,
       "totalFines": 0,
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2025-12-11T23:10:40.922Z",
-    "lastLoginAt": "2025-12-11T23:06:48.990Z",
-    "lastActivityAt": "2025-12-11T23:10:40.921Z",
+    "updatedAt": "2026-01-09T05:47:44.273Z",
+    "lastLoginAt": "2026-01-09T05:12:12.010Z",
+    "lastActivityAt": "2026-01-09T05:47:44.273Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -73,12 +73,15 @@
     "password": "$2b$10$aHwwcdlhGetHuibADO8LPeZYX9i9orVvTpqMP91FqwezO.HZYyEPq",
     "_id": "mgniuxw0uslme",
     "createdAt": "2025-10-12T09:48:46.260Z",
-    "updatedAt": "2025-11-26T12:34:15.795Z",
+    "updatedAt": "2025-12-16T06:21:26.798Z",
     "lastLoginAt": "2025-10-12T09:49:31.891Z",
     "lastActivityAt": "2025-10-12T09:49:52.776Z",
     "mustChangePassword": true,
     "schoolYear": "2025-2026",
-    "academicYear": "2025-2026"
+    "academicYear": "2025-2026",
+    "failedLoginAttempts": 3,
+    "lastFailedLoginAt": "2025-12-16T06:21:26.796Z",
+    "lockedUntil": null
   },
   {
     "firstName": "Mary15",
@@ -155,9 +158,9 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-11-03T03:39:53.477Z",
-    "updatedAt": "2025-11-26T12:34:15.804Z",
+    "updatedAt": "2026-01-09T06:36:52.206Z",
     "createdBy": "mgnhicbwhxfy9",
-    "lastLoginAt": "2025-11-03T03:40:06.897Z",
+    "lastLoginAt": "2026-01-09T06:28:18.696Z",
     "profile": {
       "phone": "",
       "address": "",
@@ -176,17 +179,19 @@
       "totalFines": 0
     },
     "_id": "mhildatik9wdo",
-    "lastActivityAt": "2025-11-03T03:47:04.225Z"
+    "lastActivityAt": "2026-01-09T06:36:52.204Z",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null
   },
   {
-    "firstName": "Mary",
+    "firstName": "Clarence ",
     "lastName": "Smith",
     "middleName": "Cruz",
     "email": "mary.smith@student.example.edu",
     "phoneNumber": "9111222333",
     "lrn": "123456789013",
     "grade": "Grade 10",
-    "section": "B",
+    "section": "",
     "barangay": "Barangay 2",
     "municipality": "Manila",
     "province": "Metro Manila",
@@ -195,20 +200,39 @@
     "parentPhone": "9444555666",
     "username": "123456789013",
     "libraryCardNumber": "LIB-25-0022",
-    "password": "$2b$10$6fNp8s/HAn5T3tufJme93.GZjo8ajLWyOT2EpIVmzBhXzJMTf5L.G",
+    "password": "$2b$10$WTAapQ9/mvaEiAM3FoGvmOiuVia38Y4OqS2hYQjud539yjtz7NaOi",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
-      "totalBorrowed": 0,
-      "currentlyBorrowed": 0,
+      "totalBorrowed": 7,
+      "currentlyBorrowed": 2,
       "totalFines": 0,
-      "totalReturned": 0
+      "totalReturned": 5
     },
     "_id": "mhiohn4smj18h",
     "createdAt": "2025-11-03T05:07:14.908Z",
-    "updatedAt": "2025-11-26T12:34:15.805Z",
+    "updatedAt": "2026-01-09T06:49:06.923Z",
     "schoolYear": "2025-2026",
-    "academicYear": "2025-2026"
+    "academicYear": "2025-2026",
+    "lastLoginAt": "2026-01-09T06:37:27.608Z",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "lastActivityAt": "2026-01-09T06:49:06.922Z",
+    "preferences": {
+      "studentDashboard": {
+        "welcomeDismissed": true
+      }
+    },
+    "avatar": {
+      "url": "/uploads/avatars/avatar-1767937221184-355748037.jpg",
+      "filename": "avatar-1767937221184-355748037.jpg",
+      "mimeType": "image/jpeg",
+      "size": 135492,
+      "uploadedAt": "2026-01-09T05:40:21.200Z"
+    },
+    "avatarUrl": "/uploads/avatars/avatar-1767937221184-355748037.jpg",
+    "updatedBy": "mhiohn4smj18h",
+    "gradeLevel": "Grade 10"
   },
   {
     "firstName": "Mary1",
@@ -227,23 +251,23 @@
     "parentPhone": "9987654321",
     "username": "123456789014",
     "libraryCardNumber": "LIB-25-0023",
-    "password": "$2b$10$lkqZXEuwE2wOftBMjKFMQuDURr/0j.dNEzvFBeqSZwrPciORzA6ja",
+    "password": "$2b$10$wp/5ZDy4zIo.pmfKctjJI.J3fWh82DFA/42vON/RWtrW7FRcuoeVy",
     "role": "student",
     "isActive": true,
     "borrowingStats": {
-      "totalBorrowed": 2,
-      "currentlyBorrowed": 2,
+      "totalBorrowed": 7,
+      "currentlyBorrowed": 4,
       "totalFines": 0,
-      "totalReturned": 0
+      "totalReturned": 3
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-12-11T05:44:45.475Z",
+    "updatedAt": "2025-12-28T13:08:29.855Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
-    "lastLoginAt": "2025-12-11T05:43:45.810Z",
-    "lastActivityAt": "2025-12-11T05:44:45.474Z",
-    "failedLoginAttempts": 0,
+    "lastLoginAt": "2025-12-14T06:54:35.461Z",
+    "lastActivityAt": "2025-12-14T07:30:12.298Z",
+    "failedLoginAttempts": 4,
     "lockedUntil": null,
     "avatar": {
       "url": "/uploads/avatars/avatar-1765167450651-207326744.jpg",
@@ -257,7 +281,8 @@
       "studentDashboard": {
         "welcomeDismissed": true
       }
-    }
+    },
+    "lastFailedLoginAt": "2025-12-28T13:08:29.854Z"
   },
   {
     "firstName": "Mary2",
@@ -676,38 +701,6 @@
     "updatedAt": "2025-11-26T12:34:15.830Z"
   },
   {
-    "firstName": "Carl",
-    "lastName": "Yap",
-    "middleName": "Anastacio",
-    "email": "carl.yap@student.example.edu",
-    "phoneNumber": "09835638278",
-    "lrn": "111335090045",
-    "grade": "Grade 12",
-    "section": "B",
-    "barangay": "Tulay",
-    "municipality": "Odiongan",
-    "province": "Romblon",
-    "fullAddress": "3 Sampaguita St Tulay",
-    "parentGuardianName": "Odiongan",
-    "parentPhone": "Romblon",
-    "username": "111335090045",
-    "libraryCardNumber": "LIB-25-0037",
-    "schoolYear": "2025-2026",
-    "academicYear": "2025-2026",
-    "password": "$2b$10$dsyJwnlLPiZkrOgfh2WRDOzpkmvlGSjwyuwb8AHPPaC/Ll9iMyo/a",
-    "role": "student",
-    "isActive": true,
-    "borrowingStats": {
-      "totalBorrowed": 0,
-      "currentlyBorrowed": 0,
-      "totalFines": 0,
-      "totalReturned": 0
-    },
-    "_id": "mhj2qv218sgc0",
-    "createdAt": "2025-11-03T11:46:19.705Z",
-    "updatedAt": "2025-11-26T12:34:15.832Z"
-  },
-  {
     "firstName": "Maria",
     "lastName": "Gavis",
     "middleName": "Famisan",
@@ -773,43 +766,6 @@
     "updatedBy": "mgnhicbwhxfy9"
   },
   {
-    "libraryCardNumber": "LIB-25-0040",
-    "username": "5986",
-    "firstName": "Aidelyn",
-    "lastName": "Manzalay",
-    "middleName": "Falsia",
-    "email": "aidelynmanzalay@gmail.com",
-    "phoneNumber": "09289691283",
-    "lrn": "5986",
-    "grade": "Grade 12",
-    "section": "A",
-    "curriculum": "",
-    "schoolYear": "2025-2026",
-    "academicYear": "2025-2026",
-    "barangay": "Linao",
-    "municipality": "Calatrava",
-    "province": "Romblon",
-    "fullAddress": "",
-    "parentGuardianName": "Nazel Ascaño",
-    "parentOccupation": "",
-    "parentAddress": "",
-    "parentPhone": "0949981659",
-    "parentEmail": "",
-    "role": "student",
-    "isActive": true,
-    "borrowingStats": {
-      "totalBorrowed": 0,
-      "currentlyBorrowed": 0,
-      "totalFines": 0,
-      "totalReturned": 0
-    },
-    "password": "$2b$10$o1HXVdov2xfH/qPLQQknNOePp37lwM7ZuT.tRDaDZvNKGvLxP/z3u",
-    "_id": "micosx98s2u1z",
-    "createdAt": "2025-11-24T05:09:06.525Z",
-    "updatedAt": "2025-11-26T12:34:15.838Z",
-    "updatedBy": "mgnhicbwhxfy9"
-  },
-  {
     "username": "nascano",
     "email": null,
     "password": "$2b$10$7vonQA8YTuoVGdp0B/jxWetiFdUMc3P1HjLFYcLVrJAf2n5W5Ww7a",
@@ -820,9 +776,9 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-12-11T23:10:38.854Z",
-    "updatedAt": "2025-12-12T00:42:05.707Z",
+    "updatedAt": "2025-12-16T06:21:36.765Z",
     "createdBy": "mgnhicbwhxfy9",
-    "lastLoginAt": "2025-12-12T00:41:34.123Z",
+    "lastLoginAt": "2025-12-16T06:21:32.237Z",
     "profile": {
       "phone": "",
       "address": "",
@@ -843,6 +799,153 @@
     "_id": "mj21x9tz8681l",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2025-12-12T00:42:05.706Z"
+    "lastActivityAt": "2025-12-16T06:21:36.761Z",
+    "lastFailedLoginAt": "2025-12-14T07:26:22.504Z"
+  },
+  {
+    "username": "staffniel",
+    "email": null,
+    "password": "$2b$10$FfDqUoz0LjVk6mg1v9BT5OuDe/Yj2C0WAq4rDoXvIMQXyd8sIFcb.",
+    "firstName": "Niel",
+    "lastName": "Insigne",
+    "role": "staff",
+    "curriculum": null,
+    "gradeLevel": null,
+    "isActive": true,
+    "createdAt": "2025-12-14T05:24:23.901Z",
+    "updatedAt": "2026-01-09T06:47:51.075Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "lastLoginAt": "2026-01-09T05:47:50.796Z",
+    "profile": {
+      "phone": "",
+      "address": "",
+      "dateOfBirth": null
+    },
+    "library": {
+      "cardNumber": "staffniel",
+      "membershipDate": "2025-12-14T05:24:23.901Z",
+      "borrowingLimit": 10,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalReturned": 0,
+      "totalFines": 0
+    },
+    "_id": "mj5a5mg4ts8iv",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "lastActivityAt": "2026-01-09T06:47:51.074Z",
+    "lastFailedLoginAt": "2025-12-16T06:22:14.153Z"
+  },
+  {
+    "username": "librarianniel",
+    "email": null,
+    "password": "$2b$10$Um79072o82Bk2M.I0EJ66e5QK80spVf2v8aqwFoWmpYhDp3UFDxs.",
+    "firstName": "Niel",
+    "lastName": "Insigne",
+    "role": "librarian",
+    "curriculum": null,
+    "gradeLevel": null,
+    "isActive": true,
+    "createdAt": "2025-12-14T07:16:10.068Z",
+    "updatedAt": "2026-01-09T05:15:10.324Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "lastLoginAt": "2025-12-14T07:24:01.317Z",
+    "profile": {
+      "phone": "",
+      "address": "",
+      "dateOfBirth": null
+    },
+    "library": {
+      "cardNumber": "librarianniel",
+      "membershipDate": "2025-12-14T07:16:10.068Z",
+      "borrowingLimit": 10,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalReturned": 0,
+      "totalFines": 0
+    },
+    "_id": "mj5e5cydi651b",
+    "failedLoginAttempts": 20,
+    "lockedUntil": "2026-01-09T05:30:10.323Z",
+    "lastActivityAt": "2025-12-14T07:28:57.635Z",
+    "lastFailedLoginAt": "2026-01-09T05:15:10.323Z"
+  },
+  {
+    "libraryCardNumber": "LIB-25-0040",
+    "username": "234567887654",
+    "firstName": "sdfghj",
+    "lastName": "ikj",
+    "middleName": "sdfghj",
+    "email": "onhs-olms@example.com",
+    "phoneNumber": "09123456789",
+    "lrn": "234567887654",
+    "grade": "Grade 8",
+    "section": "Rose",
+    "curriculum": "Basic Education Program(BEP)",
+    "schoolYear": "2025-2026",
+    "academicYear": "2025-2026",
+    "barangay": "",
+    "municipality": "",
+    "province": "",
+    "fullAddress": "Brgy. Liwanag, Odiongan, Romblon",
+    "parentGuardianName": "",
+    "parentOccupation": "",
+    "parentAddress": "",
+    "parentPhone": "",
+    "parentEmail": "",
+    "role": "student",
+    "isActive": true,
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalFines": 0,
+      "totalReturned": 0
+    },
+    "password": "$2b$10$8yAkvpCROfY9wzUJoJLx9eC4F4cly1ODscYY.gUzazCqkHBnzcexW",
+    "_id": "mjmhruucnccx0",
+    "createdAt": "2025-12-26T06:29:43.524Z",
+    "updatedAt": "2025-12-26T06:29:43.524Z"
+  },
+  {
+    "libraryCardNumber": "LIB-26-0001",
+    "username": "111234567890",
+    "firstName": "Ella",
+    "lastName": "Calay",
+    "middleName": "Fetalver",
+    "email": "ellacalay@gmail.com",
+    "phoneNumber": "09157096401",
+    "lrn": "111234567890",
+    "grade": "Grade 10",
+    "section": "Section A",
+    "curriculum": "Special Science Class(SSC)",
+    "schoolYear": "2026-2027",
+    "academicYear": "2026-2027",
+    "barangay": "Canduyong",
+    "municipality": "Odiongan",
+    "province": "Romblon",
+    "fullAddress": "Canduyong, Odiongan, Romblon",
+    "parentGuardianName": "Maricel F. Vicente",
+    "parentOccupation": "",
+    "parentAddress": "",
+    "parentPhone": "09994562675",
+    "parentEmail": "",
+    "role": "student",
+    "isActive": true,
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalFines": 0,
+      "totalReturned": 0
+    },
+    "password": "$2b$10$ZFVGu8IajLNPKmngcG3STe9vJP75m/DQqeNQpCSOEg/BIzJOCX4me",
+    "_id": "mk6fforrpn8l9",
+    "createdAt": "2026-01-09T05:19:40.071Z",
+    "updatedAt": "2026-01-09T05:19:40.071Z"
   }
 ]

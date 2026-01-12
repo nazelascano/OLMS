@@ -1,5 +1,5 @@
 const express = require('express');
-const { verifyToken, requireAdmin, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
+const { verifyToken, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
 const { invalidateSettingsCache } = require('../utils/settingsCache');
 const {
     DEFAULT_CURRICULA,
@@ -87,8 +87,8 @@ const applySettingsUpdates = async (dbAdapter, userId, updates = []) => {
     }
 };
 
-// Get all settings (Admin only)
-router.get('/', verifyToken, requireAdmin, async(req, res) => {
+// Get all settings (Librarian+)
+router.get('/', verifyToken, requireLibrarian, async(req, res) => {
     try {
         let settings = await req.dbAdapter.findInCollection('settings', {});
 
@@ -138,7 +138,7 @@ router.get('/library', async(req, res) => {
     }
 });
 
-router.get('/borrowing-rules', verifyToken, requireLibrarian, async(req, res) => {
+router.get('/borrowing-rules', verifyToken, async(req, res) => {
     try {
         const settings = await req.dbAdapter.findInCollection('settings', { category: LIBRARY_CATEGORY });
         const index = settings.reduce((acc, setting) => {
@@ -149,15 +149,13 @@ router.get('/borrowing-rules', verifyToken, requireLibrarian, async(req, res) =>
         const response = {
             maxBooksPerTransaction: toNumber(index.MAX_BOOKS_PER_TRANSACTION, 10),
             maxBorrowDays: toNumber(index.MAX_BORROW_DAYS, 14),
-            maxRenewals: toNumber(index.MAX_RENEWALS, 2),
             finePerDay: toNumber(index.FINE_PER_DAY, 5),
             gracePeriodDays: toNumber(index.GRACE_PERIOD_DAYS, 0),
             maxFineAmount: toNumber(index.MAX_FINE_AMOUNT, 0),
             reservationPeriodDays: toNumber(index.RESERVATION_PERIOD_DAYS, 3),
             enableFines: toBoolean(index.ENABLE_FINES, true),
             annualBorrowingEnabled: toBoolean(index.ANNUAL_BORROWING_ENABLED, true),
-            overnightBorrowingEnabled: toBoolean(index.OVERNIGHT_BORROWING_ENABLED, false),
-            allowRenewalsWithOverdue: toBoolean(index.ALLOW_RENEWALS_WITH_OVERDUE, false)
+            overnightBorrowingEnabled: toBoolean(index.OVERNIGHT_BORROWING_ENABLED, false)
         };
 
         res.json(response);
@@ -171,28 +169,18 @@ router.get('/notifications', verifyToken, requireLibrarian, async(req, res) => {
     try {
         const setting = await req.dbAdapter.findOneInCollection('settings', { id: 'NOTIFICATION_SETTINGS' });
         const defaults = {
-            emailNotifications: true,
-            smsNotifications: false,
             dueDateReminders: true,
             overdueNotifications: true,
             reservationNotifications: true,
+            returnNotifications: true,
             reminderDaysBefore: 3,
-            maxReminders: 3,
-            emailTemplate: {
-                dueDate: '',
-                overdue: '',
-                reservation: ''
-            }
+            maxReminders: 3
         };
 
         const value = setting?.value || {};
         const response = {
             ...defaults,
-            ...value,
-            emailTemplate: {
-                ...defaults.emailTemplate,
-                ...(value.emailTemplate || {})
-            }
+            ...value
         };
 
         res.json(response);
@@ -202,7 +190,7 @@ router.get('/notifications', verifyToken, requireLibrarian, async(req, res) => {
     }
 });
 
-router.get('/user-attributes', verifyToken, requireLibrarian, async(req, res) => {
+router.get('/user-attributes', verifyToken, async(req, res) => {
     try {
         const [curriculaSetting, gradeLevelsSetting, gradeStructureSetting] = await Promise.all([
             req.dbAdapter.findOneInCollection('settings', { id: 'USER_CURRICULA' }),
@@ -264,7 +252,7 @@ router.get('/system', verifyToken, requireLibrarian, async(req, res) => {
     }
 });
 
-router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-library'), async(req, res) => {
+router.put('/library', verifyToken, requireLibrarian, logAction('UPDATE', 'settings-library'), async(req, res) => {
     try {
         const {
             libraryName = '',
@@ -314,34 +302,30 @@ router.put('/library', verifyToken, requireAdmin, logAction('UPDATE', 'settings-
     }
 });
 
-router.put('/borrowing-rules', verifyToken, requireAdmin, logAction('UPDATE', 'settings-borrowing'), async(req, res) => {
+router.put('/borrowing-rules', verifyToken, requireLibrarian, logAction('UPDATE', 'settings-borrowing'), async(req, res) => {
     try {
         const {
             maxBooksPerTransaction,
             maxBorrowDays,
-            maxRenewals,
             finePerDay,
             gracePeriodDays,
             maxFineAmount,
             reservationPeriodDays,
             enableFines,
             annualBorrowingEnabled,
-            overnightBorrowingEnabled,
-            allowRenewalsWithOverdue
+            overnightBorrowingEnabled
         } = req.body || {};
 
         const updates = [
             { id: 'MAX_BOOKS_PER_TRANSACTION', value: toNumber(maxBooksPerTransaction, 0), type: 'number' },
             { id: 'MAX_BORROW_DAYS', value: toNumber(maxBorrowDays, 0), type: 'number' },
-            { id: 'MAX_RENEWALS', value: toNumber(maxRenewals, 0), type: 'number' },
             { id: 'FINE_PER_DAY', value: toNumber(finePerDay, 0), type: 'number' },
             { id: 'GRACE_PERIOD_DAYS', value: toNumber(gracePeriodDays, 0), type: 'number' },
             { id: 'MAX_FINE_AMOUNT', value: toNumber(maxFineAmount, 0), type: 'number' },
             { id: 'RESERVATION_PERIOD_DAYS', value: toNumber(reservationPeriodDays, 0), type: 'number' },
             { id: 'ENABLE_FINES', value: toBoolean(enableFines, true), type: 'boolean' },
             { id: 'ANNUAL_BORROWING_ENABLED', value: toBoolean(annualBorrowingEnabled, true), type: 'boolean' },
-            { id: 'OVERNIGHT_BORROWING_ENABLED', value: toBoolean(overnightBorrowingEnabled, false), type: 'boolean' },
-            { id: 'ALLOW_RENEWALS_WITH_OVERDUE', value: toBoolean(allowRenewalsWithOverdue, false), type: 'boolean' }
+            { id: 'OVERNIGHT_BORROWING_ENABLED', value: toBoolean(overnightBorrowingEnabled, false), type: 'boolean' }
         ];
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, updates);
@@ -364,32 +348,24 @@ router.put('/borrowing-rules', verifyToken, requireAdmin, logAction('UPDATE', 's
     }
 });
 
-router.put('/notifications', verifyToken, requireAdmin, logAction('UPDATE', 'settings-notifications'), async(req, res) => {
+router.put('/notifications', verifyToken, requireLibrarian, logAction('UPDATE', 'settings-notifications'), async(req, res) => {
     try {
         const {
-            emailNotifications = true,
-            smsNotifications = false,
             dueDateReminders = true,
             overdueNotifications = true,
             reservationNotifications = true,
+            returnNotifications = true,
             reminderDaysBefore = 3,
-            maxReminders = 3,
-            emailTemplate = {}
+            maxReminders = 3
         } = req.body || {};
 
         const normalized = {
-            emailNotifications: toBoolean(emailNotifications, true),
-            smsNotifications: toBoolean(smsNotifications, false),
             dueDateReminders: toBoolean(dueDateReminders, true),
             overdueNotifications: toBoolean(overdueNotifications, true),
             reservationNotifications: toBoolean(reservationNotifications, true),
+            returnNotifications: toBoolean(returnNotifications, true),
             reminderDaysBefore: toNumber(reminderDaysBefore, 0),
-            maxReminders: toNumber(maxReminders, 0),
-            emailTemplate: {
-                dueDate: emailTemplate.dueDate || '',
-                overdue: emailTemplate.overdue || '',
-                reservation: emailTemplate.reservation || ''
-            }
+            maxReminders: toNumber(maxReminders, 0)
         };
 
         await updateOrCreateSetting(req.dbAdapter, req.user.id, {
@@ -418,7 +394,7 @@ router.put('/notifications', verifyToken, requireAdmin, logAction('UPDATE', 'set
     }
 });
 
-router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 'settings-user-attributes'), async(req, res) => {
+router.put('/user-attributes', verifyToken, requireLibrarian, logAction('UPDATE', 'settings-user-attributes'), async(req, res) => {
     try {
         const {
             curriculum = [],
@@ -481,7 +457,7 @@ router.put('/user-attributes', verifyToken, requireAdmin, logAction('UPDATE', 's
     }
 });
 
-router.put('/system', verifyToken, requireAdmin, logAction('UPDATE', 'settings-system'), async(req, res) => {
+router.put('/system', verifyToken, requireLibrarian, logAction('UPDATE', 'settings-system'), async(req, res) => {
     try {
         const {
             maintenanceMode,
@@ -562,7 +538,7 @@ router.get('/:key', verifyToken, requireLibrarian, async(req, res) => {
 });
 
 // Update setting (Admin only)
-router.put('/:key', verifyToken, requireAdmin, logAction('UPDATE', 'setting'), async(req, res) => {
+router.put('/:key', verifyToken, requireLibrarian, logAction('UPDATE', 'setting'), async(req, res) => {
     try {
         const { value, description } = req.body;
         const settingKey = req.params.key;
@@ -630,7 +606,7 @@ router.put('/:key', verifyToken, requireAdmin, logAction('UPDATE', 'setting'), a
 });
 
 // Create new setting (Admin only)
-router.post('/', verifyToken, requireAdmin, logAction('CREATE', 'setting'), async(req, res) => {
+router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'setting'), async(req, res) => {
     try {
         const { key, value, type, category, description } = req.body;
 
@@ -707,7 +683,7 @@ router.post('/', verifyToken, requireAdmin, logAction('CREATE', 'setting'), asyn
 });
 
 // Delete setting (Admin only)
-router.delete('/:key', verifyToken, requireAdmin, logAction('DELETE', 'setting'), async(req, res) => {
+router.delete('/:key', verifyToken, requireLibrarian, logAction('DELETE', 'setting'), async(req, res) => {
     try {
         const settingKey = req.params.key;
 
@@ -756,7 +732,7 @@ router.delete('/:key', verifyToken, requireAdmin, logAction('DELETE', 'setting')
 });
 
 // Reset settings to defaults (Admin only)
-router.post('/reset/defaults', verifyToken, requireAdmin, logAction('RESET_DEFAULTS', 'setting'), async(req, res) => {
+router.post('/reset/defaults', verifyToken, requireLibrarian, logAction('RESET_DEFAULTS', 'setting'), async(req, res) => {
     try {
         setAuditContext(req, {
             metadata: {
@@ -820,7 +796,7 @@ router.post('/reset/defaults', verifyToken, requireAdmin, logAction('RESET_DEFAU
     }
 });
 
-router.post('/backup', verifyToken, requireAdmin, logAction('BACKUP', 'system'), async (req, res) => {
+router.post('/backup', verifyToken, requireLibrarian, logAction('BACKUP', 'system'), async (req, res) => {
   try {
     const fs = require('fs').promises;
     const path = require('path');
@@ -858,7 +834,7 @@ router.post('/backup', verifyToken, requireAdmin, logAction('BACKUP', 'system'),
   }
 });
 
-router.post('/cleanup-logs', verifyToken, requireAdmin, logAction('CLEANUP_LOGS', 'system'), async (req, res) => {
+router.post('/cleanup-logs', verifyToken, requireLibrarian, logAction('CLEANUP_LOGS', 'system'), async (req, res) => {
   try {
     const systemSettings = req.systemSettings;
     const retentionDays = systemSettings?.logRetentionDays || 90;

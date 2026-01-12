@@ -1,5 +1,9 @@
 const express = require('express');
+const { verifyToken, requireStaff } = require('../middleware/customAuth');
 const router = express.Router();
+
+// All report endpoints require authenticated staff (includes librarians and admins)
+router.use(verifyToken, requireStaff);
 
 const normalizeId = (value) => {
     if (value === undefined || value === null) {

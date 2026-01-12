@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -45,6 +45,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { reportsAPI, studentsAPI } from "../../utils/api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import { formatCurrency } from "../../utils/currency";
 import { generateReportPDF, downloadPDF } from "../../utils/pdfGenerator";
 
@@ -109,7 +111,7 @@ const filterStudentsByCriteria = (students, filters) => {
   });
 };
 
-const initialDashboardStats = {
+const createInitialDashboardStats = () => ({
   totalBooks: 0,
   totalUsers: 0,
   activeTransactions: 0,
@@ -117,9 +119,9 @@ const initialDashboardStats = {
   monthlyBorrowings: 0,
   popularBooks: [],
   recentActivity: [],
-};
+});
 
-const initialReportData = {
+const createInitialReportData = () => ({
   circulationReport: [],
   popularBooksReport: [],
   userActivityReport: [],
@@ -127,7 +129,7 @@ const initialReportData = {
   fineReport: [],
   inventoryReport: [],
   studentListReport: [],
-};
+});
 
 const ReportsPage = () => {
   const [currentTab, setCurrentTab] = useState(0);
@@ -150,8 +152,58 @@ const ReportsPage = () => {
   const [allStudents, setAllStudents] = useState([]);
   const studentFiltersRef = useRef(studentFilters);
 
-  const [dashboardStats, setDashboardStats] = useState(initialDashboardStats);
-  const [reportData, setReportData] = useState(initialReportData);
+  const [dashboardStats, setDashboardStats] = useState(() => createInitialDashboardStats());
+  const [reportData, setReportData] = useState(() => createInitialReportData());
+  const { isAuthenticated, loading: authLoading, user, authToken } = useAuth();
+  const { finesEnabled } = useSettings();
+
+  const sessionReady = useMemo(() => {
+    if (authLoading) {
+      return false;
+    }
+    if (typeof isAuthenticated === "function") {
+      return isAuthenticated();
+    }
+    return Boolean(authToken && user);
+  }, [authLoading, isAuthenticated, authToken, user]);
+
+  const overviewMetrics = useMemo(
+    () => [
+      {
+        key: "totalBooks",
+        title: "Total Books",
+        icon: LibraryBooks,
+        color: "primary",
+      },
+      {
+        key: "totalUsers",
+        title: "Total Users",
+        icon: People,
+        color: "success",
+      },
+      {
+        key: "activeTransactions",
+        title: "Borrowed Books",
+        icon: Assignment,
+        color: "info",
+      },
+      {
+        key: "overdueBooks",
+        title: "Overdue Books",
+        icon: Warning,
+        color: "error",
+      },
+    ],
+    [],
+  );
+
+  const resolvedOverviewMetrics = useMemo(() => {
+    if (finesEnabled) {
+      return overviewMetrics;
+    }
+    return overviewMetrics.filter((metric) => metric.key !== "overdueBooks");
+  }, [finesEnabled, overviewMetrics]);
+
 
   const toValidDate = (value) => {
     if (!value) return null;
@@ -200,6 +252,25 @@ const ReportsPage = () => {
     return csvRows.join('\n');
   };
 
+  const buildRowKey = (prefix, row, index) => {
+    const candidate =
+      row?.id ??
+      row?._id ??
+      row?.transactionId ??
+      row?.userId ??
+      row?.bookId ??
+      row?.libraryId ??
+      row?.libraryCardNumber ??
+      row?.studentId ??
+      row?.bookTitle ??
+      row?.title ??
+      row?.name ??
+      row?.email;
+    const normalized =
+      candidate !== undefined && candidate !== null ? candidate : "row";
+    return `${prefix}-${String(normalized)}-${index}`;
+  };
+
   const renderTableRows = (rows, renderRow, emptyMessage, colSpan) => {
     if (!rows || rows.length === 0) {
       return (
@@ -243,33 +314,6 @@ const ReportsPage = () => {
     },
   };
 
-  const overviewMetrics = [
-    {
-      key: "totalBooks",
-      title: "Total Books",
-      icon: LibraryBooks,
-      color: "primary",
-    },
-    {
-      key: "totalUsers",
-      title: "Total Users",
-      icon: People,
-      color: "success",
-    },
-    {
-      key: "activeTransactions",
-      title: "Active Loans",
-      icon: Assignment,
-      color: "info",
-    },
-    {
-      key: "overdueBooks",
-      title: "Overdue Books",
-      icon: Warning,
-      color: "error",
-    },
-  ];
-
   const getRangeParams = useCallback(() => {
     const params = {};
     const start = toValidDate(dateRange.startDate);
@@ -280,10 +324,20 @@ const ReportsPage = () => {
   }, [dateRange.startDate, dateRange.endDate]);
 
   const loadAllReports = useCallback(async () => {
+    if (!sessionReady) {
+      return;
+    }
     try {
       setLoading(true);
       setError("");
       const params = getRangeParams();
+
+      const overdueLoader = finesEnabled
+        ? reportsAPI.getOverdue(params)
+        : Promise.resolve({ data: [] });
+      const fineLoader = finesEnabled
+        ? reportsAPI.getFines(params)
+        : Promise.resolve({ data: [] });
 
       const [
         dashboardResponse,
@@ -301,8 +355,8 @@ const ReportsPage = () => {
         reportsAPI.getCirculation(params),
         reportsAPI.getPopularBooks(params),
         reportsAPI.getUserActivity(params),
-        reportsAPI.getOverdue(params),
-        reportsAPI.getFines(params),
+        overdueLoader,
+        fineLoader,
         reportsAPI.getInventory(),
         studentsAPI.getAll(),
       ]);
@@ -315,7 +369,7 @@ const ReportsPage = () => {
 
       // Merge dashboard and stats endpoints so overview cards have all expected fields
       setDashboardStats({
-        ...initialDashboardStats,
+        ...createInitialDashboardStats(),
         ...(dashboardResponse?.data || {}),
         ...(statsResponse?.data || {}),
       });
@@ -335,11 +389,28 @@ const ReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getRangeParams]);
+  }, [finesEnabled, getRangeParams, sessionReady]);
 
   useEffect(() => {
+    if (!finesEnabled && (currentTab === 4 || currentTab === 5)) {
+      setCurrentTab(0);
+    }
+  }, [currentTab, finesEnabled]);
+
+  useEffect(() => {
+    if (!sessionReady) {
+      if (!authLoading) {
+        setDashboardStats(createInitialDashboardStats());
+        setReportData(createInitialReportData());
+        setAllStudents([]);
+        setFilterOptions({ grades: [], sections: [], schoolYears: [] });
+        setLoading(false);
+        setError("");
+      }
+      return;
+    }
     loadAllReports();
-  }, [loadAllReports]);
+  }, [sessionReady, authLoading, loadAllReports]);
 
   useEffect(() => {
     studentFiltersRef.current = studentFilters;
@@ -353,6 +424,9 @@ const ReportsPage = () => {
   }, [allStudents, studentFilters]);
 
   const handleExportReport = async (type) => {
+    if (!finesEnabled && (type === "overdue" || type === "fines")) {
+      return;
+    }
     try {
       if (type === "student-list") {
         const studentRows = (reportData.studentListReport || []).map((student) => ({
@@ -408,6 +482,9 @@ const ReportsPage = () => {
   };
 
   const handlePrintReport = async (type, reportData) => {
+    if (!finesEnabled && (type === "overdue" || type === "fines")) {
+      return;
+    }
     try {
       const options = {
         startDate: dateRange.startDate,
@@ -642,15 +719,25 @@ const ReportsPage = () => {
             <Tab label="Circulation" icon={<TrendingUp />} disableRipple />
             <Tab label="Popular Books" icon={<LibraryBooks />} disableRipple />
             <Tab label="User Activity" icon={<People />} disableRipple />
-            <Tab label="Overdue Books" icon={<Warning />} disableRipple />
-            <Tab label="Fines" icon={<CurrencyExchange />} disableRipple />
+            <Tab
+              label="Overdue Books"
+              icon={<Warning />}
+              disableRipple
+              sx={{ display: finesEnabled ? "inline-flex" : "none" }}
+            />
+            <Tab
+              label="Fines"
+              icon={<CurrencyExchange />}
+              disableRipple
+              sx={{ display: finesEnabled ? "inline-flex" : "none" }}
+            />
             <Tab label="Inventory" icon={<Book />} disableRipple />
             <Tab label="Student List" icon={<People />} disableRipple />
           </Tabs>
           {/* Overview Tab */}{" "}
           <TabPanel value={currentTab} index={0}>
             <Grid container spacing={3}>
-              {overviewMetrics.map((metric) => {
+              {resolvedOverviewMetrics.map((metric) => {
                 const Icon = metric.icon;
                 return (
                   <Grid key={metric.key} item xs={12} sm={6} md={3}>
@@ -688,7 +775,7 @@ const ReportsPage = () => {
                     </Typography>
                     <List>
                       {dashboardStats.popularBooks.slice(0, 5).map((book, index) => (
-                        <ListItem key={book.id || index}>
+                        <ListItem key={buildRowKey("overview-popular", book, index)}>
                           <ListItemIcon>
                             <Typography variant="h6" color="primary">
                               #{index + 1}
@@ -841,7 +928,7 @@ const ReportsPage = () => {
                   {renderTableRows(
                     reportData.popularBooksReport,
                     (book, index) => (
-                      <TableRow key={book.id || index} sx={stripedRowSx}>
+                      <TableRow key={buildRowKey("popular-book", book, index)} sx={stripedRowSx}>
                         <TableCell>{`#${index + 1}`}</TableCell>
                         <TableCell>{book.title || "Unknown Title"}</TableCell>
                         <TableCell>
@@ -907,7 +994,7 @@ const ReportsPage = () => {
                   {renderTableRows(
                     reportData.userActivityReport,
                     (user, index) => (
-                      <TableRow key={user.id || user.userId || index} sx={stripedRowSx}>
+                      <TableRow key={buildRowKey("user-activity", user, index)} sx={stripedRowSx}>
                         <TableCell>
                           {user.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unknown User"}
                         </TableCell>
@@ -932,6 +1019,7 @@ const ReportsPage = () => {
             </TableContainer>
           </TabPanel>
           {/* Overdue Books Tab */}{" "}
+          {finesEnabled ? (
           <TabPanel value={currentTab} index={4}>
             <Box
               display="flex"
@@ -973,7 +1061,7 @@ const ReportsPage = () => {
                   {renderTableRows(
                     reportData.overdueReport,
                     (item, index) => (
-                      <TableRow key={item.id || item.transactionId || index} sx={stripedRowSx}>
+                      <TableRow key={buildRowKey("overdue", item, index)} sx={stripedRowSx}>
                         <TableCell>{item.bookTitle || "Unknown Book"}</TableCell>
                         <TableCell>
                           {item.borrowerName || "Unknown Borrower"}
@@ -998,9 +1086,11 @@ const ReportsPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-          </TabPanel>
-          {/* Fines Tab */}{" "}
-          <TabPanel value={currentTab} index={5}>
+              </TabPanel>
+              ) : null}
+              {/* Fines Tab */}{" "}
+              {finesEnabled ? (
+              <TabPanel value={currentTab} index={5}>
             <Box
               display="flex"
               justifyContent="space-between"
@@ -1041,7 +1131,7 @@ const ReportsPage = () => {
                   {renderTableRows(
                     reportData.fineReport,
                     (fine, index) => (
-                      <TableRow key={fine.id || index} sx={stripedRowSx}>
+                      <TableRow key={buildRowKey("fine", fine, index)} sx={stripedRowSx}>
                         <TableCell>{formatDate(fine.date)}</TableCell>
                         <TableCell>
                           {fine.userName || "Unknown User"}
@@ -1071,6 +1161,7 @@ const ReportsPage = () => {
               </Table>
             </TableContainer>
           </TabPanel>
+          ) : null}
           {/* Inventory Tab */}{" "}
           <TabPanel value={currentTab} index={6}>
             <Box
@@ -1114,7 +1205,7 @@ const ReportsPage = () => {
                   {renderTableRows(
                     reportData.inventoryReport,
                     (book, index) => (
-                      <TableRow key={book.id || index} sx={stripedRowSx}>
+                      <TableRow key={buildRowKey("inventory", book, index)} sx={stripedRowSx}>
                         <TableCell>{book.title || "Unknown Title"}</TableCell>
                         <TableCell>{book.author || "Unknown Author"}</TableCell>
                         <TableCell>
@@ -1180,7 +1271,7 @@ const ReportsPage = () => {
                   {renderTableRows(
                     reportData.studentListReport,
                     (student, index) => (
-                      <TableRow key={student.id || student._id || index} sx={stripedRowSx}>
+                      <TableRow key={buildRowKey("student", student, index)} sx={stripedRowSx}>
                         <TableCell>{student.libraryId || student.libraryCardNumber || student.studentId || "N/A"}</TableCell>
                         <TableCell>
                           {student.firstName && student.lastName

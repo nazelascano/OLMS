@@ -45,12 +45,14 @@ import {
   AutoStories,
   Print,
   FilterList,
+  ListAlt,
 } from "@mui/icons-material";
 import QRScanner from "../../components/QRScanner";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
 import ApproveRequestDialog from "../../components/Transactions/ApproveRequestDialog";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import { api, settingsAPI } from "../../utils/api";
 import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
@@ -59,6 +61,7 @@ import { addActionButtonSx, importActionButtonSx } from "../../theme/actionButto
 const TransactionsList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { finesEnabled } = useSettings();
   const location = useLocation();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,8 +69,18 @@ const TransactionsList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchScannerOpen, setSearchScannerOpen] = useState(false);
   const searchInputId = "transactions-search-input";
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(() => {
+    const params = new URLSearchParams(location.search || "");
+    const rawStatus = (params.get("status") || "").toLowerCase();
+    const allowedStatuses = new Set(["requested", "active", "returned", "overdue", "lost"]);
+    return allowedStatuses.has(rawStatus) ? rawStatus : "all";
+  });
+  const [typeFilter, setTypeFilter] = useState(() => {
+    const params = new URLSearchParams(location.search || "");
+    const rawType = (params.get("type") || "").toLowerCase();
+    const allowedTypes = new Set(["regular", "annual"]);
+    return allowedTypes.has(rawType) ? rawType : "all";
+  });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
@@ -76,7 +89,7 @@ const TransactionsList = () => {
   // detailsDialog removed: use dedicated page at /transactions/:id instead
   const [stats, setStats] = useState({
     total: 0,
-    active: 0,
+    borrowed: 0,
     overdue: 0,
     returned: 0,
   });
@@ -94,7 +107,13 @@ const TransactionsList = () => {
   // Approval dialog state
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [approveTransactionId, setApproveTransactionId] = useState(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectTransactionId, setRejectTransactionId] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [rejectError, setRejectError] = useState("");
   const copyIdInputRef = useRef(null);
+  const hasAppliedUrlFiltersRef = useRef(false);
   // filters menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
   const filtersOpen = Boolean(filterAnchorEl);
@@ -102,7 +121,7 @@ const TransactionsList = () => {
   const closeFilters = () => setFilterAnchorEl(null);
   
 
-  // Focus the Copy ID input when return dialog opens or when scanner closes
+  // Focus the Reference ID input when return dialog opens or when scanner closes
   useEffect(() => {
     if (returnDialogOpen) {
       // small timeout to wait for dialog animation/mount
@@ -133,6 +152,61 @@ const TransactionsList = () => {
     return undefined;
   }, [scannerOpen, returnDialogOpen]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    const rawStatus = (params.get("status") || "").toLowerCase();
+    const allowedStatuses = new Set(["requested", "active", "returned", "overdue", "lost", "all"]);
+    const nextStatus = allowedStatuses.has(rawStatus) ? rawStatus : "all";
+    setStatusFilter((prev) => (prev === nextStatus ? prev : nextStatus));
+
+    const rawType = (params.get("type") || "").toLowerCase();
+    const allowedTypes = new Set(["regular", "annual", "all"]);
+    const nextType = allowedTypes.has(rawType) ? rawType : "all";
+    setTypeFilter((prev) => (prev === nextType ? prev : nextType));
+
+    hasAppliedUrlFiltersRef.current = true;
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!hasAppliedUrlFiltersRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(location.search || "");
+    let shouldUpdate = false;
+
+    if (statusFilter === "all") {
+      if (params.has("status")) {
+        params.delete("status");
+        shouldUpdate = true;
+      }
+    } else if (params.get("status") !== statusFilter) {
+      params.set("status", statusFilter);
+      shouldUpdate = true;
+    }
+
+    if (typeFilter === "all") {
+      if (params.has("type")) {
+        params.delete("type");
+        shouldUpdate = true;
+      }
+    } else if (params.get("type") !== typeFilter) {
+      params.set("type", typeFilter);
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      const nextSearch = params.toString();
+      navigate(
+        {
+          pathname: location.pathname,
+          search: nextSearch ? `?${nextSearch}` : "",
+        },
+        { replace: true },
+      );
+    }
+  }, [statusFilter, typeFilter, navigate, location.pathname, location.search]);
+
   // Handle a scanned QR value: auto-validate and perform return when it matches
   const handleScannedCopy = async (value) => {
     const scanned = String(value || '').trim();
@@ -149,8 +223,8 @@ const TransactionsList = () => {
 
     if (expectedCopyIds.length > 0) {
       if (!expectedCopyIds.includes(scanned.toLowerCase())) {
-        setReturnError('Scanned Copy ID does not match the expected item(s).');
-        toast.error('Scanned Copy ID does not match.');
+        setReturnError('Scanned Reference ID does not match the expected item(s).');
+        toast.error('Scanned Reference ID does not match.');
         return; // don't proceed
       }
     }
@@ -457,25 +531,6 @@ const TransactionsList = () => {
     }
   };
 
-  const handleRenewBook = async () => {
-    const transactionId = getTransactionIdentifier(selectedTransaction);
-    if (!transactionId) {
-      setError("Transaction identifier is missing");
-      return;
-    }
-
-    try {
-      await api.post(`/transactions/${transactionId}/renew`);
-      await fetchTransactions();
-      await fetchStats();
-      handleMenuClose();
-    } catch (error) {
-      const message = error.response?.data?.message || "Failed to renew book";
-      setError(message);
-      console.error("Error renewing book:", error);
-    }
-  };
-
   const handleApproveRequest = () => {
     const transactionId = getTransactionIdentifier(selectedTransaction);
     if (!transactionId) {
@@ -497,6 +552,58 @@ const TransactionsList = () => {
     handleMenuClose();
   };
 
+  const handleRejectRequest = () => {
+    const transactionId = getTransactionIdentifier(selectedTransaction);
+    if (!transactionId) {
+      setError("Transaction identifier is missing");
+      return;
+    }
+    setRejectTransactionId(transactionId);
+    setRejectReason("");
+    setRejectError("");
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectDialogClose = () => {
+    if (rejectSubmitting) {
+      return;
+    }
+    setRejectDialogOpen(false);
+    setRejectTransactionId(null);
+    setRejectReason("");
+    setRejectError("");
+  };
+
+  const handleRejectDialogConfirm = async () => {
+    if (!rejectTransactionId) {
+      setRejectError("Transaction identifier is missing");
+      return;
+    }
+
+    setRejectSubmitting(true);
+    setRejectError("");
+    const toastId = toast.loading("Rejecting request...");
+    try {
+      await api.post(`/transactions/reject/${rejectTransactionId}`, {
+        reason: rejectReason.trim() || undefined,
+      });
+      toast.success("Request rejected", { id: toastId });
+      await fetchTransactions();
+      await fetchStats();
+      setRejectDialogOpen(false);
+      setRejectTransactionId(null);
+      setRejectReason("");
+      setRejectError("");
+      handleMenuClose();
+    } catch (err) {
+      const message = err.response?.data?.message || "Failed to reject request";
+      setRejectError(message);
+      toast.error(message, { id: toastId });
+    } finally {
+      setRejectSubmitting(false);
+    }
+  };
+
   // Confirm and perform return — validates copy ID if available
   const handleConfirmReturn = async () => {
     // Collect expected copy IDs from transaction items (if any), fallback to single copyId
@@ -510,7 +617,7 @@ const TransactionsList = () => {
     // If we have expected copy IDs, require that the entered value matches any of them (case-insensitive)
     if (expectedCopyIds.length > 0) {
       if (!returnCopyInput || !expectedCopyIds.includes(returnCopyInput.trim().toLowerCase())) {
-        setReturnError("Copy ID does not match. Please enter the correct Copy ID to confirm return.");
+        setReturnError("Reference ID does not match. Please enter the correct Reference ID to confirm return.");
         return;
       }
     }
@@ -611,6 +718,14 @@ const TransactionsList = () => {
             )}
             <Button
               variant="outlined"
+              startIcon={<ListAlt />}
+              onClick={() => navigate("/transactions/requests")}
+              sx={{ ...importActionButtonSx, minWidth: 170 }}
+            >
+              Borrow Requests
+            </Button>
+            <Button
+              variant="outlined"
               startIcon={<Assignment />}
               onClick={() => navigate("/transactions/borrow")}
               sx={{ ...importActionButtonSx, minWidth: 140 }}
@@ -656,30 +771,32 @@ const TransactionsList = () => {
               <Box display="flex" alignItems="center">
                 <CheckCircle color="primary" sx={{ mr: 2 }} />
                 <Box>
-                  <Typography variant="h6">{stats.active}</Typography>
+                  <Typography variant="h6">{stats.borrowed}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Active Borrowings
+                    Borrowed Transactions
                   </Typography>
                 </Box>
               </Box>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <Warning color="error" sx={{ mr: 2 }} />
-                <Box>
-                  <Typography variant="h6">{stats.overdue}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Overdue Books
-                  </Typography>
+        {finesEnabled ? (
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box display="flex" alignItems="center">
+                  <Warning color="error" sx={{ mr: 2 }} />
+                  <Box>
+                    <Typography variant="h6">{stats.overdue}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Overdue Books
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        ) : null}
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
@@ -688,7 +805,7 @@ const TransactionsList = () => {
                 <Box>
                   <Typography variant="h6">{stats.returned}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Returned Today
+                    Total Returns
                   </Typography>
                 </Box>
               </Box>
@@ -742,10 +859,9 @@ const TransactionsList = () => {
               >
                 <MenuItem value="all">All Status</MenuItem>
                 <MenuItem value="requested">Requested</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="active">Borrowed</MenuItem>
                 <MenuItem value="returned">Returned</MenuItem>
                 <MenuItem value="overdue">Overdue</MenuItem>
-                <MenuItem value="renewed">Renewed</MenuItem>
                 <MenuItem value="lost">Lost</MenuItem>
               </Select>
             </FormControl>
@@ -760,7 +876,6 @@ const TransactionsList = () => {
                 <MenuItem value="all">All Types</MenuItem>
                 <MenuItem value="regular">Regular</MenuItem>
                 <MenuItem value="annual">Annual</MenuItem>
-                <MenuItem value="reserved">Reserved</MenuItem>
               </Select>
             </FormControl>
             <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
@@ -783,7 +898,7 @@ const TransactionsList = () => {
               <TableRow>
                 <TableCell>Transaction ID</TableCell>
                 <TableCell>Book Title</TableCell>
-                <TableCell>Copy ID</TableCell>
+                <TableCell>Reference ID</TableCell>
                 <TableCell>Borrower</TableCell>
                 <TableCell>Borrow Date</TableCell>
                 <TableCell>Due Date</TableCell>
@@ -853,7 +968,7 @@ const TransactionsList = () => {
                     </TableCell>
                     <TableCell>
                       <Box display="flex" alignItems="center">
-                        {isOverdue(transaction) && (
+                        {finesEnabled && isOverdue(transaction) && (
                           <Warning color="error" sx={{ mr: 1, fontSize: 16 }} />
                         )}
                         {formatDate(resolveDueDateValue(transaction))}
@@ -932,17 +1047,17 @@ const TransactionsList = () => {
             Return Book
           </MenuItem>
         )}
-        {canManageTransactions && selectedTransaction?.status === "active" && (
-          <MenuItem onClick={handleRenewBook}>
-            <Schedule sx={{ mr: 1 }} />
-            Renew Book
-          </MenuItem>
-        )}
         {canManageTransactions && selectedTransaction?.status === "requested" && (
-          <MenuItem onClick={() => { handleMenuClose(false); handleApproveRequest(); }}>
-            <CheckCircle sx={{ mr: 1 }} />
-            Approve Request
-          </MenuItem>
+          <>
+            <MenuItem onClick={() => { handleMenuClose(false); handleApproveRequest(); }}>
+              <CheckCircle sx={{ mr: 1 }} />
+              Approve Request
+            </MenuItem>
+            <MenuItem onClick={() => { handleMenuClose(false); handleRejectRequest(); }}>
+              <Cancel sx={{ mr: 1 }} />
+              Reject Request
+            </MenuItem>
+          </>
         )}
       </Menu>
       {/* Inline Transaction Details dialog removed in favor of the dedicated /transactions/:id page */}
@@ -956,11 +1071,11 @@ const TransactionsList = () => {
         <DialogTitle>Confirm Return</DialogTitle>
         <DialogContent>
           <Typography gutterBottom>
-            To confirm the return, please enter the Copy ID of the book being returned.
+            To confirm the return, please enter the Reference ID of the book being returned.
           </Typography>
           <Box display="flex" gap={1} alignItems="center">
             <TextField
-              label="Copy ID"
+              label="Reference ID"
               value={returnCopyInput}
               onChange={(e) => { setReturnCopyInput(e.target.value); setReturnError(""); }}
               fullWidth
@@ -978,7 +1093,7 @@ const TransactionsList = () => {
             </Button>
           </Box>
           <MobileScanButton
-            label="Scan Copy QR"
+            label="Scan Reference QR"
             onClick={() => setScannerOpen(true)}
           />
           {returnError && (
@@ -991,6 +1106,47 @@ const TransactionsList = () => {
           <Button variant="outlined" onClick={() => setReturnDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleConfirmReturn} variant="contained" color="primary">
             Confirm Return
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={handleRejectDialogClose}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Reject Request</DialogTitle>
+        <DialogContent>
+          <Typography gutterBottom>
+            Optionally include a note so the borrower knows why the request was rejected.
+          </Typography>
+          {rejectError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {rejectError}
+            </Alert>
+          )}
+          <TextField
+            label="Reason"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            multiline
+            minRows={3}
+            fullWidth
+            placeholder="Optional"
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={handleRejectDialogClose} disabled={rejectSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRejectDialogConfirm}
+            variant="contained"
+            color="error"
+            disabled={rejectSubmitting}
+          >
+            {rejectSubmitting ? "Rejecting..." : "Reject Request"}
           </Button>
         </DialogActions>
       </Dialog>

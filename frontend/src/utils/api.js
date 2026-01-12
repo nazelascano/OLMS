@@ -2,20 +2,132 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const DEFAULT_BASE_URL = "http://localhost:5001/api";
+const DEV_SERVER_PORTS = new Set(["3000", "3001", "5173"]);
+const SESSION_REFRESH_HEADER = "x-session-refresh";
+
+const dispatchTokenRefresh = (token) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("olms-token-refresh", {
+      detail: { token },
+    }),
+  );
+};
+
+const persistRefreshedToken = (token) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (token) {
+    window.localStorage.setItem("authToken", token);
+  }
+  dispatchTokenRefresh(token);
+  try {
+    if (token) {
+      window.sessionStorage.setItem("authToken", token);
+    } else {
+      window.sessionStorage.removeItem("authToken");
+    }
+  } catch (error) {
+    console.warn("Failed to persist session token copy", error);
+  }
+};
+
+const handleSessionRefreshHeader = (response) => {
+  if (!response || typeof window === "undefined") {
+    return;
+  }
+  const headerToken = response.headers?.[SESSION_REFRESH_HEADER];
+  if (headerToken) {
+    persistRefreshedToken(headerToken);
+    window.sessionStorage.setItem("authTokenRefreshedAt", Date.now().toString());
+  }
+};
+
+const attachAuthHeader = (config, token) => {
+  if (!config || !token) {
+    return config;
+  }
+  if (config.headers && typeof config.headers.set === "function") {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+let silentVerifyPromise = null;
+const runSilentSessionCheck = async () => {
+  if (silentVerifyPromise) {
+    return silentVerifyPromise;
+  }
+  silentVerifyPromise = api
+    .get("/auth/verify", { __skipAuthHandler: true })
+    .then((response) => {
+      const sessionToken = response?.data?.token;
+      if (sessionToken) {
+        persistRefreshedToken(sessionToken);
+      }
+      return true;
+    })
+    .catch((probeError) => {
+      if (probeError?.response?.status === 401) {
+        return false;
+      }
+      console.warn("Silent session check failed", probeError);
+      return null;
+    })
+    .finally(() => {
+      silentVerifyPromise = null;
+    });
+  return silentVerifyPromise;
+};
 
 const resolveAutomaticBaseUrl = () => {
   if (typeof window === "undefined") {
     return DEFAULT_BASE_URL;
   }
 
-  const origin = window.location.origin.replace(/\/$/, "");
-  const isLocalhost = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(origin);
+  const { protocol, hostname, port } = window.location;
+  const normalizedPort = (port || "").trim();
+  const backendPort =
+    process.env.REACT_APP_API_PORT ||
+    process.env.REACT_APP_BACKEND_PORT ||
+    "5001";
 
-  if (isLocalhost) {
+  const isLoopbackHost = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(hostname);
+  if (isLoopbackHost) {
     return DEFAULT_BASE_URL;
   }
 
-  return `${origin}/api`;
+  if (!normalizedPort || normalizedPort === "80" || normalizedPort === "443") {
+    return `${protocol}//${hostname}/api`;
+  }
+
+  if (DEV_SERVER_PORTS.has(normalizedPort)) {
+    return `${protocol}//${hostname}:${backendPort}/api`;
+  }
+
+  return `${protocol}//${hostname}:${normalizedPort}/api`;
+};
+
+const shouldUseFallback = (candidate) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const loopbackPattern = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?/i;
+  const isLoopbackCandidate = loopbackPattern.test(candidate);
+  const isViewerLoopback = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(
+    window.location.hostname,
+  );
+
+  return isLoopbackCandidate && !isViewerLoopback;
 };
 
 const normalizeBaseUrl = (value) => {
@@ -25,6 +137,10 @@ const normalizeBaseUrl = (value) => {
   }
 
   const trimmed = value.trim().replace(/\/+$/, "");
+
+  if (shouldUseFallback(trimmed)) {
+    return fallback;
+  }
   if (trimmed.toLowerCase().endsWith("/api")) {
     return trimmed;
   }
@@ -32,18 +148,35 @@ const normalizeBaseUrl = (value) => {
   return `${trimmed}/api`;
 };
 
+const readBrowserToken = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    return (
+      window.localStorage.getItem("authToken") ||
+      window.sessionStorage.getItem("authToken") ||
+      null
+    );
+  } catch (error) {
+    console.warn("Failed to read stored auth token", error);
+    return null;
+  }
+};
+
 // Create axios instance
 const api = axios.create({
   baseURL: normalizeBaseUrl(process.env.REACT_APP_API_URL),
   timeout: 30000,
+  withCredentials: true,
 });
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authToken");
+    const token = readBrowserToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      attachAuthHeader(config, token);
     }
     return config;
   },
@@ -55,24 +188,56 @@ api.interceptors.request.use(
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
+    handleSessionRefreshHeader(response);
     return response;
   },
-  (error) => {
-    const { response } = error;
+  async (error) => {
+    const { response, config } = error;
+    const skipAuthHandler = Boolean(config?.__skipAuthHandler);
 
     if (response) {
+      handleSessionRefreshHeader(response);
       const { status, data } = response;
 
       switch (status) {
-        case 401:
-          // Unauthorized - token expired or invalid
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("userData");
-          if (window.location.pathname !== "/login") {
-            toast.error("Session expired. Please login again.");
-            window.location.href = "/login";
+        case 401: {
+          if (!skipAuthHandler) {
+            const storedToken = readBrowserToken();
+            const alreadyRetried = Boolean(config?.__authRetryAttempted);
+
+            if (storedToken && config && !alreadyRetried) {
+              config.__authRetryAttempted = true;
+              attachAuthHeader(config, storedToken);
+              return api.request(config);
+            }
+
+            const sessionValid = await runSilentSessionCheck();
+            if (sessionValid) {
+              const refreshedToken = readBrowserToken();
+              if (config) {
+                config.__authRetryAttempted = true;
+                attachAuthHeader(config, refreshedToken);
+                return api.request(config);
+              }
+            }
+
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem("authToken");
+              window.localStorage.removeItem("userData");
+              try {
+                window.sessionStorage.removeItem("authToken");
+                window.sessionStorage.removeItem("userData");
+              } catch (storageError) {
+                console.warn("Failed to clear session storage copy", storageError);
+              }
+            }
+            if (window.location.pathname !== "/login") {
+              toast.error("Session expired. Please login again.");
+              window.location.href = "/login";
+            }
           }
           break;
+        }
         case 403:
           toast.error("Access denied. Insufficient permissions.");
           break;
@@ -133,8 +298,12 @@ const resolveSettingsCategoryPath = (category) => {
 // API helper functions
 export const authAPI = {
   login: (usernameOrEmail, password) =>
-    api.post("/auth/login", { usernameOrEmail, password }),
-  logout: () => api.post("/auth/logout"),
+    api.post(
+      "/auth/login",
+      { usernameOrEmail, password },
+      { __skipAuthHandler: true },
+    ),
+  logout: () => api.post("/auth/logout", undefined, { __skipAuthHandler: true }),
   getProfile: () => api.get("/auth/profile"),
   updateProfile: (data) => api.put("/auth/profile", data),
   verifyToken: () => api.get("/auth/verify"),
@@ -143,10 +312,13 @@ export const authAPI = {
     api.put("/auth/preferences", { preferences }),
 };
 
+export const verifySession = (config = {}) => api.get("/auth/verify", config);
+
 export const usersAPI = {
   getAll: (params) => api.get("/users", { params }),
   getById: (id) => api.get(`/users/${id}`),
   getRoles: () => api.get("/users/roles"),
+  getProfileAttributes: () => api.get("/users/profile/user-attributes"),
   create: (data) => api.post("/users", data),
   update: (id, data) => api.put(`/users/${id}`, data),
   updateStatus: (id, isActive) => api.put(`/users/${id}/status`, { isActive }),
@@ -209,8 +381,8 @@ export const transactionsAPI = {
   getById: (id) => api.get(`/transactions/${id}`),
   create: (data) => api.post("/transactions", data),
   update: (id, data) => api.put(`/transactions/${id}`, data),
+  getStats: () => api.get("/transactions/stats"),
   return: (id, data) => api.post(`/transactions/${id}/return`, data),
-  renew: (id, data) => api.post(`/transactions/${id}/renew`, data),
   cancelRequest: (id, data) => api.post(`/transactions/cancel/${id}`, data),
   bulkReturn: (data) => api.post("/transactions/bulk-return", data),
   bulkAssign: (data) => api.post("/transactions/bulk-assign", data),

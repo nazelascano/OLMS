@@ -87,6 +87,27 @@ const sanitizeCategoryValue = (value) => {
   return value.trim();
 };
 
+const extractAuthorsFromRecord = (record) => {
+  if (!record) {
+    return [];
+  }
+
+  if (Array.isArray(record.authors) && record.authors.length > 0) {
+    return record.authors
+      .map((author) => (typeof author === "string" ? author.trim() : ""))
+      .filter(Boolean);
+  }
+
+  if (typeof record.author === "string" && record.author.trim() !== "") {
+    return record.author
+      .split(/[,;|]/)
+      .map((author) => author.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
 const BookForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -94,7 +115,7 @@ const BookForm = () => {
 
   const [formData, setFormData] = useState({
     title: "",
-    author: "",
+    authors: [],
     isbn: "",
     category: "",
     publisher: "",
@@ -105,6 +126,8 @@ const BookForm = () => {
     deweyDecimal: "",
     copies: [{ copyId: "", status: "available", location: "" }],
   });
+
+  const [authorInput, setAuthorInput] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -154,8 +177,10 @@ const BookForm = () => {
       if (!book) {
         throw new Error("Book payload missing in response");
       }
+      const normalizedAuthors = extractAuthorsFromRecord(book);
       setFormData({
         ...book,
+        authors: normalizedAuthors,
         publicationDate: book.publicationDate
           ? book.publicationDate.split("T")[0]
           : "",
@@ -237,11 +262,12 @@ const BookForm = () => {
     }
 
     appendCategoryOption(duplicateBook.category);
+    const duplicateAuthors = extractAuthorsFromRecord(duplicateBook);
 
     setFormData((prev) => ({
       ...prev,
       title: prev.title || duplicateBook.title || "",
-      author: prev.author || duplicateBook.author || "",
+      authors: prev.authors.length > 0 ? prev.authors : duplicateAuthors,
       category: prev.category || duplicateBook.category || "",
       publisher: prev.publisher || duplicateBook.publisher || "",
       description: prev.description || duplicateBook.description || "",
@@ -249,7 +275,7 @@ const BookForm = () => {
     setErrors((prev) => {
       const next = { ...prev };
       delete next.title;
-      delete next.author;
+      delete next.authors;
       delete next.category;
       return next;
     });
@@ -270,6 +296,59 @@ const BookForm = () => {
         [name]: "",
       }));
     }
+  };
+
+  const appendAuthor = (value) => {
+    if (typeof value !== "string") {
+      return false;
+    }
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      return false;
+    }
+
+    let added = false;
+    setFormData((prev) => {
+      const exists = prev.authors.some(
+        (author) => author.toLowerCase() === normalized.toLowerCase(),
+      );
+      if (exists) {
+        return prev;
+      }
+      added = true;
+      return {
+        ...prev,
+        authors: [...prev.authors, normalized],
+      };
+    });
+
+    if (added) {
+      setErrors((prev) => ({
+        ...prev,
+        authors: "",
+      }));
+      setAuthorInput("");
+    }
+
+    return added;
+  };
+
+  const handleAuthorInputKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      appendAuthor(authorInput);
+    }
+  };
+
+  const handleAddAuthor = () => {
+    appendAuthor(authorInput);
+  };
+
+  const handleRemoveAuthor = (authorToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      authors: prev.authors.filter((author) => author !== authorToRemove),
+    }));
   };
 
   const handleCopyChange = (index, field, value) => {
@@ -310,7 +389,6 @@ const BookForm = () => {
 
     if (!isDuplicateIsbn) {
       if (!formData.title.trim()) newErrors.title = "Title is required";
-      if (!formData.author.trim()) newErrors.author = "Author is required";
       if (!formData.category) newErrors.category = "Category is required";
     }
 
@@ -330,13 +408,13 @@ const BookForm = () => {
       formData.copies.forEach((copy, index) => {
         const trimmedCopyId = (copy.copyId || "").trim();
         if (!trimmedCopyId) {
-          newErrors[`copy_${index}_id`] = "Copy ID is required";
+          newErrors[`copy_${index}_id`] = "Reference ID is required";
           return;
         }
 
         const normalizedCopyId = trimmedCopyId.toUpperCase();
         if (seenCopyIds.has(normalizedCopyId)) {
-          newErrors[`copy_${index}_id`] = "Duplicate copy ID";
+          newErrors[`copy_${index}_id`] = "Duplicate reference ID";
           return;
         }
 
@@ -372,10 +450,14 @@ const BookForm = () => {
       });
 
       const parsedPages = formData.pages ? parseInt(formData.pages, 10) : undefined;
+      const normalizedAuthors = formData.authors
+        .map((author) => author.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
 
       const requestPayload = {
         title: formData.title.trim(),
-        author: formData.author.trim(),
+        author: normalizedAuthors.join(", "),
+        authors: normalizedAuthors,
         isbn: formData.isbn.trim(),
         category: formData.category,
         publisher: formData.publisher,
@@ -392,8 +474,12 @@ const BookForm = () => {
       if (!requestPayload.title && duplicateBook) {
         requestPayload.title = duplicateBook.title;
       }
-      if (!requestPayload.author && duplicateBook) {
-        requestPayload.author = duplicateBook.author;
+      if ((!requestPayload.authors || requestPayload.authors.length === 0) && duplicateBook) {
+        const duplicateAuthors = extractAuthorsFromRecord(duplicateBook);
+        if (duplicateAuthors.length > 0) {
+          requestPayload.authors = duplicateAuthors;
+          requestPayload.author = duplicateAuthors.join(", ");
+        }
       }
       if (!requestPayload.category && duplicateBook) {
         requestPayload.category = duplicateBook.category;
@@ -538,16 +624,41 @@ const BookForm = () => {
                     />
                   </Grid>{" "}
                   <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Author"
-                      name="author"
-                      value={formData.author}
-                      onChange={handleChange}
-                      error={Boolean(errors.author)}
-                      helperText={errors.author}
-                      required={!duplicateBook || isEditing}
-                    />
+                    <Box display="flex" gap={1} flexWrap="wrap">
+                      <TextField
+                        fullWidth
+                        label="Add Author"
+                        value={authorInput}
+                        onChange={(e) => setAuthorInput(e.target.value)}
+                        onKeyDown={handleAuthorInputKeyDown}
+                        error={Boolean(errors.authors)}
+                        helperText={errors.authors || "Press Enter after each author"}
+                        sx={{ flexGrow: 1, minWidth: 220 }}
+                      />
+                      <Button
+                        variant="outlined"
+                        onClick={handleAddAuthor}
+                        sx={{ alignSelf: "flex-start", minWidth: 80 }}
+                      >
+                        Add
+                      </Button>
+                    </Box>
+                    <Box mt={1} display="flex" gap={1} flexWrap="wrap">
+                      {formData.authors.length === 0 ? (
+                        <Typography variant="caption" color="text.secondary">
+                          No authors added yet.
+                        </Typography>
+                      ) : (
+                        formData.authors.map((author) => (
+                          <Chip
+                            key={author}
+                            label={author}
+                            variant="outlined"
+                            onDelete={() => handleRemoveAuthor(author)}
+                          />
+                        ))
+                      )}
+                    </Box>
                   </Grid>{" "}
                   <Grid item xs={12} md={6}>
                     <TextField
@@ -674,7 +785,7 @@ const BookForm = () => {
                 </Box>
                 {!isEditing && (
                   <Alert severity="info" sx={{ mb: 2 }}>
-                    Copy IDs are generated automatically once the book is saved.
+                    Reference IDs are generated automatically once the book is saved.
                   </Alert>
                 )}
                 {errors.copies && (
@@ -693,7 +804,7 @@ const BookForm = () => {
                         {isEditing ? (
                           <TextField
                             fullWidth
-                            label="Copy ID"
+                            label="Reference ID"
                             value={copy.copyId}
                             onChange={(e) =>
                               handleCopyChange(index, "copyId", e.target.value)
@@ -706,7 +817,7 @@ const BookForm = () => {
                         ) : (
                           <TextField
                             fullWidth
-                            label="Copy ID"
+                            label="Reference ID"
                             value="Auto-generated"
                             disabled
                             helperText="Assigned automatically after save"
