@@ -213,6 +213,28 @@ const toIsoString = (value) => {
   return date.toISOString();
 };
 
+const resolveNotificationTimeMs = (notification) => {
+  if (!notification || typeof notification !== 'object') {
+    return 0;
+  }
+
+  const candidates = [
+    notification.timestamp,
+    notification?.meta?.requestCreatedAt,
+    notification.createdAt,
+    notification.updatedAt,
+  ];
+
+  for (const candidate of candidates) {
+    const date = toDate(candidate);
+    if (date) {
+      return date.getTime();
+    }
+  }
+
+  return 0;
+};
+
 const registerInMap = (map, candidates, value) => {
   candidates
     .map((candidate) =>
@@ -770,11 +792,7 @@ router.get('/', verifyToken, async (req, res) => {
       }
     });
 
-    notifications.sort((a, b) => {
-      const aTime = new Date(a.timestamp || 0).getTime();
-      const bTime = new Date(b.timestamp || 0).getTime();
-      return bTime - aTime;
-    });
+    notifications.sort((a, b) => resolveNotificationTimeMs(b) - resolveNotificationTimeMs(a));
 
     res.json({
       notifications: notifications.slice(0, limit),
@@ -795,7 +813,7 @@ router.get('/persistent', verifyToken, async (req, res) => {
     const roleTargets = buildRoleTargets(role);
     let items = await req.dbAdapter.findInCollection('notifications', {});
     items = items.filter((entry) => shouldDeliverPersistentNotification(entry, { identifiers, roleTargets }));
-    items.sort((a,b) => new Date(b.createdAt || b.timestamp || 0) - new Date(a.createdAt || a.timestamp || 0));
+    items.sort((a, b) => resolveNotificationTimeMs(b) - resolveNotificationTimeMs(a));
 
     const viewerId = getUserIdString(req.user);
     const normalizedItems = items.map((entry) => {
