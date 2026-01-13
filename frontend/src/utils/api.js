@@ -346,6 +346,7 @@ export const usersAPI = {
 
 export const studentsAPI = {
   getAll: (params) => api.get("/students", { params }),
+  getSchoolYears: () => api.get("/students/school-years"),
   getById: (id) => api.get(`/students/${id}`),
   create: (data) => api.post("/students", data),
   update: (id, data) => api.put(`/students/${id}`, data),

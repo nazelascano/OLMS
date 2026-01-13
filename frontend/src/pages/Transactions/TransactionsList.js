@@ -58,6 +58,15 @@ import { generateTransactionReceipt, downloadPDF } from "../../utils/pdfGenerato
 import toast from "react-hot-toast";
 import { addActionButtonSx, importActionButtonSx } from "../../theme/actionButtons";
 
+const RETURNABLE_STATUSES = new Set(["active", "borrowed", "overdue", "renewed", "missing"]);
+
+const isReturnableStatus = (status) => {
+  if (!status) {
+    return false;
+  }
+  return RETURNABLE_STATUSES.has(String(status).toLowerCase());
+};
+
 const TransactionsList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -72,7 +81,7 @@ const TransactionsList = () => {
   const [statusFilter, setStatusFilter] = useState(() => {
     const params = new URLSearchParams(location.search || "");
     const rawStatus = (params.get("status") || "").toLowerCase();
-    const allowedStatuses = new Set(["requested", "active", "returned", "overdue", "lost"]);
+    const allowedStatuses = new Set(["requested", "active", "returned", "overdue", "lost", "missing"]);
     return allowedStatuses.has(rawStatus) ? rawStatus : "all";
   });
   const [typeFilter, setTypeFilter] = useState(() => {
@@ -155,7 +164,7 @@ const TransactionsList = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search || "");
     const rawStatus = (params.get("status") || "").toLowerCase();
-    const allowedStatuses = new Set(["requested", "active", "returned", "overdue", "lost", "all"]);
+    const allowedStatuses = new Set(["requested", "active", "returned", "overdue", "lost", "missing", "all"]);
     const nextStatus = allowedStatuses.has(rawStatus) ? rawStatus : "all";
     setStatusFilter((prev) => (prev === nextStatus ? prev : nextStatus));
 
@@ -331,12 +340,26 @@ const TransactionsList = () => {
     }
   };
 
+  const navigateToTransactionDetails = useCallback((transaction) => {
+    if (!transaction) {
+      setError("Transaction identifier is missing");
+      return false;
+    }
+    const transactionId = getTransactionIdentifier(transaction);
+    if (!transactionId) {
+      setError("Transaction identifier is missing");
+      return false;
+    }
+    navigate(`/transactions/${transactionId}`, { state: { from: location.pathname } });
+    return true;
+  }, [navigate, location.pathname]);
+
   const handleViewDetails = () => {
     // Navigate to the transaction details page instead of opening the inline dialog
-    const transactionId = getTransactionIdentifier(selectedTransaction);
+    const success = navigateToTransactionDetails(selectedTransaction);
     handleMenuClose();
-    if (transactionId) {
-      navigate(`/transactions/${transactionId}`, { state: { from: location.pathname } });
+    if (!success) {
+      return;
     }
   };
 
@@ -645,6 +668,7 @@ const TransactionsList = () => {
       case "renewed":
         return "warning";
       case "lost":
+      case "missing":
         return "error";
       default:
         return "default";
@@ -662,6 +686,7 @@ const TransactionsList = () => {
       case "renewed":
         return <Schedule />;
       case "lost":
+      case "missing":
         return <Cancel />;
       default:
         return <History />;
@@ -863,6 +888,7 @@ const TransactionsList = () => {
                 <MenuItem value="returned">Returned</MenuItem>
                 <MenuItem value="overdue">Overdue</MenuItem>
                 <MenuItem value="lost">Lost</MenuItem>
+                <MenuItem value="missing">Missing</MenuItem>
               </Select>
             </FormControl>
 
@@ -928,12 +954,15 @@ const TransactionsList = () => {
               ) : (
                 displayedTransactions.map((transaction) => (
                   <TableRow
+                    hover
                     key={
                       transaction._id ||
                       transaction.documentId ||
                       transaction.id ||
                       transaction.copyId
                     }
+                    onDoubleClick={() => navigateToTransactionDetails(transaction)}
+                    sx={{ cursor: 'pointer' }}
                   >
                     <TableCell sx={{ maxWidth: 220 }}>
                       <Typography
@@ -1041,7 +1070,7 @@ const TransactionsList = () => {
           <Visibility sx={{ mr: 1 }} />
           View Details
         </MenuItem>
-        {canManageTransactions && selectedTransaction?.status === "active" && (
+        {canManageTransactions && isReturnableStatus(selectedTransaction?.status) && (
           <MenuItem onClick={() => { handleMenuClose(false); setReturnCopyInput(""); setReturnError(""); setReturnDialogOpen(true); }}>
             <AssignmentReturn sx={{ mr: 1 }} />
             Return Book

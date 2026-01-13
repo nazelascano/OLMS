@@ -118,7 +118,7 @@ const formatBookAuthor = (record) => {
   return names.length > 0 ? names.join(", ") : "Unknown Author";
 };
 
-const LibrarianDashboard = () => {
+const LibrarianDashboard = ({ dashboardTitle = "Librarian Dashboard" }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { finesEnabled } = useSettings();
@@ -261,7 +261,6 @@ const LibrarianDashboard = () => {
     navigate(query ? `${path}?${query}` : path);
   };
 
-  const visitorCount = stats?.visitors ?? stats?.activeUsers ?? 0;
   const newStudentsCount = stats?.newStudents ?? stats?.studentsThisYear ?? 0;
   const schoolYearLabel = stats?.currentSchoolYear ?? getCurrentSchoolYearLabel();
 
@@ -272,7 +271,7 @@ const LibrarianDashboard = () => {
   return (
     <Box sx={{ p: { xs: 1.5, md: 2 } }}>
       <Typography variant="h1" sx={{ mb: 3, fontSize: "1.5rem", fontWeight: 600, color: "white" }}>
-        Librarian Dashboard
+        {dashboardTitle}
       </Typography>
       
       {/* Statistics Cards in 2x3 Grid matching Figma */}
@@ -305,7 +304,7 @@ const LibrarianDashboard = () => {
           <StatCard
             title="Missing Books"
             value={stats?.missingBooks}
-            onClick={() => handleCardNavigate("/transactions", { status: "lost" })}
+            onClick={() => handleCardNavigate("/transactions", { status: "missing" })}
           />
         </Grid>
 
@@ -315,13 +314,6 @@ const LibrarianDashboard = () => {
             title="Total Books"
             value={stats?.totalBooks}
             onClick={() => handleCardNavigate("/books")}
-          />
-        </Grid>
-        <Grid item xs={6} sm={6} md={4}>
-          <StatCard
-            title="Visitors"
-            value={visitorCount}
-            onClick={() => handleCardNavigate("/audit-logs", { action: "LOGIN" })}
           />
         </Grid>
         <Grid item xs={6} sm={6} md={4}>

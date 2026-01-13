@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { formatCurrency } from './currency';
+import { resolveEntityAvatar } from './media';
 
 // Simple, robust PDF utilities for OLMS. Exports the functions used across the app:
 // - generateLibraryCard(student)
@@ -80,6 +81,155 @@ const deriveStudentLibraryId = (student = {}) => {
     student.studentId ||
     'N/A'
   );
+};
+
+const studentPhotoCache = new Map();
+
+const readBlobAsDataUrl = (blob) => {
+  return new Promise((resolve, reject) => {
+    if (typeof FileReader === 'undefined') {
+      reject(new Error('FileReader is not available in this environment.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+const downloadImageAsDataUrl = async (url) => {
+  if (!url || typeof fetch !== 'function') {
+    return null;
+  }
+  try {
+    const response = await fetch(url, {
+      mode: 'cors',
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const blob = await response.blob();
+    return await readBlobAsDataUrl(blob);
+  } catch (error) {
+    console.warn('Unable to download student photo for PDF generation.', error);
+    return null;
+  }
+};
+
+const getImageDimensions = async (dataUrl) => {
+  if (!dataUrl || typeof Image === 'undefined') {
+    return null;
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth || img.width || 0,
+        height: img.naturalHeight || img.height || 0
+      });
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+};
+
+const getStudentPhotoPayload = async (student = {}) => {
+  const resolvedUrl = resolveEntityAvatar(student);
+  if (!resolvedUrl) {
+    return null;
+  }
+
+  if (studentPhotoCache.has(resolvedUrl)) {
+    return studentPhotoCache.get(resolvedUrl);
+  }
+
+  let dataUrl = null;
+  if (resolvedUrl.startsWith('data:')) {
+    dataUrl = resolvedUrl;
+  } else {
+    try {
+      dataUrl = await downloadImageAsDataUrl(resolvedUrl);
+    } catch (error) {
+      dataUrl = null;
+    }
+  }
+
+  if (!dataUrl) {
+    return null;
+  }
+
+  let dimensions = null;
+  try {
+    dimensions = await getImageDimensions(dataUrl);
+  } catch (error) {
+    dimensions = null;
+  }
+
+  const payload = {
+    dataUrl,
+    format: dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG',
+    width: dimensions?.width || 0,
+    height: dimensions?.height || 0
+  };
+
+  studentPhotoCache.set(resolvedUrl, payload);
+  return payload;
+};
+
+const drawStudentPhoto = async (doc, student, x, y, size) => {
+  const drawPlaceholder = () => {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('PHOTO', x + size / 2, y + size / 2 + 1, { align: 'center' });
+  };
+
+  const drawFrame = () => {
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.rect(x, y, size, size);
+  };
+
+  drawFrame();
+
+  let photoPayload = null;
+  try {
+    photoPayload = await getStudentPhotoPayload(student);
+  } catch (error) {
+    photoPayload = null;
+  }
+
+  if (!photoPayload) {
+    drawPlaceholder();
+    return;
+  }
+
+  const hasDimensions = Number.isFinite(photoPayload.width) && Number.isFinite(photoPayload.height) && photoPayload.width > 0 && photoPayload.height > 0;
+  const ratio = hasDimensions ? (photoPayload.width / photoPayload.height) : null;
+
+  let renderWidth = size;
+  let renderHeight = size;
+  if (ratio && ratio > 0) {
+    if (ratio >= 1) {
+      renderHeight = size / ratio;
+    } else {
+      renderWidth = size * ratio;
+    }
+  }
+
+  const offsetX = x + (size - renderWidth) / 2;
+  const offsetY = y + (size - renderHeight) / 2;
+
+  try {
+    doc.addImage(photoPayload.dataUrl, photoPayload.format, offsetX, offsetY, renderWidth, renderHeight);
+  } catch (error) {
+    console.warn('Failed to render student photo on library card.', error);
+    drawPlaceholder();
+    return;
+  }
+
+  drawFrame();
 };
 
 // (no longer using a wrapper for splitTextToSize; use doc.splitTextToSize directly)
@@ -171,12 +321,7 @@ const drawCardFront = async (doc, student, librarySettings = {}, options = {}) =
   
   // Define photo area (left)
   // Make the photo slightly smaller so there's room for the info block between photo and QR
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
-  doc.rect(photoX, photoY, photoSize, photoSize);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text('PHOTO', photoX + photoSize / 2, photoY + photoSize / 2 + 1, { align: 'center' });
+  await drawStudentPhoto(doc, student, photoX, photoY, photoSize);
 
   // Student ID under the photo, bold
   doc.setFontSize(10);

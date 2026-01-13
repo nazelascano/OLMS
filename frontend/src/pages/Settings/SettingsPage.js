@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -27,7 +27,6 @@ import {
   Stack,
 } from "@mui/material";
 import {
-  Save,
   Restore,
   LibraryBooks,
   Notifications,
@@ -88,6 +87,125 @@ const sanitizePhoneInput = (value = "") =>
 
 const resolveGradeColorValue = (entry, index = 0) =>
   sanitizeHexColor(entry?.color, getDefaultGradeColor(index));
+
+const AUTO_SAVE_DEBOUNCE_MS = 1000;
+
+const getAutoSaveMessage = (status, error) => {
+  switch (status) {
+    case "pending":
+      return "Preparing to save changes...";
+    case "saving":
+      return "Saving changes...";
+    case "saved":
+      return "All changes saved automatically.";
+    case "error":
+      return (
+        error || "Auto-save failed. Please review your connection or try again."
+      );
+    default:
+      return "Changes are saved automatically.";
+  }
+};
+
+const getAutoSaveColor = (status) => {
+  if (status === "error") {
+    return "error.main";
+  }
+  if (status === "saved") {
+    return "success.main";
+  }
+  return "text.secondary";
+};
+
+const useAutoSaveSetting = ({
+  data,
+  mergeFn,
+  endpoint,
+  eventCategory,
+  debounceMs = AUTO_SAVE_DEBOUNCE_MS,
+  resetKey = 0,
+}) => {
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
+  const readyRef = useRef(false);
+  const lastSerializedRef = useRef("");
+
+  useEffect(() => {
+    readyRef.current = false;
+  }, [resetKey]);
+
+  useEffect(() => {
+    const normalized = mergeFn(data);
+    const serialized = JSON.stringify(normalized);
+
+    if (!readyRef.current) {
+      readyRef.current = true;
+      lastSerializedRef.current = serialized;
+      setStatus("saved");
+      setError("");
+      return;
+    }
+
+    if (lastSerializedRef.current === serialized) {
+      setStatus("saved");
+      setError("");
+      return;
+    }
+
+    setStatus("pending");
+    setError("");
+    let cancelled = false;
+
+    const handler = setTimeout(async () => {
+      if (cancelled) {
+        return;
+      }
+
+      setStatus("saving");
+      setError("");
+
+      try {
+        await api.put(`/settings/${endpoint}`, normalized);
+        if (cancelled) {
+          return;
+        }
+
+        lastSerializedRef.current = serialized;
+        setStatus("saved");
+        setError("");
+
+        if (
+          typeof window !== "undefined" &&
+          typeof window.dispatchEvent === "function"
+        ) {
+          window.dispatchEvent(
+            new CustomEvent(SETTINGS_UPDATED_EVENT, {
+              detail: { category: eventCategory || endpoint },
+            }),
+          );
+        }
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(`Error auto-saving ${endpoint} settings:`, err);
+        setStatus("error");
+        setError(
+          err?.response?.data?.message ||
+            "Failed to auto-save changes. Please check your connection.",
+        );
+      }
+    }, debounceMs);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(handler);
+    };
+  }, [data, debounceMs, endpoint, eventCategory, mergeFn]);
+
+  return { status, error };
+};
 
 const createDefaultLibrarySettings = () => ({
   libraryName: "",
@@ -212,12 +330,59 @@ const mergeSystemSettings = (data = {}) => {
   };
 };
 
+const resolveCategoryName = (category) => {
+  if (typeof category === "string") {
+    return category.trim();
+  }
+  if (category && typeof category === "object") {
+    return category.name || category.label || category.title || "";
+  }
+  return "";
+};
+
+const resolveCategoryKey = (category, fallback) => {
+  if (category && typeof category === "object") {
+    return category._id || category.id || category.slug || category.name || fallback;
+  }
+  if (typeof category === "string") {
+    const trimmed = category.trim();
+    return trimmed || fallback;
+  }
+  return fallback;
+};
+
+const normalizeUserAttributesPayload = (attributes = {}) => {
+  const normalizedStructure = normalizeGradeStructure(
+    attributes.gradeStructure || [],
+    [],
+    { useFallbackWhenEmpty: false },
+  );
+
+  return {
+    curriculum: normalizeStringList(attributes.curriculum || []),
+    gradeLevels: normalizedStructure.map((entry) => entry.grade),
+    gradeStructure: normalizedStructure,
+  };
+};
+
+const resolveCategoryDeleteTarget = (category) => {
+  if (!category || typeof category !== "object") {
+    return null;
+  }
+  return category._id || category.id || category.slug || null;
+};
+
 const SettingsPage = () => {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [librarySettingsVersion, setLibrarySettingsVersion] = useState(0);
+  const [borrowingRulesVersion, setBorrowingRulesVersion] = useState(0);
+  const [notificationSettingsVersion, setNotificationSettingsVersion] = useState(0);
+  const [systemSettingsVersion, setSystemSettingsVersion] = useState(0);
+  const [userAttributesVersion, setUserAttributesVersion] = useState(0);
 
   // Settings state
   const [librarySettings, setLibrarySettings] = useState(() =>
@@ -260,10 +425,18 @@ const SettingsPage = () => {
         api.get("/settings/notifications"),
         api.get("/settings/system"),
       ]);
-      setLibrarySettings(mergeLibrarySettings(library.data));
+      const mergedLibrarySettings = mergeLibrarySettings(library.data);
+      setLibrarySettings(mergedLibrarySettings);
+      setLibrarySettingsVersion((prev) => prev + 1);
+
       setBorrowingRules(mergeBorrowingRules(borrowing.data));
+      setBorrowingRulesVersion((prev) => prev + 1);
+
       setNotificationSettings(mergeNotificationSettings(notifications.data));
+      setNotificationSettingsVersion((prev) => prev + 1);
+
       setSystemSettings(mergeSystemSettings(system.data));
+      setSystemSettingsVersion((prev) => prev + 1);
     } catch (error) {
       setError("Failed to fetch settings");
       console.error("Error fetching settings:", error);
@@ -285,62 +458,12 @@ const SettingsPage = () => {
     try {
       const response = await settingsAPI.getUserAttributes();
       setUserAttributes(ensureUserAttributes(response.data));
+      setUserAttributesVersion((prev) => prev + 1);
     } catch (error) {
       console.error("Error fetching user attributes:", error);
       setUserAttributes(ensureUserAttributes());
+      setUserAttributesVersion((prev) => prev + 1);
     }
-  };
-
-  const saveSettings = async (settingType, data) => {
-    try {
-      setLoading(true);
-      await api.put(`/settings/${settingType}`, data);
-      setSuccess("Settings saved successfully");
-      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-        window.dispatchEvent(
-          new CustomEvent(SETTINGS_UPDATED_EVENT, {
-            detail: { category: settingType },
-          }),
-        );
-      }
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (error) {
-      setError("Failed to save settings");
-      console.error("Error saving settings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLibrarySettingsSave = () => {
-    saveSettings("library", mergeLibrarySettings(librarySettings));
-  };
-
-  const handleBorrowingRulesSave = () => {
-    saveSettings("borrowing-rules", mergeBorrowingRules(borrowingRules));
-  };
-
-  const handleNotificationSettingsSave = () => {
-    saveSettings("notifications", mergeNotificationSettings(notificationSettings));
-  };
-
-  const handleSystemSettingsSave = () => {
-    saveSettings("system", mergeSystemSettings(systemSettings));
-  };
-
-  const handleUserAttributesSave = () => {
-    const normalizedStructure = normalizeGradeStructure(
-      userAttributes.gradeStructure || [],
-      [],
-      { useFallbackWhenEmpty: false }
-    );
-    const sanitized = {
-      curriculum: normalizeStringList(userAttributes.curriculum),
-      gradeLevels: normalizedStructure.map((entry) => entry.grade),
-      gradeStructure: normalizedStructure,
-    };
-
-    saveSettings("user-attributes", sanitized);
   };
 
   const handleAddCategory = async () => {
@@ -519,6 +642,11 @@ const SettingsPage = () => {
   };
 
   const handleDeleteCategory = async (categoryId) => {
+    if (!categoryId) {
+      setError("This category is synced from book data and can't be deleted here.");
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this category?")) {
       return;
     }
@@ -562,13 +690,91 @@ const SettingsPage = () => {
     }
   };
 
+  const { status: libraryAutoSaveStatus, error: libraryAutoSaveError } =
+    useAutoSaveSetting({
+      data: librarySettings,
+      mergeFn: mergeLibrarySettings,
+      endpoint: "library",
+      eventCategory: "library",
+      resetKey: librarySettingsVersion,
+    });
+
+  const { status: borrowingAutoSaveStatus, error: borrowingAutoSaveError } =
+    useAutoSaveSetting({
+      data: borrowingRules,
+      mergeFn: mergeBorrowingRules,
+      endpoint: "borrowing-rules",
+      eventCategory: "borrowing-rules",
+      resetKey: borrowingRulesVersion,
+    });
+
+  const { status: notificationAutoSaveStatus, error: notificationAutoSaveError } =
+    useAutoSaveSetting({
+      data: notificationSettings,
+      mergeFn: mergeNotificationSettings,
+      endpoint: "notifications",
+      eventCategory: "notifications",
+      resetKey: notificationSettingsVersion,
+    });
+
+  const { status: systemAutoSaveStatus, error: systemAutoSaveError } =
+    useAutoSaveSetting({
+      data: systemSettings,
+      mergeFn: mergeSystemSettings,
+      endpoint: "system",
+      eventCategory: "system",
+      resetKey: systemSettingsVersion,
+    });
+
+  const { status: userAttributesAutoSaveStatus, error: userAttributesAutoSaveError } =
+    useAutoSaveSetting({
+      data: userAttributes,
+      mergeFn: normalizeUserAttributesPayload,
+      endpoint: "user-attributes",
+      eventCategory: "user-attributes",
+      resetKey: userAttributesVersion,
+    });
+
   const role = user?.role || "";
   const isAdmin = role === "admin";
   const isLibrarian = role === "librarian";
   const canAccessSettings = isAdmin || isLibrarian;
+  const libraryAutoSaveMessage = getAutoSaveMessage(
+    libraryAutoSaveStatus,
+    libraryAutoSaveError,
+  );
+  const libraryAutoSaveColor = getAutoSaveColor(libraryAutoSaveStatus);
+  const borrowingAutoSaveMessage = getAutoSaveMessage(
+    borrowingAutoSaveStatus,
+    borrowingAutoSaveError,
+  );
+  const borrowingAutoSaveColor = getAutoSaveColor(borrowingAutoSaveStatus);
+  const notificationAutoSaveMessage = getAutoSaveMessage(
+    notificationAutoSaveStatus,
+    notificationAutoSaveError,
+  );
+  const notificationAutoSaveColor = getAutoSaveColor(
+    notificationAutoSaveStatus,
+  );
+  const systemAutoSaveMessage = getAutoSaveMessage(
+    systemAutoSaveStatus,
+    systemAutoSaveError,
+  );
+  const systemAutoSaveColor = getAutoSaveColor(systemAutoSaveStatus);
+  const userAttributesAutoSaveMessage = getAutoSaveMessage(
+    userAttributesAutoSaveStatus,
+    userAttributesAutoSaveError,
+  );
+  const userAttributesAutoSaveColor = getAutoSaveColor(
+    userAttributesAutoSaveStatus,
+  );
 
   useEffect(() => {
     if (!isAdmin && currentTab === 3) {
+      setCurrentTab(0);
+      return;
+    }
+    if (isAdmin && (currentTab === 1 || currentTab === 5)) {
       setCurrentTab(0);
     }
   }, [isAdmin, currentTab]);
@@ -633,7 +839,12 @@ const SettingsPage = () => {
           scrollButtons="auto"
         >
           <Tab label="Library Info" icon={<LibraryBooks />} />
-          <Tab label="Borrowing Rules" icon={<Schedule />} />
+          <Tab
+            label="Borrowing Rules"
+            icon={<Schedule />}
+            disabled={isAdmin}
+            sx={{ display: isAdmin ? "none" : "inline-flex" }}
+          />
           <Tab label="Notifications" icon={<Notifications />} />
           <Tab
             label="System"
@@ -642,7 +853,12 @@ const SettingsPage = () => {
             sx={{ display: isAdmin ? "inline-flex" : "none" }}
           />
           <Tab label="User Fields" icon={<Group />} />
-          <Tab label="Categories" icon={<Edit />} />
+          <Tab
+            label="Categories"
+            icon={<Edit />}
+            disabled={isAdmin}
+            sx={{ display: isAdmin ? "none" : "inline-flex" }}
+          />
         </Tabs>
 
         <TabPanel value={currentTab} index={0}>
@@ -837,14 +1053,12 @@ const SettingsPage = () => {
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={handleLibrarySettingsSave}
-                  disabled={loading}
+                <Typography
+                  variant="body2"
+                  sx={{ color: libraryAutoSaveColor, textAlign: "right" }}
                 >
-                  Save Library Settings
-                </Button>
+                  {libraryAutoSaveMessage}
+                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -998,14 +1212,12 @@ const SettingsPage = () => {
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={handleBorrowingRulesSave}
-                  disabled={loading}
+                <Typography
+                  variant="body2"
+                  sx={{ color: borrowingAutoSaveColor, textAlign: "right" }}
                 >
-                  Save Borrowing Rules
-                </Button>
+                  {borrowingAutoSaveMessage}
+                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -1093,14 +1305,12 @@ const SettingsPage = () => {
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={handleNotificationSettingsSave}
-                  disabled={loading}
+                <Typography
+                  variant="body2"
+                  sx={{ color: notificationAutoSaveColor, textAlign: "right" }}
                 >
-                  Save Notification Settings
-                </Button>
+                  {notificationAutoSaveMessage}
+                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -1248,14 +1458,12 @@ const SettingsPage = () => {
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={handleSystemSettingsSave}
-                  disabled={loading}
+                <Typography
+                  variant="body2"
+                  sx={{ color: systemAutoSaveColor, textAlign: "right" }}
                 >
-                  Save System Settings
-                </Button>
+                  {systemAutoSaveMessage}
+                </Typography>
               </Box>
             </Grid>
             </Grid>
@@ -1451,14 +1659,12 @@ const SettingsPage = () => {
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="contained"
-                  startIcon={<Save />}
-                  onClick={handleUserAttributesSave}
-                  disabled={loading}
+                <Typography
+                  variant="body2"
+                  sx={{ color: userAttributesAutoSaveColor, textAlign: "right" }}
                 >
-                  Save User Fields
-                </Button>
+                  {userAttributesAutoSaveMessage}
+                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -1504,23 +1710,36 @@ const SettingsPage = () => {
                   ) : (
                     <List>
                       {categories.map((category, index) => {
-                        const fallbackKey = `${category?.name || "category"}-${index}`;
-                        const categoryKey =
-                          category?._id ||
-                          category?.id ||
-                          fallbackKey;
+                        const displayName = resolveCategoryName(category);
+                        const fallbackKey = `${displayName || "category"}-${index}`;
+                        const categoryKey = resolveCategoryKey(category, fallbackKey);
+                        const deleteTarget = resolveCategoryDeleteTarget(category);
+
                         return (
-                          <ListItem key={categoryKey} divider secondaryAction={
-                          <IconButton
-                            edge="end"
-                            color="error"
-                            onClick={() => handleDeleteCategory(category._id)}
+                          <ListItem
+                            key={categoryKey}
+                            divider
+                            secondaryAction={
+                              deleteTarget ? (
+                                <IconButton
+                                  edge="end"
+                                  color="error"
+                                  onClick={() => handleDeleteCategory(deleteTarget)}
+                                >
+                                  <Delete />
+                                </IconButton>
+                              ) : undefined
+                            }
                           >
-                            <Delete />
-                          </IconButton>
-                        }>
-                          <ListItemText primary={category.name} />
-                        </ListItem>
+                            <ListItemText
+                              primary={displayName || "Unnamed Category"}
+                              secondary={
+                                deleteTarget
+                                  ? undefined
+                                  : "Synced from existing book records"
+                              }
+                            />
+                          </ListItem>
                         );
                       })}
                     </List>

@@ -72,6 +72,9 @@ const TransactionDetails = () => {
   const [notes, setNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [markMissingDialogOpen, setMarkMissingDialogOpen] = useState(false);
+  const [missingReason, setMissingReason] = useState("");
+  const [markMissingLoading, setMarkMissingLoading] = useState(false);
 
   const fetchTransactionDetails = useCallback(async () => {
     try {
@@ -187,6 +190,28 @@ const TransactionDetails = () => {
     setApproveDialogOpen(false);
   };
 
+  const handleMarkMissing = async () => {
+    try {
+      setMarkMissingLoading(true);
+      setError("");
+      await api.post(`/transactions/${id}/missing`, {
+        reason: missingReason.trim() || undefined,
+      });
+      setSuccess("Transaction flagged as missing");
+      setMarkMissingDialogOpen(false);
+      setMissingReason("");
+      fetchTransactionDetails();
+      fetchTransactionHistory();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to mark transaction as missing";
+      setError(message);
+      console.error("Error marking missing:", error);
+    } finally {
+      setMarkMissingLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "active":
@@ -198,6 +223,7 @@ const TransactionDetails = () => {
       case "renewed":
         return "warning";
       case "lost":
+      case "missing":
         return "error";
       default:
         return "default";
@@ -215,6 +241,7 @@ const TransactionDetails = () => {
       case "renewed":
         return <Schedule />;
       case "lost":
+      case "missing":
         return <Cancel />;
       default:
         return <Assignment />;
@@ -357,6 +384,11 @@ const TransactionDetails = () => {
     user?.role === "librarian" ||
     user?.role === "staff";
 
+  const normalizedStatus = (transaction?.status || "").toLowerCase();
+  const returnableStatuses = ["active", "borrowed", "overdue", "renewed", "missing"];
+  const canProcessReturn = returnableStatuses.includes(normalizedStatus);
+  const canMarkMissing = ["active", "borrowed", "overdue", "renewed"].includes(normalizedStatus);
+
   const printReceipt = () => {
     window.print();
   };
@@ -412,7 +444,7 @@ const TransactionDetails = () => {
             >
               Print Receipt{" "}
             </Button>{" "}
-            {canManageTransaction && transaction.status === "active" && (
+            {canManageTransaction && canProcessReturn && (
               <Button
                 variant="contained"
                 startIcon={<AssignmentReturn />}
@@ -721,7 +753,7 @@ const TransactionDetails = () => {
                         Approve Request
                       </Button>
                     )}
-                    {transaction.status === "active" && (
+                    {canProcessReturn && (
                       <Button
                         fullWidth
                         variant="contained"
@@ -729,6 +761,17 @@ const TransactionDetails = () => {
                         onClick={() => setReturnDialog(true)}
                       >
                         Process Return{" "}
+                      </Button>
+                    )}{" "}
+                    {canMarkMissing && (
+                      <Button
+                        fullWidth
+                        color="error"
+                        variant="outlined"
+                        startIcon={<Warning />}
+                        onClick={() => setMarkMissingDialogOpen(true)}
+                      >
+                        Mark Missing{" "}
                       </Button>
                     )}{" "}
                   </Box>{" "}
@@ -811,6 +854,55 @@ const TransactionDetails = () => {
             navigate("/transactions/requests");
           }}
         />
+        <Dialog
+          open={markMissingDialogOpen}
+          onClose={() => {
+            if (!markMissingLoading) {
+              setMarkMissingDialogOpen(false);
+            }
+          }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Mark Transaction as Missing</DialogTitle>{" "}
+          <DialogContent>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              Flag all outstanding items on this transaction as missing. This action notifies the borrower and updates reports.
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              margin="normal"
+              label="Reason (optional)"
+              value={missingReason}
+              onChange={(e) => setMissingReason(e.target.value)}
+              placeholder="Provide additional context for the borrower"
+            />
+          </DialogContent>{" "}
+          <DialogActions>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                if (!markMissingLoading) {
+                  setMarkMissingDialogOpen(false);
+                  setMissingReason("");
+                }
+              }}
+              disabled={markMissingLoading}
+            >
+              Cancel
+            </Button>{" "}
+            <Button
+              color="error"
+              variant="contained"
+              onClick={handleMarkMissing}
+              disabled={markMissingLoading}
+            >
+              {markMissingLoading ? "Marking..." : "Confirm Missing"}
+            </Button>{" "}
+          </DialogActions>{" "}
+        </Dialog>
       </Box>{" "}
     </LocalizationProvider>
   );

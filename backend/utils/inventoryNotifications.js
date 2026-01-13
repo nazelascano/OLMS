@@ -126,6 +126,7 @@ const maybeNotifyLowInventory = async (dbAdapter, bookInput, { source } = {}) =>
       availableCopies: available,
       totalCopies,
       level,
+      excludeRoles: ['admin'],
     },
     link: bookId ? `/books/${bookId}` : undefined,
   };

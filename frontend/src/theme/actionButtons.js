@@ -51,6 +51,25 @@ export const importActionButtonSx = {
   },
 };
 
+export const printActionButtonSx = {
+  ...sharedButtonSx,
+  color: "#0f172a",
+  backgroundColor: "#fde047",
+  border: "1px solid #facc15",
+  "&:hover": {
+    backgroundColor: "#facc15",
+    borderColor: "#eab308",
+    transform: "translateY(-1px)",
+  },
+  "&:active": {
+    transform: "translateY(0)",
+  },
+  "&:focus-visible": {
+    outline: "3px solid rgba(250, 204, 21, 0.45)",
+    outlineOffset: "2px",
+  },
+};
+
 export const floatingAddFabSx = {
   backgroundColor: "#16a34a",
   color: "#ffffff",

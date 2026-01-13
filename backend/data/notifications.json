@@ -589,8 +589,10 @@
       "level": "low"
     },
     "createdAt": "2025-12-14T16:50:11.067Z",
-    "updatedAt": "2026-01-09T06:27:17.106Z",
-    "readBy": [],
+    "updatedAt": "2026-01-13T02:21:57.641Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
     "link": "/books/book-approve-test",
     "fingerprint": "inventory-level:book-approve-test",
     "source": "transaction-approve",
@@ -3418,5 +3420,55 @@
       "mhiohn4smj18h"
     ],
     "_id": "mk6hun7szslbf"
+  },
+  {
+    "title": "Student profile updated",
+    "message": "System Administrator updated Nazel Ignacio Ascaño's profile.",
+    "type": "student-updated",
+    "severity": "info",
+    "recipients": [
+      "admin",
+      "librarian"
+    ],
+    "meta": {
+      "studentId": "mgniuxw0uslme",
+      "grade": "Grade 7",
+      "section": "Santan",
+      "updatedFields": [
+        "libraryCardNumber",
+        "firstName",
+        "lastName",
+        "middleName",
+        "email",
+        "phoneNumber",
+        "lrn",
+        "grade",
+        "section",
+        "curriculum",
+        "streetAddress",
+        "barangay",
+        "barangayCode",
+        "municipality",
+        "municipalityCode",
+        "province",
+        "provinceCode",
+        "fullAddress",
+        "parentGuardianName",
+        "parentOccupation",
+        "parentAddress",
+        "parentPhone",
+        "parentEmail",
+        "isActive",
+        "role",
+        "username"
+      ],
+      "actorId": "mgnhicbwhxfy9"
+    },
+    "createdAt": "2026-01-13T06:44:48.047Z",
+    "updatedAt": "2026-01-13T07:37:06.606Z",
+    "readBy": [
+      "mgnhicbwhxfy9"
+    ],
+    "_id": "mkc88ks5rc2s7"
   }
 ]

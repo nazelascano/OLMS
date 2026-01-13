@@ -333,6 +333,20 @@ const shouldDeliverPersistentNotification = (notification, context = {}) => {
     .map((value) => (value === undefined || value === null ? '' : String(value).trim()))
     .filter(Boolean);
 
+  const excludedRoleTokens = [
+    ...(Array.isArray(notification.excludeRoles) ? notification.excludeRoles : []),
+    ...(Array.isArray(notification?.meta?.excludeRoles) ? notification.meta.excludeRoles : []),
+  ]
+    .map((value) => normalizeRole(value))
+    .filter(Boolean);
+
+  if (excludedRoleTokens.length > 0 && normalizedRoleTargets.length > 0) {
+    const shouldExclude = normalizedRoleTargets.some((target) => excludedRoleTokens.includes(target));
+    if (shouldExclude) {
+      return false;
+    }
+  }
+
   if (normalizedRecipients.length === 0) {
     return true;
   }
@@ -612,6 +626,7 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
     const role = req.user.role || 'student';
+    const normalizedRole = normalizeRole(role);
     const userId = getUserIdString(req.user);
     const notificationSettings = await getNotificationSettings(req);
     const channelState = getNotificationChannelState(notificationSettings);
@@ -672,7 +687,10 @@ router.get('/', verifyToken, async (req, res) => {
       notifications.push(normalized);
     };
 
-    transactions.forEach((transaction) => {
+    // Admin dashboard skips transaction-driven alerts
+    const transactionSource = normalizedRole === 'admin' ? [] : transactions;
+
+    transactionSource.forEach((transaction) => {
       if (role === 'student' && !transactionBelongsToUser(transaction, identifiers)) {
         return;
       }

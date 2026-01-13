@@ -1,0 +1,114 @@
+[
+  {
+    "name": "Business",
+    "slug": "business",
+    "source": "auto-import",
+    "_id": "mkc5hs5n6n9qw",
+    "createdAt": "2026-01-13T05:27:58.667Z",
+    "updatedAt": "2026-01-13T05:27:58.667Z"
+  },
+  {
+    "name": "Classic Literature",
+    "slug": "classic-literature",
+    "source": "auto-import",
+    "_id": "mkc5hs5z4kx7k",
+    "createdAt": "2026-01-13T05:27:58.679Z",
+    "updatedAt": "2026-01-13T05:27:58.679Z"
+  },
+  {
+    "name": "Computer Science",
+    "slug": "computer-science",
+    "source": "auto-import",
+    "_id": "mkc5hs68v5sw4",
+    "createdAt": "2026-01-13T05:27:58.688Z",
+    "updatedAt": "2026-01-13T05:27:58.688Z"
+  },
+  {
+    "name": "Fantasy",
+    "slug": "fantasy",
+    "source": "auto-import",
+    "_id": "mkc5hs6g4e7x9",
+    "createdAt": "2026-01-13T05:27:58.696Z",
+    "updatedAt": "2026-01-13T05:27:58.696Z"
+  },
+  {
+    "name": "Fiction",
+    "slug": "fiction",
+    "source": "auto-import",
+    "_id": "mkc5hs6nvsff9",
+    "createdAt": "2026-01-13T05:27:58.703Z",
+    "updatedAt": "2026-01-13T05:27:58.703Z"
+  },
+  {
+    "name": "History",
+    "slug": "history",
+    "source": "auto-import",
+    "_id": "mkc5hs6uyk9cz",
+    "createdAt": "2026-01-13T05:27:58.710Z",
+    "updatedAt": "2026-01-13T05:27:58.710Z"
+  },
+  {
+    "name": "Mathematics",
+    "slug": "mathematics",
+    "source": "auto-import",
+    "_id": "mkc5hs715kxvy",
+    "createdAt": "2026-01-13T05:27:58.717Z",
+    "updatedAt": "2026-01-13T05:27:58.717Z"
+  },
+  {
+    "name": "Philosophy",
+    "slug": "philosophy",
+    "source": "auto-import",
+    "_id": "mkc5hs77j897k",
+    "createdAt": "2026-01-13T05:27:58.723Z",
+    "updatedAt": "2026-01-13T05:27:58.723Z"
+  },
+  {
+    "name": "Psychology",
+    "slug": "psychology",
+    "source": "auto-import",
+    "_id": "mkc5hs7ey66uh",
+    "createdAt": "2026-01-13T05:27:58.730Z",
+    "updatedAt": "2026-01-13T05:27:58.730Z"
+  },
+  {
+    "name": "Religion",
+    "slug": "religion",
+    "source": "auto-import",
+    "_id": "mkc5hs7mb2y6z",
+    "createdAt": "2026-01-13T05:27:58.738Z",
+    "updatedAt": "2026-01-13T05:27:58.738Z"
+  },
+  {
+    "name": "Romance",
+    "slug": "romance",
+    "source": "auto-import",
+    "_id": "mkc5hs7smn1bd",
+    "createdAt": "2026-01-13T05:27:58.744Z",
+    "updatedAt": "2026-01-13T05:27:58.744Z"
+  },
+  {
+    "name": "Self-Help",
+    "slug": "self-help",
+    "source": "auto-import",
+    "_id": "mkc5hs7zjjhys",
+    "createdAt": "2026-01-13T05:27:58.751Z",
+    "updatedAt": "2026-01-13T05:27:58.751Z"
+  },
+  {
+    "name": "Software Development",
+    "slug": "software-development",
+    "source": "auto-import",
+    "_id": "mkc5hs856xy46",
+    "createdAt": "2026-01-13T05:27:58.757Z",
+    "updatedAt": "2026-01-13T05:27:58.757Z"
+  },
+  {
+    "name": "Test Category",
+    "slug": "test-category",
+    "source": "auto-import",
+    "_id": "mkc5hs8cpuxts",
+    "createdAt": "2026-01-13T05:27:58.764Z",
+    "updatedAt": "2026-01-13T05:27:58.764Z"
+  }
+]

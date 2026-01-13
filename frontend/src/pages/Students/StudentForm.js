@@ -55,8 +55,11 @@ const StudentForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const { user } = useAuth();
+  const { hasPermission } = useAuth();
   const isEditing = Boolean(id);
+  const canCreateStudents = hasPermission("students.create");
+  const canEditStudents = hasPermission("students.update");
+  const canAccessForm = isEditing ? canEditStudents : canCreateStudents;
 
   const [formData, setFormData] = useState({
     // Library Card Number
@@ -734,16 +737,13 @@ const StudentForm = () => {
     });
   }, [formData.streetAddress, formData.barangay, formData.municipality, formData.province]);
 
-  const canManageStudents =
-    user?.role === "admin" ||
-    user?.role === "librarian" ||
-    user?.role === "staff";
-
-  if (!canManageStudents) {
+  if (!canAccessForm) {
     return (
       <Box>
         <Alert severity="error">
-          Access denied. You don't have permission to manage students.
+          {isEditing
+            ? "Access denied. You don't have permission to edit student records."
+            : "Access denied. You don't have permission to create student records."}
         </Alert>
       </Box>
     );

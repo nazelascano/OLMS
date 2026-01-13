@@ -376,6 +376,83 @@ const wrapTextLines = (text, maxCharsPerLine, maxLines) => {
     return lines.slice(0, maxLines);
 };
 
+const BOOK_CATEGORIES_COLLECTION = 'bookCategories';
+
+const normalizeCategoryDisplayName = (value) => {
+    if (value === undefined || value === null) {
+        return '';
+    }
+    return String(value).replace(/\s+/g, ' ').trim();
+};
+
+const slugifyCategoryName = (value) => {
+    const normalized = normalizeCategoryDisplayName(value).toLowerCase();
+    if (!normalized) {
+        return '';
+    }
+    return normalized
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+};
+
+const sortCategoriesByName = (records = []) =>
+    [...records].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+const getStoredCategories = async (dbAdapter) => {
+    const records = await dbAdapter.findInCollection(BOOK_CATEGORIES_COLLECTION, {});
+    if (!Array.isArray(records)) {
+        return [];
+    }
+    return sortCategoriesByName(records);
+};
+
+const deriveCategoriesFromBooks = async (dbAdapter) => {
+    const books = await dbAdapter.findInCollection('books', {});
+    const names = new Set();
+    books.forEach((book) => {
+        const categoryName = normalizeCategoryDisplayName(book?.category);
+        if (categoryName) {
+            names.add(categoryName);
+        }
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+};
+
+const seedCategoriesFromBooks = async (dbAdapter) => {
+    const derivedNames = await deriveCategoriesFromBooks(dbAdapter);
+    if (!derivedNames.length) {
+        return [];
+    }
+
+    for (const name of derivedNames) {
+        const slug = slugifyCategoryName(name);
+        if (!slug) {
+            continue;
+        }
+        const existing = await dbAdapter.findOneInCollection(BOOK_CATEGORIES_COLLECTION, { slug });
+        if (existing) {
+            continue;
+        }
+        await dbAdapter.insertIntoCollection(BOOK_CATEGORIES_COLLECTION, {
+            name,
+            slug,
+            source: 'auto-import'
+        });
+    }
+
+    return getStoredCategories(dbAdapter);
+};
+
+const ensureStoredCategories = async (dbAdapter) => {
+    const stored = await getStoredCategories(dbAdapter);
+    if (stored.length) {
+        return stored;
+    }
+    return seedCategoriesFromBooks(dbAdapter);
+};
+
 const buildBarcodePdf = async({
     book,
     copies,
@@ -725,7 +802,7 @@ router.get('/search', verifyToken, async(req, res) => {
     }
 });
 
-router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 'books'), async(req, res) => {
+router.post('/bulk-import', verifyToken, requireLibrarian, logAction('BULK_IMPORT', 'books'), async(req, res) => {
     try {
         const { books } = req.body;
         if (!Array.isArray(books) || books.length === 0) {
@@ -975,13 +1052,104 @@ router.post('/bulk-import', verifyToken, requireStaff, logAction('BULK_IMPORT', 
 // Get all categories - MUST be before /:id route
 router.get('/categories', verifyToken, async(req, res) => {
     try {
-        const allBooks = await req.dbAdapter.findInCollection('books', {});
-        const categories = new Set();
-        allBooks.forEach(book => { if (book.category) categories.add(book.category); });
-        res.json(Array.from(categories).sort());
+        const categories = await ensureStoredCategories(req.dbAdapter);
+        res.json(categories);
     } catch (error) {
         console.error('Get categories error:', error);
         res.status(500).json({ message: 'Failed to fetch categories' });
+    }
+});
+
+router.post('/categories', verifyToken, requireLibrarian, logAction('CREATE', 'book-category'), async(req, res) => {
+    try {
+        const displayName = normalizeCategoryDisplayName(req.body?.name);
+        if (!displayName) {
+            return res.status(400).json({ message: 'Category name is required' });
+        }
+
+        const slug = slugifyCategoryName(displayName);
+        if (!slug) {
+            return res.status(400).json({ message: 'Category name is invalid' });
+        }
+
+        const existing = await req.dbAdapter.findOneInCollection(BOOK_CATEGORIES_COLLECTION, { slug });
+        if (existing) {
+            return res.status(409).json({ message: 'Category already exists' });
+        }
+
+        const payload = {
+            name: displayName,
+            slug,
+            source: 'manual',
+            createdBy: req.user?.id || null,
+            updatedBy: req.user?.id || null,
+        };
+
+        const saved = await req.dbAdapter.insertIntoCollection(BOOK_CATEGORIES_COLLECTION, payload);
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Created',
+            description: `Created book category ${displayName}`,
+            entityId: saved?._id,
+            resourceId: saved?._id,
+        });
+
+        res.status(201).json(saved);
+    } catch (error) {
+        console.error('Create category error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: `Create category failed: ${error.message}`,
+        });
+        res.status(500).json({ message: 'Failed to create category' });
+    }
+});
+
+router.delete('/categories/:id', verifyToken, requireLibrarian, logAction('DELETE', 'book-category'), async(req, res) => {
+    try {
+        const identifier = (req.params.id || '').trim();
+        if (!identifier) {
+            return res.status(400).json({ message: 'Category identifier is required' });
+        }
+
+        const lookupFilters = [
+            { _id: identifier },
+            { id: identifier },
+            { slug: identifier }
+        ];
+
+        let deleted = null;
+        for (const filter of lookupFilters) {
+            deleted = await req.dbAdapter.deleteFromCollection(BOOK_CATEGORIES_COLLECTION, filter);
+            if (deleted) {
+                break;
+            }
+        }
+
+        if (!deleted) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Deleted',
+            description: `Deleted book category ${deleted.name || identifier}`,
+            entityId: deleted._id || identifier,
+            resourceId: deleted._id || identifier,
+        });
+
+        res.json({ message: 'Category deleted successfully', category: deleted });
+    } catch (error) {
+        console.error('Delete category error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: `Delete category failed: ${error.message}`,
+            entityId: req.params.id,
+        });
+        res.status(500).json({ message: 'Failed to delete category' });
     }
 });
 
@@ -1006,7 +1174,7 @@ router.get('/:id', verifyToken, async(req, res) => {
 });
 
 
-router.post('/', verifyToken, requireStaff, logAction('CREATE', 'book'), async(req, res) => {
+router.post('/', verifyToken, requireLibrarian, logAction('CREATE', 'book'), async(req, res) => {
     try {
         const {
             title,
@@ -2048,10 +2216,11 @@ router.get('/search/advanced', verifyToken, async(req, res) => {
 
 router.get('/meta/categories', verifyToken, async(req, res) => {
     try {
-        const allBooks = await req.dbAdapter.findInCollection('books', {});
-        const categories = new Set();
-        allBooks.forEach(book => { if (book.category) categories.add(book.category); });
-        res.json(Array.from(categories).sort());
+        const storedCategories = await ensureStoredCategories(req.dbAdapter);
+        const response = storedCategories
+            .map((category) => normalizeCategoryDisplayName(category?.name || category?.slug))
+            .filter(Boolean);
+        res.json(response);
     } catch (error) {
         console.error('Get categories error:', error);
         res.status(500).json({ message: 'Failed to fetch categories' });

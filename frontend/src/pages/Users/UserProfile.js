@@ -49,11 +49,12 @@ import {
   Phone,
   Save,
   PhotoCamera,
+  LocationOn,
 } from "@mui/icons-material";
 import Cropper from "react-easy-crop";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSettings } from "../../contexts/SettingsContext";
-import { api, usersAPI, booksAPI } from "../../utils/api";
+import { api, usersAPI, booksAPI, auditAPI } from "../../utils/api";
 import { formatCurrency } from "../../utils/currency";
 import { ensureUserAttributes, getSectionsForGrade } from "../../utils/userAttributes";
 import { useNavigate, useParams } from "react-router-dom";
@@ -110,6 +111,10 @@ const getCroppedImage = async (file, cropArea) => {
     URL.revokeObjectURL(imageUrl);
   }
 };
+
+const normalizeRoleValue = (value) => (value ? String(value).trim().toLowerCase() : "");
+const ADMIN_ROLE_TOKENS = new Set(["admin", "super admin", "super-admin", "superadmin"]);
+const isAdminRoleValue = (role) => ADMIN_ROLE_TOKENS.has(normalizeRoleValue(role));
 
 const sanitizePhoneInput = (value = "") =>
   String(value ?? "").replace(/\D/g, "").slice(0, 11);
@@ -181,7 +186,7 @@ const derivePasswordChangeError = (error) => {
 };
 
 const UserProfile = () => {
-  const { user, updateUserData } = useAuth();
+  const { user, updateUserData, hasPermission } = useAuth();
   const { finesEnabled } = useSettings();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -191,6 +196,7 @@ const UserProfile = () => {
   const [changePasswordDialog, setChangePasswordDialog] = useState(false);
   const [passwordData, setPasswordData] = useState(() => createPasswordFormState());
   const [passwordErrors, setPasswordErrors] = useState(() => createPasswordErrorState());
+  const canEditStudentRecords = hasPermission("students.update");
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -222,8 +228,13 @@ const UserProfile = () => {
   const [attributeOptions, setAttributeOptions] = useState(() => ensureUserAttributes());
   const [attributeLoading, setAttributeLoading] = useState(false);
   const [attributeError, setAttributeError] = useState("");
-  const resolvedProfileRole = (profileData?.role || user?.role || "").toLowerCase();
+  const [auditHistory, setAuditHistory] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState("");
+  const resolvedProfileRole = normalizeRoleValue(profileData?.role || user?.role || "");
   const isStudentProfileView = resolvedProfileRole === "student";
+  const viewerIsAdmin = isAdminRoleValue(user?.role);
+  const shouldShowAuditHistory = viewerIsAdmin;
 
   useEffect(() => {
     if (!avatarPreviewUrl) {
@@ -304,6 +315,46 @@ const UserProfile = () => {
       }).length,
       totalFines: history.reduce((sum, t) => sum + (t.fineAmount || t.fine || 0), 0),
     };
+  };
+
+  const formatAuditTimestamp = (value) => {
+    if (!value) {
+      return "—";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
+    try {
+      return date.toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+    } catch (error) {
+      return date.toISOString();
+    }
+  };
+
+  const formatAuditDetails = (log = {}) => {
+    if (!log || typeof log !== "object") {
+      return "—";
+    }
+
+    const textCandidates = [
+      log.description,
+      typeof log.details === "string" ? log.details : null,
+      typeof log.details === "object" && log.details
+        ? log.details.summary || log.details.description || log.details.message
+        : null,
+      typeof log.metadata === "object" && log.metadata
+        ? log.metadata.summary || log.metadata.description
+        : null,
+      log.status ? `Status: ${log.status}` : null,
+      log.entityId ? `Entity ID: ${log.entityId}` : null,
+    ];
+
+    const resolved = textCandidates.find((value) => typeof value === "string" && value.trim());
+    return resolved ? resolved.trim() : "No additional details";
   };
 
   const dedupeValues = (values = []) => {
@@ -540,9 +591,15 @@ const UserProfile = () => {
       }
 
       if (viewingSelf) {
-        setProfileData(hydrateProfileData(user));
-        const history = await fetchBorrowingHistory(currentUserId, true);
-        await fetchUserStats(currentUserId, true, history);
+        const hydratedProfile = hydrateProfileData(user);
+        setProfileData(hydratedProfile);
+        if (viewerIsAdmin) {
+          await fetchAuditHistory(currentUserId);
+          setStats(computeStatsFromHistory([]));
+        } else {
+          const history = await fetchBorrowingHistory(currentUserId, true);
+          await fetchUserStats(currentUserId, true, history);
+        }
       } else {
         await loadProfileById(id);
       }
@@ -559,12 +616,55 @@ const UserProfile = () => {
     loadStudentAttributeOptions();
   }, [user, isStudentProfileView, loadStudentAttributeOptions]);
 
+  const fetchAuditHistory = useCallback(
+    async (targetUserId) => {
+      if (!targetUserId) {
+        return [];
+      }
+
+      if (!viewerIsAdmin) {
+        setAuditHistory([]);
+        setAuditError("You do not have permission to view audit history.");
+        return [];
+      }
+
+      try {
+        setAuditLoading(true);
+        setAuditError("");
+        const response = await auditAPI.getByUser(targetUserId, { limit: 25 });
+        const logs = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.logs)
+            ? response.data.logs
+            : [];
+        setBorrowingHistory([]);
+        setAuditHistory(logs);
+        return logs;
+      } catch (err) {
+        console.error("Error fetching audit history:", err);
+        const message = err?.response?.data?.message || "Failed to fetch audit history.";
+        setAuditError(message);
+        setAuditHistory([]);
+        return [];
+      } finally {
+        setAuditLoading(false);
+      }
+    },
+    [viewerIsAdmin]
+  );
+
   const loadProfileById = async (targetUserId) => {
     try {
       setProfileLoading(true);
       const response = await api.get(`/users/${targetUserId}`);
-      setProfileData(hydrateProfileData(response.data));
-      await fetchBorrowingHistory(targetUserId, false);
+      const hydratedProfile = hydrateProfileData(response.data);
+      setProfileData(hydratedProfile);
+      if (viewerIsAdmin) {
+        await fetchAuditHistory(targetUserId);
+        setStats(computeStatsFromHistory([]));
+      } else {
+        await fetchBorrowingHistory(targetUserId, false);
+      }
     } catch (err) {
       console.error("Error loading user profile:", err);
       setError("Failed to load user profile");
@@ -575,6 +675,8 @@ const UserProfile = () => {
 
   const fetchBorrowingHistory = async (targetUserId, viewingSelf) => {
     try {
+      setAuditHistory([]);
+      setAuditError("");
       let response;
       if (viewingSelf) {
         response = await api.get("/users/profile/borrowing-history");
@@ -1173,6 +1275,9 @@ const UserProfile = () => {
                     )}
                     {profileData.fullAddress && (
                       <ListItem>
+                      <ListItemIcon>
+                          <LocationOn />
+                        </ListItemIcon>
                         <ListItemText primary="Address" secondary={profileData.fullAddress} />
                       </ListItem>
                     )}
@@ -1191,6 +1296,9 @@ const UserProfile = () => {
                 )}{" "}
                 {profileData.curriculum && (
                   <ListItem>
+                    <ListItemIcon>
+                      <School />
+                    </ListItemIcon>
                     <ListItemText
                       primary="Curriculum"
                       secondary={profileData.curriculum}
@@ -1220,7 +1328,7 @@ const UserProfile = () => {
                     </Button>{" "}
                   </Box>
                 )}
-                {!isSelfProfile && profileData.role === "student" && (user && (user.role === "admin" || user.role === "librarian" || user.role === "staff")) && (
+                {!isSelfProfile && profileData.role === "student" && canEditStudentRecords && (
                   <Box mt={2}>
                     <Button
                       fullWidth
@@ -1241,115 +1349,165 @@ const UserProfile = () => {
         {/* Statistics and Activity */}
         <Grid item xs={12} md={8}>
           {/* Statistics Cards */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={6} md={3}>
-              <Card>
-                <CardContent sx={{ textAlign: "center" }}>
-                  <LibraryBooks color="primary" sx={{ fontSize: 40, mb: 1 }} />
-                  <Typography variant="h6">{stats.totalBorrowings}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Total Borrowed
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={6} md={3}>
-              <Card>
-                <CardContent sx={{ textAlign: "center" }}>
-                  <Assignment color="info" sx={{ fontSize: 40, mb: 1 }} />
-                  <Typography variant="h6">{stats.currentlyBorrowed}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Currently Borrowed
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            {finesEnabled ? (
+          {!shouldShowAuditHistory && (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={6} md={3}>
                 <Card>
                   <CardContent sx={{ textAlign: "center" }}>
-                    <Warning color="error" sx={{ fontSize: 40, mb: 1 }} />
-                    <Typography variant="h6">{stats.overdueBorrowings}</Typography>
+                    <LibraryBooks color="primary" sx={{ fontSize: 40, mb: 1 }} />
+                    <Typography variant="h6">{stats.totalBorrowings}</Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Overdue
+                      Total Borrowed
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
-            ) : null}
-            {finesEnabled ? (
               <Grid item xs={6} md={3}>
                 <Card>
                   <CardContent sx={{ textAlign: "center" }}>
-                    <Typography variant="h6" color="error">
-                      {formatCurrency(stats.totalFines)}
-                    </Typography>
+                    <Assignment color="info" sx={{ fontSize: 40, mb: 1 }} />
+                    <Typography variant="h6">{stats.currentlyBorrowed}</Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Total Fines
+                      Currently Borrowed
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
-            ) : null}
-          </Grid>
-          {/* Borrowing History */}
+              {finesEnabled ? (
+                <Grid item xs={6} md={3}>
+                  <Card>
+                    <CardContent sx={{ textAlign: "center" }}>
+                      <Warning color="error" sx={{ fontSize: 40, mb: 1 }} />
+                      <Typography variant="h6">{stats.overdueBorrowings}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Overdue
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ) : null}
+              {finesEnabled ? (
+                <Grid item xs={6} md={3}>
+                  <Card>
+                    <CardContent sx={{ textAlign: "center" }}>
+                      <Typography variant="h6" color="error">
+                        {formatCurrency(stats.totalFines)}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Total Fines
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ) : null}
+            </Grid>
+          )}
+          {/* Activity History */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Recent Borrowing History
+                {shouldShowAuditHistory ? "Recent Audit History" : "Recent Borrowing History"}
               </Typography>
-              {booksLoading && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                  Resolving book titles...
-                </Typography>
+              {shouldShowAuditHistory ? (
+                auditLoading && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                    Loading audit entries...
+                  </Typography>
+                )
+              ) : (
+                booksLoading && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                    Resolving book titles...
+                  </Typography>
+                )
               )}
-              {booksError && (
-                <Alert severity="warning" sx={{ mb: 1 }}>
-                  {booksError}
-                </Alert>
+              {shouldShowAuditHistory ? (
+                auditError && (
+                  <Alert severity="warning" sx={{ mb: 1 }}>
+                    {auditError}
+                  </Alert>
+                )
+              ) : (
+                booksError && (
+                  <Alert severity="warning" sx={{ mb: 1 }}>
+                    {booksError}
+                  </Alert>
+                )
               )}
               <TableContainer>
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Book Title</TableCell>
-                      <TableCell>Borrow Date</TableCell>
-                      <TableCell>Due Date</TableCell>
-                      <TableCell>Status</TableCell>
+                      {shouldShowAuditHistory ? (
+                        <>
+                          <TableCell>Timestamp</TableCell>
+                          <TableCell>Action</TableCell>
+                          <TableCell>Entity</TableCell>
+                          <TableCell>Details</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>Book Title</TableCell>
+                          <TableCell>Borrow Date</TableCell>
+                          <TableCell>Due Date</TableCell>
+                          <TableCell>Status</TableCell>
+                        </>
+                      )}
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {borrowingHistory.slice(0, 10).map((transaction) => (
-                      <TableRow key={transaction._id}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {transaction.bookTitle || "Unknown Book"}
-                          </Typography>
-                          {transaction.author && (
-                            <Typography variant="caption" color="textSecondary">
-                              {transaction.author}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(transaction.borrowDate).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(transaction.dueDate).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={transaction.status}
-                            color={getStatusColor(transaction.status)}
-                            size="small"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {shouldShowAuditHistory
+                      ? (auditHistory.length > 0
+                          ? auditHistory.slice(0, 10).map((log) => (
+                              <TableRow key={log.id || log._id || log.timestamp}>
+                                <TableCell>
+                                  {formatAuditTimestamp(log.timestamp || log.createdAt)}
+                                </TableCell>
+                                <TableCell>{log.action || "—"}</TableCell>
+                                <TableCell>{log.entity || log.resource || "—"}</TableCell>
+                                <TableCell>{formatAuditDetails(log)}</TableCell>
+                              </TableRow>
+                            ))
+                          : (
+                              <TableRow>
+                                <TableCell colSpan={4} align="center">
+                                  {auditLoading
+                                    ? "Loading audit history..."
+                                    : auditError || "No audit history found"}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                      : borrowingHistory.slice(0, 10).map((transaction) => (
+                          <TableRow key={transaction._id}>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight="medium">
+                                {transaction.bookTitle || "Unknown Book"}
+                              </Typography>
+                              {transaction.author && (
+                                <Typography variant="caption" color="textSecondary">
+                                  {transaction.author}
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(transaction.borrowDate).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(transaction.dueDate).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={transaction.status}
+                                color={getStatusColor(transaction.status)}
+                                size="small"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
                   </TableBody>
                 </Table>
               </TableContainer>
-              {borrowingHistory.length === 0 && (
+              {!shouldShowAuditHistory && borrowingHistory.length === 0 && (
                 <Typography
                   textAlign="center"
                   color="textSecondary"

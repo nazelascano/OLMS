@@ -26,9 +26,9 @@
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2026-01-09T05:47:44.273Z",
-    "lastLoginAt": "2026-01-09T05:12:12.010Z",
-    "lastActivityAt": "2026-01-09T05:47:44.273Z",
+    "updatedAt": "2026-01-13T08:00:01.495Z",
+    "lastLoginAt": "2026-01-13T04:20:21.804Z",
+    "lastActivityAt": "2026-01-13T08:00:01.493Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -43,7 +43,7 @@
   },
   {
     "libraryCardNumber": "LIB-25-0001",
-    "username": "nascaño",
+    "username": "123456789012",
     "firstName": "Nazel",
     "lastName": "Ascaño",
     "middleName": "Ignacio",
@@ -51,8 +51,8 @@
     "phoneNumber": "",
     "lrn": "123456789012",
     "grade": "Grade 7",
-    "section": "A",
-    "curriculum": "Mathematics",
+    "section": "Santan",
+    "curriculum": "",
     "barangay": "Barangay 1",
     "municipality": "Quezon City",
     "province": "Philippines",
@@ -73,7 +73,7 @@
     "password": "$2b$10$aHwwcdlhGetHuibADO8LPeZYX9i9orVvTpqMP91FqwezO.HZYyEPq",
     "_id": "mgniuxw0uslme",
     "createdAt": "2025-10-12T09:48:46.260Z",
-    "updatedAt": "2025-12-16T06:21:26.798Z",
+    "updatedAt": "2026-01-13T06:44:48.038Z",
     "lastLoginAt": "2025-10-12T09:49:31.891Z",
     "lastActivityAt": "2025-10-12T09:49:52.776Z",
     "mustChangePassword": true,
@@ -81,7 +81,11 @@
     "academicYear": "2025-2026",
     "failedLoginAttempts": 3,
     "lastFailedLoginAt": "2025-12-16T06:21:26.796Z",
-    "lockedUntil": null
+    "lockedUntil": null,
+    "streetAddress": "",
+    "barangayCode": "",
+    "municipalityCode": "",
+    "provinceCode": ""
   },
   {
     "firstName": "Mary15",
@@ -158,9 +162,9 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-11-03T03:39:53.477Z",
-    "updatedAt": "2026-01-09T06:36:52.206Z",
+    "updatedAt": "2026-01-13T08:42:27.261Z",
     "createdBy": "mgnhicbwhxfy9",
-    "lastLoginAt": "2026-01-09T06:28:18.696Z",
+    "lastLoginAt": "2026-01-13T08:00:06.743Z",
     "profile": {
       "phone": "",
       "address": "",
@@ -179,7 +183,7 @@
       "totalFines": 0
     },
     "_id": "mhildatik9wdo",
-    "lastActivityAt": "2026-01-09T06:36:52.204Z",
+    "lastActivityAt": "2026-01-13T08:42:27.261Z",
     "failedLoginAttempts": 0,
     "lockedUntil": null
   },
@@ -211,13 +215,13 @@
     },
     "_id": "mhiohn4smj18h",
     "createdAt": "2025-11-03T05:07:14.908Z",
-    "updatedAt": "2026-01-09T06:49:06.923Z",
+    "updatedAt": "2026-01-13T08:48:39.801Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
-    "lastLoginAt": "2026-01-09T06:37:27.608Z",
+    "lastLoginAt": "2026-01-13T08:42:39.170Z",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2026-01-09T06:49:06.922Z",
+    "lastActivityAt": "2026-01-13T08:48:39.800Z",
     "preferences": {
       "studentDashboard": {
         "welcomeDismissed": true
@@ -262,13 +266,13 @@
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2025-12-28T13:08:29.855Z",
+    "updatedAt": "2026-01-13T08:42:33.868Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
     "lastLoginAt": "2025-12-14T06:54:35.461Z",
     "lastActivityAt": "2025-12-14T07:30:12.298Z",
-    "failedLoginAttempts": 4,
-    "lockedUntil": null,
+    "failedLoginAttempts": 5,
+    "lockedUntil": "2026-01-13T08:57:33.867Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1765167450651-207326744.jpg",
       "filename": "avatar-1765167450651-207326744.jpg",
@@ -282,7 +286,7 @@
         "welcomeDismissed": true
       }
     },
-    "lastFailedLoginAt": "2025-12-28T13:08:29.854Z"
+    "lastFailedLoginAt": "2026-01-13T08:42:33.867Z"
   },
   {
     "firstName": "Mary2",
@@ -813,9 +817,9 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-12-14T05:24:23.901Z",
-    "updatedAt": "2026-01-09T06:47:51.075Z",
+    "updatedAt": "2026-01-13T05:47:56.839Z",
     "createdBy": "mgnhicbwhxfy9",
-    "lastLoginAt": "2026-01-09T05:47:50.796Z",
+    "lastLoginAt": "2026-01-13T05:47:56.410Z",
     "profile": {
       "phone": "",
       "address": "",
@@ -836,7 +840,7 @@
     "_id": "mj5a5mg4ts8iv",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2026-01-09T06:47:51.074Z",
+    "lastActivityAt": "2026-01-13T05:47:56.837Z",
     "lastFailedLoginAt": "2025-12-16T06:22:14.153Z"
   },
   {

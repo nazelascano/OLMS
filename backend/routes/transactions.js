@@ -197,6 +197,7 @@ const calculateDueDate = (borrowDate, maxBorrowDays = 14) => {
 };
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const MAX_TRANSACTION_NOTE_LENGTH = 5000;
 
 const calculateFine = (dueDate, returnDate, options = {}) => {
     const finePerDay = Number(options.finePerDay) || 5;
@@ -1165,6 +1166,73 @@ router.get('/:id/history', verifyToken, async(req, res) => {
     }
 });
 
+router.put('/:id/notes', verifyToken, requireCirculation, logAction('UPDATE_NOTES', 'transaction'), async(req, res) => {
+    try {
+        const transactionIdentifier = req.params.id;
+        const rawNotes = req.body?.notes;
+        const normalizedNotes = rawNotes === undefined || rawNotes === null ? '' : String(rawNotes);
+        const trimmedNotes = normalizedNotes.length > MAX_TRANSACTION_NOTE_LENGTH
+            ? normalizedNotes.slice(0, MAX_TRANSACTION_NOTE_LENGTH)
+            : normalizedNotes;
+
+        setAuditContext(req, {
+            metadata: {
+                notesUpdate: {
+                    transactionId: transactionIdentifier,
+                    requestedLength: normalizedNotes.length,
+                },
+            },
+        });
+
+        const transaction = await findTransactionByIdentifier(req.dbAdapter, transactionIdentifier);
+        if (!transaction) {
+            setAuditContext(req, {
+                success: false,
+                status: 'TransactionNotFound',
+                description: `Notes update failed: transaction ${transactionIdentifier} not found`,
+            });
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+
+        const transactionQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
+        const updatedTransaction = await req.dbAdapter.updateInCollection('transactions', transactionQuery, {
+            notes: trimmedNotes,
+        });
+
+        if (!updatedTransaction) {
+            throw new Error('Transaction update failed');
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'NotesUpdated',
+            description: `Updated notes for transaction ${transaction.id || transaction._id}`,
+            entityId: transaction.id || transaction._id,
+            resourceId: transaction.id || transaction._id,
+            metadata: {
+                notesUpdate: {
+                    previousLength: String(transaction.notes || '').length,
+                    newLength: trimmedNotes.length,
+                },
+            },
+        });
+
+        return res.json({
+            message: 'Notes updated successfully',
+            transaction: updatedTransaction,
+        });
+    } catch (error) {
+        console.error('Update transaction notes error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'NotesUpdateFailed',
+            description: `Failed to update notes for transaction ${req.params.id}`,
+            metadata: { error: error.message },
+        });
+        return res.status(500).json({ message: 'Failed to update transaction notes' });
+    }
+});
+
 router.post('/borrow', verifyToken, requireCirculation, logAction('BORROW', 'transaction'), async(req, res) => {
     try {
         const { userId, items, type = 'regular', notes } = req.body;
@@ -1751,7 +1819,8 @@ router.post('/cancel/:id', verifyToken, logAction('CANCEL', 'transaction'), asyn
                         transactionId: transaction.id || transaction._id,
                         actorId: req.user && req.user.id,
                         borrowerId: transaction.userId,
-                        reason: reason || ''
+                        reason: reason || '',
+                        excludeRoles: ['admin']
                     }
                 });
             } catch (notificationError) {
@@ -2208,6 +2277,234 @@ router.post('/reject/:id', verifyToken, requireCirculation, logAction('REJECT', 
         console.error('Reject request error:', error);
         setAuditContext(req, { success: false, status: 'Error', description: `Reject failed: ${error.message}`, details: { error: error.message } });
         res.status(500).json({ message: 'Failed to reject request' });
+    }
+});
+
+router.post('/:id/missing', verifyToken, requireCirculation, logAction('MARK_MISSING', 'transaction'), async (req, res) => {
+    try {
+        const txnIdentifier = req.params.id;
+        const { reason } = req.body || {};
+
+        setAuditContext(req, {
+            metadata: {
+                missingRequest: {
+                    transactionId: txnIdentifier,
+                    providedReason: reason || ''
+                }
+            }
+        });
+
+        const transaction = await findTransactionByIdentifier(req.dbAdapter, txnIdentifier);
+        if (!transaction) {
+            setAuditContext(req, {
+                success: false,
+                status: 'TransactionNotFound',
+                description: `Missing mark failed: transaction ${txnIdentifier} not found`,
+                entityId: txnIdentifier
+            });
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+
+        const normalizedStatus = normalizeStatus(transaction.status);
+        const allowedStatuses = new Set(['active', 'overdue', 'renewed']);
+        if (!allowedStatuses.has(normalizedStatus)) {
+            setAuditContext(req, {
+                success: false,
+                status: 'InvalidStatus',
+                description: `Missing mark failed: transaction ${transaction.id || transaction._id} is not active`,
+                entityId: transaction.id || transaction._id,
+                metadata: { currentStatus: transaction.status || null }
+            });
+            return res.status(400).json({ message: 'Only active or overdue transactions can be marked as missing' });
+        }
+
+        const outstandingItems = (transaction.items || []).filter(item => item && item.status !== 'returned');
+        if (outstandingItems.length === 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'NoOutstandingItems',
+                description: `Missing mark failed: no outstanding items for ${transaction.id || transaction._id}`,
+                entityId: transaction.id || transaction._id
+            });
+            return res.status(400).json({ message: 'All items on this transaction are already returned' });
+        }
+
+        const missingCopyIds = Array.from(new Set(
+            outstandingItems
+                .map(item => normalizeIdValue(item.copyId))
+                .filter(Boolean)
+        ));
+
+        if (missingCopyIds.length === 0) {
+            setAuditContext(req, {
+                success: false,
+                status: 'MissingCopyIds',
+                description: `Missing mark failed: no reference IDs for outstanding items (${transaction.id || transaction._id})`
+            });
+            return res.status(400).json({ message: 'Outstanding items do not have reference IDs to flag as missing' });
+        }
+
+        const { copiesLookup } = await loadBorrowingLookups(req.dbAdapter);
+        const pendingBookUpdates = new Map();
+        const unresolvedCopies = [];
+        const now = new Date();
+
+        missingCopyIds.forEach(copyId => {
+            const lookup = copiesLookup.get(String(copyId));
+            if (!lookup) {
+                unresolvedCopies.push(copyId);
+                return;
+            }
+
+            const book = lookup.book;
+            const bookKey = book.id || book._id;
+            if (!pendingBookUpdates.has(bookKey)) {
+                pendingBookUpdates.set(bookKey, {
+                    book,
+                    copies: Array.isArray(book.copies) ? [...book.copies] : []
+                });
+            }
+
+            const entry = pendingBookUpdates.get(bookKey);
+            entry.copies = entry.copies.map(copy =>
+                copy.copyId === lookup.copy.copyId
+                    ? { ...copy, status: 'lost', updatedAt: now, updatedBy: req.user.id }
+                    : copy
+            );
+        });
+
+        for (const { book, copies } of pendingBookUpdates.values()) {
+            const bookQuery = book.id ? { id: book.id } : { _id: book._id };
+            const availableCopies = copies.filter(c => c.status === 'available').length;
+            await req.dbAdapter.updateInCollection('books', bookQuery, {
+                copies,
+                availableCopies,
+                updatedAt: now
+            });
+        }
+
+        const missingCopySet = new Set(missingCopyIds);
+        const updatedItems = (transaction.items || []).map(item => {
+            if (!item) return item;
+            const copyKey = normalizeIdValue(item.copyId);
+            if (!copyKey || !missingCopySet.has(copyKey)) {
+                return item;
+            }
+            return {
+                ...item,
+                status: 'missing',
+                missingReportedAt: now,
+                missingReason: reason || ''
+            };
+        });
+
+        const txQuery = transaction.id ? { id: transaction.id } : { _id: transaction._id };
+        await req.dbAdapter.updateInCollection('transactions', txQuery, {
+            status: 'missing',
+            items: updatedItems,
+            missingReportedAt: now,
+            missingReportedBy: req.user.id,
+            missingReason: reason || '',
+            updatedAt: now
+        });
+
+        let borrower = await findUserByAnyIdentifier(req.dbAdapter, transaction.userId);
+        if (!borrower && transaction.user) {
+            borrower = transaction.user;
+        }
+
+        if (borrower) {
+            const stats = borrower.borrowingStats || { totalBorrowed: 0, currentlyBorrowed: 0, totalFines: 0, totalReturned: 0 };
+            const missingCount = missingCopyIds.length;
+            const borrowerQuery = borrower.id ? { id: borrower.id } : { _id: borrower._id };
+            await req.dbAdapter.updateInCollection('users', borrowerQuery, {
+                borrowingStats: {
+                    ...stats,
+                    currentlyBorrowed: Math.max(0, (stats.currentlyBorrowed || 0) - missingCount)
+                },
+                updatedAt: now
+            });
+        }
+
+        const notificationSettings = await getNotificationSettings(req);
+        const channelState = getNotificationChannelState(notificationSettings);
+        const borrowerRecipients = borrower
+            ? buildRecipientList(
+                borrower.id,
+                borrower._id,
+                borrower.userId,
+                borrower.libraryCardNumber,
+                borrower.email,
+                borrower.username
+            )
+            : buildRecipientList(transaction.userId);
+
+        if (channelState?.hasActiveChannel && borrowerRecipients.length > 0) {
+            try {
+                await notifyRecipients(req, borrowerRecipients, {
+                    title: 'Transaction flagged as missing',
+                    message: `Transaction ${transaction.id || transaction._id} has been marked as missing. Please coordinate with the library to settle this record.${reason ? ` Reason: ${reason}.` : ''}`,
+                    type: 'missing',
+                    severity: 'high',
+                    transactionId: transaction.id || transaction._id,
+                    meta: {
+                        transactionId: transaction.id || transaction._id,
+                        missingCopies: missingCopyIds,
+                        reason: reason || ''
+                    }
+                });
+            } catch (notifyError) {
+                console.error('Failed to notify borrower about missing transaction:', notifyError);
+            }
+        }
+
+        try {
+            await notifyRoles(req, ['staff', 'librarian', 'admin'], {
+                title: 'Missing transaction recorded',
+                message: `${getBorrowerName(borrower || transaction.user || {})} has a transaction flagged as missing (${transaction.id || transaction._id}).`,
+                type: 'missing-alert',
+                severity: 'high',
+                transactionId: transaction.id || transaction._id,
+                meta: {
+                    transactionId: transaction.id || transaction._id,
+                    actorId: req.user.id,
+                    missingCopies: missingCopyIds,
+                    reason: reason || ''
+                }
+            });
+        } catch (staffNotifyError) {
+            console.error('Failed to notify staff about missing transaction:', staffNotifyError);
+        }
+
+        setAuditContext(req, {
+            success: true,
+            status: 'MarkedMissing',
+            entityId: transaction.id || transaction._id,
+            resourceId: transaction.id || transaction._id,
+            description: `Marked transaction ${transaction.id || transaction._id} as missing`,
+            metadata: {
+                actorId: req.user.id,
+                reason: reason || '',
+                missingCopies: missingCopyIds,
+                unresolvedCopies
+            }
+        });
+
+        res.json({
+            message: 'Transaction marked as missing',
+            transactionId: transaction.id || transaction._id,
+            missingCopies: missingCopyIds,
+            unresolvedCopies
+        });
+    } catch (error) {
+        console.error('Mark missing error:', error);
+        setAuditContext(req, {
+            success: false,
+            status: 'Error',
+            description: `Missing mark failed: ${error.message}`,
+            details: { error: error.message }
+        });
+        res.status(500).json({ message: 'Failed to mark transaction as missing' });
     }
 });
 

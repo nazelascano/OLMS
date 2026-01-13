@@ -28,7 +28,9 @@ import {
   Menu,
   ListItemIcon,
   CircularProgress,
+  Popover,
 } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
 import {
   Search,
   PersonAdd,
@@ -53,11 +55,23 @@ import {
   buildGradeColorMap,
 } from "../../utils/userAttributes";
 import { PageLoading } from "../../components/Loading";
-import { generateLibraryCard, downloadPDF } from "../../utils/pdfGenerator";
+import { generateLibraryCard, generateLibraryCardsPDF, downloadPDF } from "../../utils/pdfGenerator";
 import MobileScanButton from "../../components/MobileScanButton";
 import MobileScanDialog from "../../components/MobileScanDialog";
-import { addActionButtonSx, importActionButtonSx } from "../../theme/actionButtons";
+import {
+  addActionButtonSx,
+  importActionButtonSx,
+  printActionButtonSx,
+} from "../../theme/actionButtons";
 import { useSettings } from "../../contexts/SettingsContext";
+import { useAuth } from "../../contexts/AuthContext";
+
+const deriveDefaultSchoolYearLabel = () => {
+  const now = new Date();
+  const baseYear = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1;
+  const endYear = baseYear + 1;
+  return `${baseYear}-${endYear}`;
+};
 
 const StudentsList = () => {
   const navigate = useNavigate();
@@ -80,8 +94,25 @@ const StudentsList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchScannerOpen, setSearchScannerOpen] = useState(false);
+  const [batchPrintDialogOpen, setBatchPrintDialogOpen] = useState(false);
+  const [batchFilters, setBatchFilters] = useState(() => ({
+    grade: "",
+    section: "",
+    schoolYear: deriveDefaultSchoolYearLabel(),
+  }));
+  const [batchPrintError, setBatchPrintError] = useState("");
+  const [batchPrintLoading, setBatchPrintLoading] = useState(false);
+  const [schoolYearOptions, setSchoolYearOptions] = useState([]);
+  const [schoolYearLoading, setSchoolYearLoading] = useState(false);
   const searchInputId = "students-search-input";
   const { finesEnabled } = useSettings();
+  const { hasPermission, user } = useAuth();
+  const canCreateStudents = hasPermission("students.create");
+  const canEditStudents = hasPermission("students.update");
+  const canDeleteStudents = hasPermission("students.delete");
+  const userRole = (user?.role || "").toString().toLowerCase();
+  const canBatchPrintCards =
+    hasPermission("students.view") && ["admin", "librarian", "staff"].includes(userRole);
 
   // Menu state for per-row actions (three-dot vertical menu)
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -120,6 +151,13 @@ const StudentsList = () => {
     const gradeSpecific = getSectionsForGrade(gradeStructure, gradeFilter);
     return gradeSpecific.length > 0 ? gradeSpecific : allSections;
   }, [gradeFilter, gradeStructure, allSections]);
+  const batchAvailableSections = useMemo(() => {
+    if (!batchFilters.grade) {
+      return allSections;
+    }
+    const gradeSpecific = getSectionsForGrade(gradeStructure, batchFilters.grade);
+    return gradeSpecific.length > 0 ? gradeSpecific : allSections;
+  }, [batchFilters.grade, gradeStructure, allSections]);
   const hasGradeOptions = gradeOptions.length > 0;
   // Filter menu state
   const [filterAnchorEl, setFilterAnchorEl] = useState(null);
@@ -152,6 +190,48 @@ const StudentsList = () => {
       setPaymentDialogOpen(false);
     }
   }, [finesEnabled]);
+
+  useEffect(() => {
+    if (!batchPrintDialogOpen) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const loadSchoolYears = async () => {
+      try {
+        setSchoolYearLoading(true);
+        setBatchPrintError("");
+        const response = await studentsAPI.getSchoolYears();
+        if (!isMounted) {
+          return;
+        }
+        const yearList = response?.data?.schoolYears || [];
+        setSchoolYearOptions(yearList);
+        setBatchFilters((previous) => {
+          if (previous.schoolYear || yearList.length === 0) {
+            return previous;
+          }
+          return { ...previous, schoolYear: yearList[yearList.length - 1] };
+        });
+      } catch (error) {
+        console.error("Failed to load school year options:", error);
+        if (isMounted) {
+          setBatchPrintError("Failed to load school years. Enter one manually to continue.");
+        }
+      } finally {
+        if (isMounted) {
+          setSchoolYearLoading(false);
+        }
+      }
+    };
+
+    loadSchoolYears();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [batchPrintDialogOpen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -303,6 +383,84 @@ const StudentsList = () => {
     }
   };
 
+  const handleOpenBatchDialog = () => {
+    setBatchPrintError("");
+    setBatchFilters((previous) => ({
+      grade: gradeFilter || previous.grade || "",
+      section: sectionFilter || previous.section || "",
+      schoolYear: previous.schoolYear || deriveDefaultSchoolYearLabel(),
+    }));
+    setBatchPrintDialogOpen(true);
+  };
+
+  const handleBatchFilterChange = (field, value) => {
+    setBatchFilters((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
+
+  const handleBatchPrintCards = async () => {
+    const normalizedYear = (batchFilters.schoolYear || "").trim();
+    if (!normalizedYear) {
+      setBatchPrintError("School year is required to print new cards.");
+      return;
+    }
+
+    setBatchPrintError("");
+    const toastId = toast.loading("Preparing library cards...");
+    try {
+      setBatchPrintLoading(true);
+      const params = {
+        limit: "all",
+        schoolYear: normalizedYear,
+      };
+      if (batchFilters.grade) params.grade = batchFilters.grade;
+      if (batchFilters.section) params.section = batchFilters.section;
+
+      const response = await studentsAPI.getAll(params);
+      const payload = response.data || {};
+      const dataset = payload.students || payload.data || [];
+      const printableStudents = dataset
+        .filter((studentRecord) => studentRecord?.libraryCardNumber)
+        .sort((studentA, studentB) => {
+          const gradeCompare = (studentA.grade || "").localeCompare(studentB.grade || "");
+          if (gradeCompare !== 0) {
+            return gradeCompare;
+          }
+          const sectionCompare = (studentA.section || "").localeCompare(studentB.section || "");
+          if (sectionCompare !== 0) {
+            return sectionCompare;
+          }
+          const nameA = `${studentA.lastName || ""} ${studentA.firstName || ""}`.trim();
+          const nameB = `${studentB.lastName || ""} ${studentB.firstName || ""}`.trim();
+          return nameA.localeCompare(nameB);
+        });
+
+      if (printableStudents.length === 0) {
+        toast.error("No students matched the selected filters.");
+        return;
+      }
+
+      const libraryResponse = await settingsAPI.getByCategory('library');
+      const librarySettings = libraryResponse.data || {};
+      const pdf = await generateLibraryCardsPDF(printableStudents, librarySettings, { gradeColorMap });
+      const safeYear = normalizedYear.replace(/[^0-9A-Za-z-]/g, "_");
+      downloadPDF(pdf, `library_cards_${safeYear || 'students'}.pdf`);
+      toast.success(`Generated ${printableStudents.length} library card${printableStudents.length === 1 ? '' : 's'}.`);
+      setBatchPrintDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to generate batch library cards:", error);
+      setBatchPrintError(error?.response?.data?.message || "Failed to generate library cards.");
+      toast.error("Failed to generate library cards.");
+    } finally {
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
+      setBatchPrintLoading(false);
+    }
+  };
+
   const handleImportComplete = () => {
     fetchStudents();
   };
@@ -358,26 +516,41 @@ const StudentsList = () => {
           {loading && students.length > 0 && (
             <CircularProgress size={18} sx={{ mr: 1 }} />
           )}
-          <Button
-            variant="outlined"
-            startIcon={<GetApp />}
-            onClick={() => {
-              setImportDialogOpen(true);
-            }}
-            sx={importActionButtonSx}
-          >
-            Import
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PersonAdd />}
-            onClick={() => {
-              navigate("/students/new");
-            }}
-            sx={addActionButtonSx}
-          >
-            Add Student
-          </Button>
+          {canBatchPrintCards && (
+            <Button
+              variant="contained"
+              startIcon={<Print />}
+              onClick={handleOpenBatchDialog}
+              sx={printActionButtonSx}
+              aria-label="Batch print library cards"
+            >
+              Batch Print Cards
+            </Button>
+          )}
+          {canCreateStudents && (
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<GetApp />}
+                onClick={() => {
+                  setImportDialogOpen(true);
+                }}
+                sx={importActionButtonSx}
+              >
+                Import
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<PersonAdd />}
+                onClick={() => {
+                  navigate("/students/new");
+                }}
+                sx={addActionButtonSx}
+              >
+                Add Student
+              </Button>
+            </>
+          )}
         </Box>{" "}
       </Box>
   {/* Search and Filters */}
@@ -411,12 +584,14 @@ const StudentsList = () => {
             <FilterList />
           </IconButton>
 
-          <Menu
+          <Popover
             anchorEl={filterAnchorEl}
             open={filterOpen}
             onClose={handleCloseFilters}
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
+            disableAutoFocus
+            disableEnforceFocus
             PaperProps={{ sx: { p: 2, minWidth: 220 } }}
           >
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -482,7 +657,7 @@ const StudentsList = () => {
                 </Button>
               </Box>
             </Box>
-          </Menu>
+          </Popover>
         </Box>
         {attributeError && (
           <Alert severity="warning" sx={{ mt: 2 }}>
@@ -552,7 +727,7 @@ const StudentsList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {students.map((student) => {
+              {students.map((student, index) => {
                 const avatarSrc = resolveEntityAvatar(student);
                 const fallbackInitial = [student.firstName, student.lastName, student.username, student.email]
                   .map((value) => (typeof value === "string" && value.trim() ? value.trim().charAt(0).toUpperCase() : ""))
@@ -564,10 +739,27 @@ const StudentsList = () => {
                   student.username ||
                   student.studentId ||
                   "Student avatar";
+                const studentEntityId = getStudentEntityId(student);
+                const studentIdentifier =
+                  student.studentId ||
+                  student.libraryCardNumber ||
+                  student.username ||
+                  student.lrn ||
+                  studentEntityId ||
+                  "Not set";
+                const studentLrn = student.lrn || student.username || "Not provided";
+                const rowKey =
+                  studentEntityId ||
+                  studentIdentifier ||
+                  student.email ||
+                  student.phoneNumber ||
+                  student.createdAt ||
+                  student.updatedAt ||
+                  `student-row-${index}`;
 
                 return (
                   <TableRow
-                    key={student._id || student.id || student.uid || student.studentId}
+                    key={rowKey}
                     hover
                     onDoubleClick={() => handleNavigateToProfile(student)}
                     sx={{ cursor: "pointer" }}
@@ -596,8 +788,8 @@ const StudentsList = () => {
                             {student.fullName ||
                               `${student.firstName || ""} ${student.middleName ? student.middleName + " " : ""}${student.lastName || ""}`}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            ID: {student.studentId}
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            LRN: {studentLrn}
                           </Typography>
                           {student.email && (
                             <Typography
@@ -725,30 +917,34 @@ const StudentsList = () => {
                           </MenuItem>
                         )}
 
-                        <MenuItem
-                          onClick={() => {
-                            navigate(`/students/${student._id || student.id}/edit`);
-                            handleCloseMenu();
-                          }}
-                        >
-                          <ListItemIcon>
-                            <Edit fontSize="small" />
-                          </ListItemIcon>
-                          Edit
-                        </MenuItem>
+                        {canEditStudents && (
+                          <MenuItem
+                            onClick={() => {
+                              navigate(`/students/${student._id || student.id}/edit`);
+                              handleCloseMenu();
+                            }}
+                          >
+                            <ListItemIcon>
+                              <Edit fontSize="small" />
+                            </ListItemIcon>
+                            Edit
+                          </MenuItem>
+                        )}
 
-                        <MenuItem
-                          onClick={() => {
-                            setSelectedStudent(student);
-                            setDeleteDialogOpen(true);
-                            handleCloseMenu();
-                          }}
-                        >
-                          <ListItemIcon>
-                            <DeleteIcon fontSize="small" />
-                          </ListItemIcon>
-                          Delete
-                        </MenuItem>
+                        {canDeleteStudents && (
+                          <MenuItem
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setDeleteDialogOpen(true);
+                              handleCloseMenu();
+                            }}
+                          >
+                            <ListItemIcon>
+                              <DeleteIcon fontSize="small" />
+                            </ListItemIcon>
+                            Delete
+                          </MenuItem>
+                        )}
                       </Menu>
                     </Box>
                   </TableCell>
@@ -785,6 +981,98 @@ const StudentsList = () => {
         elementId="students-search-qr"
         targetSelector={`#${searchInputId}`}
       />
+      <Dialog
+        open={batchPrintDialogOpen}
+        onClose={() => {
+          if (!batchPrintLoading) {
+            setBatchPrintDialogOpen(false);
+          }
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Print Library Cards</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            Select grade, section, and school year to generate cards for newly enrolled students.
+          </Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel>Grade</InputLabel>
+            <Select
+              value={batchFilters.grade}
+              onChange={(event) => handleBatchFilterChange("grade", event.target.value)}
+              label="Grade"
+              disabled={!hasGradeOptions}
+            >
+              <MenuItem value="">All Grades</MenuItem>
+              {hasGradeOptions ? (
+                gradeOptions.map((grade) => (
+                  <MenuItem key={`batch-grade-${grade}`} value={grade}>
+                    {grade}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem value="" disabled>
+                  No grade options available
+                </MenuItem>
+              )}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth size="small">
+            <InputLabel>Section</InputLabel>
+            <Select
+              value={batchFilters.section}
+              onChange={(event) => handleBatchFilterChange("section", event.target.value)}
+              label="Section"
+              disabled={batchAvailableSections.length === 0}
+            >
+              <MenuItem value="">All Sections</MenuItem>
+              {batchAvailableSections.length === 0 ? (
+                <MenuItem value="" disabled>
+                  No sections configured
+                </MenuItem>
+              ) : (
+                batchAvailableSections.map((section) => (
+                  <MenuItem key={`batch-section-${section}`} value={section}>
+                    Section {section}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+          <Autocomplete
+            freeSolo
+            loading={schoolYearLoading}
+            options={schoolYearOptions}
+            value={batchFilters.schoolYear}
+            onInputChange={(event, value) => handleBatchFilterChange("schoolYear", value || "")}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="School Year"
+                required
+                helperText="Example: 2025-2026"
+              />
+            )}
+          />
+          {batchPrintError && (
+            <Alert severity="error">{batchPrintError}</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBatchPrintDialogOpen(false)} disabled={batchPrintLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleBatchPrintCards}
+            variant="contained"
+            disabled={batchPrintLoading}
+            startIcon={!batchPrintLoading ? <Print /> : undefined}
+          >
+            {batchPrintLoading ? <CircularProgress size={18} color="inherit" /> : "Print Library Cards"}
+          </Button>
+        </DialogActions>
+      </Dialog>
   {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}

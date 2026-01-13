@@ -6,21 +6,21 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:04:32.962Z",
-    "updatedAt": "2026-01-09T06:10:27.105Z",
+    "updatedAt": "2026-01-13T05:45:43.218Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqchqec9nul"
   },
   {
     "id": "LIBRARY_NAME",
-    "value": "Odiongan National High School LRC",
+    "value": "Odiongan NHS LRC",
     "type": "string",
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.385Z",
-    "updatedAt": "2026-01-09T06:10:27.078Z",
+    "updatedAt": "2026-01-13T05:45:43.169Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6kzg3l5j"
   },
   {
@@ -30,9 +30,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.391Z",
-    "updatedAt": "2026-01-09T06:10:27.084Z",
+    "updatedAt": "2026-01-13T05:45:43.192Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l4oogud"
   },
   {
@@ -42,9 +42,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.396Z",
-    "updatedAt": "2026-01-09T06:10:27.089Z",
+    "updatedAt": "2026-01-13T05:45:43.199Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l94ztt2"
   },
   {
@@ -54,9 +54,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.400Z",
-    "updatedAt": "2026-01-09T06:10:27.095Z",
+    "updatedAt": "2026-01-13T05:45:43.206Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ld6m03t"
   },
   {
@@ -66,9 +66,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.405Z",
-    "updatedAt": "2026-01-09T06:10:27.100Z",
+    "updatedAt": "2026-01-13T05:45:43.213Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ljoql14"
   },
   {
@@ -78,7 +78,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.910Z",
-    "updatedAt": "2026-01-09T06:13:36.572Z",
+    "updatedAt": "2026-01-13T08:10:17.730Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrorc3m9xi"
@@ -90,7 +90,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.915Z",
-    "updatedAt": "2026-01-09T06:13:36.577Z",
+    "updatedAt": "2026-01-13T08:10:17.733Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrorggln7f"
@@ -102,7 +102,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.940Z",
-    "updatedAt": "2026-01-09T06:13:36.582Z",
+    "updatedAt": "2026-01-13T08:10:17.736Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqros5bldud"
@@ -114,7 +114,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.946Z",
-    "updatedAt": "2026-01-09T06:13:36.591Z",
+    "updatedAt": "2026-01-13T08:10:17.740Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrosbq7kps"
@@ -126,7 +126,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.950Z",
-    "updatedAt": "2026-01-09T06:13:36.597Z",
+    "updatedAt": "2026-01-13T08:10:17.744Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrosfh64gu"
@@ -138,7 +138,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.954Z",
-    "updatedAt": "2026-01-09T06:13:36.608Z",
+    "updatedAt": "2026-01-13T08:10:17.749Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrosjwqh9n"
@@ -150,7 +150,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.958Z",
-    "updatedAt": "2026-01-09T06:13:36.613Z",
+    "updatedAt": "2026-01-13T08:10:17.752Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrosnr4xu3"
@@ -162,7 +162,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.963Z",
-    "updatedAt": "2026-01-09T06:13:36.617Z",
+    "updatedAt": "2026-01-13T08:10:17.756Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrossekbzp"
@@ -174,7 +174,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:16:21.967Z",
-    "updatedAt": "2026-01-09T06:13:36.623Z",
+    "updatedAt": "2026-01-13T08:10:17.760Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mhildatik9wdo",
     "_id": "mibqrosw573hd"
@@ -195,7 +195,7 @@
     "category": "user",
     "description": "Configured curriculum options for users and students",
     "createdAt": "2025-11-24T05:02:39.839Z",
-    "updatedAt": "2026-01-09T05:45:48.487Z",
+    "updatedAt": "2026-01-13T05:42:57.438Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "micokmw090ijp"
@@ -214,7 +214,7 @@
     "category": "user",
     "description": "Configured grade level options for users and students",
     "createdAt": "2025-11-24T05:02:39.845Z",
-    "updatedAt": "2026-01-09T05:45:48.490Z",
+    "updatedAt": "2026-01-13T05:42:57.445Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "micokmw7tkjx3"
@@ -226,14 +226,14 @@
       "overdueNotifications": true,
       "reservationNotifications": true,
       "returnNotifications": true,
-      "reminderDaysBefore": 3,
+      "reminderDaysBefore": 1,
       "maxReminders": 3
     },
     "type": "object",
     "category": "notifications",
     "description": "",
     "createdAt": "2025-12-08T04:40:29.954Z",
-    "updatedAt": "2025-12-08T04:40:29.957Z",
+    "updatedAt": "2026-01-13T05:44:59.097Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "miwny22tjqzoj"
@@ -245,7 +245,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.933Z",
-    "updatedAt": "2025-12-12T23:29:32.945Z",
+    "updatedAt": "2026-01-13T05:44:13.810Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d73swlt4"
@@ -257,7 +257,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.939Z",
-    "updatedAt": "2025-12-12T23:29:32.947Z",
+    "updatedAt": "2026-01-13T05:44:13.818Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d784ciu5"
@@ -269,7 +269,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.946Z",
-    "updatedAt": "2025-12-12T23:29:32.949Z",
+    "updatedAt": "2026-01-13T05:44:13.824Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d7gcj7cg"
@@ -281,7 +281,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.952Z",
-    "updatedAt": "2025-12-12T23:29:32.950Z",
+    "updatedAt": "2026-01-13T05:44:13.830Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d7l7klky"
@@ -293,7 +293,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.956Z",
-    "updatedAt": "2025-12-12T23:29:32.952Z",
+    "updatedAt": "2026-01-13T05:44:13.837Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d7pfd1pl"
@@ -305,7 +305,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.961Z",
-    "updatedAt": "2025-12-12T23:29:32.955Z",
+    "updatedAt": "2026-01-13T05:44:13.842Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d7vmyc9o"
@@ -317,7 +317,7 @@
     "category": "system",
     "description": "",
     "createdAt": "2025-12-12T03:58:25.967Z",
-    "updatedAt": "2025-12-12T23:29:32.959Z",
+    "updatedAt": "2026-01-13T05:44:13.848Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj2c7d803ffyl"
@@ -329,9 +329,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.460Z",
-    "updatedAt": "2026-01-09T06:10:27.110Z",
+    "updatedAt": "2026-01-13T05:45:43.226Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atb1oh0ll"
   },
   {
@@ -341,9 +341,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.465Z",
-    "updatedAt": "2026-01-09T06:10:27.115Z",
+    "updatedAt": "2026-01-13T05:45:43.234Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atb686r04"
   },
   {
@@ -361,9 +361,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.471Z",
-    "updatedAt": "2026-01-09T06:10:27.120Z",
+    "updatedAt": "2026-01-13T05:45:43.240Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atbc3onl7"
   },
   {
@@ -373,9 +373,9 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.475Z",
-    "updatedAt": "2026-01-09T06:10:27.125Z",
+    "updatedAt": "2026-01-13T05:45:43.249Z",
     "createdBy": "mgnhicbwhxfy9",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atbhcsa2w"
   },
   {
@@ -442,7 +442,7 @@
     "category": "user",
     "description": "Configured grade levels with section options",
     "createdAt": "2025-12-14T05:31:49.641Z",
-    "updatedAt": "2026-01-09T05:45:48.493Z",
+    "updatedAt": "2026-01-13T05:42:57.453Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj5af6douzyj4"

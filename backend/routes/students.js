@@ -97,7 +97,8 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
             section,
             curriculum,
             search,
-            isActive
+            isActive,
+            schoolYear
         } = req.query;
 
         const baseFilters = { role: 'student' };
@@ -155,6 +156,15 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
             );
         }
 
+        if (schoolYear) {
+            const yearLower = schoolYear.toString().toLowerCase();
+            filteredStudents = filteredStudents.filter(student =>
+                (student.schoolYear || student.academicYear || '')
+                    .toString()
+                    .toLowerCase() === yearLower
+            );
+        }
+
         if (searchTerm) {
             filteredStudents = filteredStudents.filter(student => {
                 const valuesToMatch = [
@@ -198,6 +208,23 @@ router.get('/', verifyToken, requireStaff, async(req, res) => {
     } catch (error) {
         console.error('Failed to fetch students:', error);
         res.status(500).json({ message: 'Failed to fetch students', error: error.message });
+    }
+});
+
+router.get('/school-years', verifyToken, requireStaff, async(req, res) => {
+    try {
+        const students = await req.dbAdapter.getUsers({ role: 'student' });
+        const uniqueYears = Array.from(new Set(
+            (students || []).map((student) => {
+                const resolvedYear = student?.schoolYear || student?.academicYear || resolveSchoolYear(student);
+                return (resolvedYear || '').toString().trim();
+            }).filter(Boolean)
+        )).sort((a, b) => a.localeCompare(b));
+
+        res.json({ schoolYears: uniqueYears });
+    } catch (error) {
+        console.error('Failed to fetch school years:', error);
+        res.status(500).json({ message: 'Failed to fetch school years', error: error.message });
     }
 });
 

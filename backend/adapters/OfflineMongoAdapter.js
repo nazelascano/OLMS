@@ -9,6 +9,7 @@ class OfflineMongoAdapter {
     this.collections = {
       users: 'users.json',
       books: 'books.json',
+      bookCategories: 'bookCategories.json',
       transactions: 'transactions.json',
       notifications: 'notifications.json',
       notificationReads: 'notificationReads.json',
