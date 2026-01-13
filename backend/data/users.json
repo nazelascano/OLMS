@@ -215,13 +215,13 @@
     },
     "_id": "mhiohn4smj18h",
     "createdAt": "2025-11-03T05:07:14.908Z",
-    "updatedAt": "2026-01-13T08:48:39.801Z",
+    "updatedAt": "2026-01-13T09:26:39.800Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
     "lastLoginAt": "2026-01-13T08:42:39.170Z",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2026-01-13T08:48:39.800Z",
+    "lastActivityAt": "2026-01-13T09:26:39.799Z",
     "preferences": {
       "studentDashboard": {
         "welcomeDismissed": true

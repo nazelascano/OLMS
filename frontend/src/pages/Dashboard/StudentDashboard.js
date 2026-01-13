@@ -8,6 +8,140 @@ import { useSettings } from "../../contexts/SettingsContext";
 import { useNavigate } from "react-router-dom";
 import { resolveEntityAvatar } from "../../utils/media";
 
+const ACTIVE_TRANSACTION_STATUSES = new Set([
+  "borrowed",
+  "active",
+  "missing",
+  "lost",
+  "damaged",
+  "overdue",
+  "released",
+]);
+
+const REQUEST_TRANSACTION_STATUSES = new Set([
+  "requested",
+  "pending",
+  "reservation-expired",
+  "queued",
+  "processing",
+  "awaiting-approval",
+]);
+
+const normalizeStatusValue = (status) => {
+  if (!status) return "pending";
+  return String(status).trim().toLowerCase();
+};
+
+const formatStatValue = (value) => {
+  if (value === null || value === undefined) {
+    return "0";
+  }
+
+  if (typeof value === "number") {
+    return new Intl.NumberFormat("en-US").format(value);
+  }
+
+  const numericValue = Number(value);
+  if (!Number.isNaN(numericValue)) {
+    return new Intl.NumberFormat("en-US").format(numericValue);
+  }
+
+  return String(value);
+};
+
+const StatCard = ({ title, value, caption, icon: Icon, iconColor = "#2563EB", iconBg = "rgba(37, 99, 235, 0.12)" }) => {
+  const displayValue = formatStatValue(value);
+
+  return (
+    <Card
+      sx={{
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: "divider",
+        boxShadow: "0 14px 30px rgba(15, 23, 42, 0.12)",
+        height: "100%",
+        backgroundColor: "#fff",
+      }}
+    >
+      <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={1.5}>
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
+                letterSpacing: "0.08em",
+                fontWeight: 600,
+                textTransform: "uppercase",
+              }}
+            >
+              {title}
+            </Typography>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: "#0F172A", mt: 0.75 }}>
+              {displayValue}
+            </Typography>
+          </Box>
+          {Icon ? (
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                backgroundColor: iconBg,
+                color: iconColor,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon fontSize="small" />
+            </Box>
+          ) : null}
+        </Box>
+        {caption ? (
+          <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.8rem" }}>
+            {caption}
+          </Typography>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+};
+
+const SectionCard = ({ title, subtitle, children }) => (
+  <Paper
+    sx={{
+      p: { xs: 2, md: 3 },
+      borderRadius: 3,
+      border: "1px solid",
+      borderColor: "divider",
+      backgroundColor: "#fff",
+      boxShadow: "0 18px 45px rgba(15, 23, 42, 0.12)",
+    }}
+  >
+    <Box mb={2}>
+      {subtitle ? (
+        <Typography
+          variant="caption"
+          sx={{
+            color: "text.secondary",
+            letterSpacing: "0.08em",
+            fontWeight: 600,
+            textTransform: "uppercase",
+          }}
+        >
+          {subtitle}
+        </Typography>
+      ) : null}
+      <Typography variant="h6" sx={{ color: "#0F172A", fontWeight: 700 }}>
+        {title}
+      </Typography>
+    </Box>
+    <Divider sx={{ mb: 2 }} />
+    {children}
+  </Paper>
+);
+
 const StudentDashboard = () => {
   const { user, updateUserData } = useAuth();
   const { finesEnabled } = useSettings();
@@ -15,16 +149,17 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [cancelingId, setCancelingId] = useState(null);
   const [showWelcomeCard, setShowWelcomeCard] = useState(() => {
-    const dismissed = Boolean(
-      user?.preferences?.studentDashboard?.welcomeDismissed,
-    );
+    const dismissed = Boolean(user?.preferences?.studentDashboard?.welcomeDismissed);
     return !dismissed;
   });
   const navigate = useNavigate();
   const studentAvatarSrc = useMemo(() => resolveEntityAvatar(user), [user]);
-  const studentDisplayName = user
-    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Student"
-    : "Student";
+  const studentDisplayName = useMemo(() => {
+    if (!user) return "Student";
+    const fallback = user.username || "Student";
+    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    return fullName || fallback;
+  }, [user]);
   const studentInitial = (studentDisplayName.charAt(0) || "U").toUpperCase();
   const userIdentifier = useMemo(() => {
     return (
@@ -41,25 +176,20 @@ const StudentDashboard = () => {
     return tx.id || tx._id || tx.transactionId || tx.documentId || "";
   }, []);
 
-  const normalizeStatus = (status) => {
-    if (!status) return "pending";
-    return String(status).toLowerCase();
-  };
+  const normalizeStatus = useCallback((status) => normalizeStatusValue(status), []);
 
-  const isBorrowedStatus = (status) => {
-    const normalized = normalizeStatus(status);
-    return normalized === "borrowed" || normalized === "active";
-  };
+  const isBorrowedStatus = useCallback(
+    (status) => ACTIVE_TRANSACTION_STATUSES.has(normalizeStatus(status)),
+    [normalizeStatus],
+  );
 
-  const isPendingRequestStatus = (status) => {
-    const normalized = normalizeStatus(status);
-    return normalized === "requested" || normalized === "pending";
-  };
+  const isPendingRequestStatus = useCallback(
+    (status) => REQUEST_TRANSACTION_STATUSES.has(normalizeStatus(status)),
+    [normalizeStatus],
+  );
 
   useEffect(() => {
-    const dismissed = Boolean(
-      user?.preferences?.studentDashboard?.welcomeDismissed,
-    );
+    const dismissed = Boolean(user?.preferences?.studentDashboard?.welcomeDismissed);
     setShowWelcomeCard(!dismissed);
 
     const fetchUserTransactions = async () => {
@@ -71,7 +201,7 @@ const StudentDashboard = () => {
         const txs = Array.isArray(resp.data) ? resp.data : resp.data?.transactions || [];
         setTransactions(txs);
       } catch (err) {
-        console.error('Failed to load user transactions', err);
+        console.error("Failed to load user transactions", err);
         setTransactions([]);
       } finally {
         setLoading(false);
@@ -111,36 +241,77 @@ const StudentDashboard = () => {
     }
   };
 
-  const currentBorrows = transactions.filter(t => isBorrowedStatus(t.status));
-  const requests = transactions.filter(t => isPendingRequestStatus(t.status));
-  const overdue = transactions.filter(t => {
-    try {
-      if (!t.dueDate) return false;
-      const due = new Date(t.dueDate);
-      return isBorrowedStatus(t.status) && due < new Date();
-    } catch (e) { return false; }
-  });
+  const currentBorrows = useMemo(
+    () => transactions.filter((t) => isBorrowedStatus(t.status)),
+    [transactions, isBorrowedStatus],
+  );
 
-  const totalBorrowed = user?.borrowingStats?.totalBorrowed ?? transactions.filter(t => {
-    const status = normalizeStatus(t.status);
-    return status === 'borrowed' || status === 'returned' || status === 'active';
-  }).length;
-  const currentlyBorrowed = user?.borrowingStats?.currentlyBorrowed ?? currentBorrows.length;
+  const requests = useMemo(
+    () => transactions.filter((t) => isPendingRequestStatus(t.status)),
+    [transactions, isPendingRequestStatus],
+  );
+
+  const overdue = useMemo(() => {
+    return transactions.filter((t) => {
+      try {
+        if (!t.dueDate) return false;
+        const due = new Date(t.dueDate);
+        return isBorrowedStatus(t.status) && due < new Date();
+      } catch (error) {
+        return false;
+      }
+    });
+  }, [transactions, isBorrowedStatus]);
+
+  const totalBorrowed = useMemo(() => transactions.length, [transactions]);
+
+  const currentlyBorrowed = useMemo(() => currentBorrows.length, [currentBorrows]);
+
   const pendingRequestsCount = requests.length;
   const pendingCardLabel = finesEnabled ? "Pending / Overdue" : "Pending Requests";
   const pendingDisplayValue = finesEnabled
     ? pendingRequestsCount + overdue.length
     : pendingRequestsCount;
 
+  const statCards = useMemo(
+    () => [
+      {
+        title: "Total Borrowed",
+        value: totalBorrowed,
+        caption: "Lifetime checkouts",
+        icon: MenuBook,
+        iconColor: "#A855F7",
+        iconBg: "rgba(168, 85, 247, 0.16)",
+      },
+      {
+        title: "Currently Borrowed",
+        value: currentlyBorrowed,
+        caption: "Books in hand",
+        icon: History,
+        iconColor: "#2563EB",
+        iconBg: "rgba(37, 99, 235, 0.12)",
+      },
+      {
+        title: pendingCardLabel,
+        value: pendingDisplayValue,
+        caption: finesEnabled ? "Requests + overdue" : "Awaiting approval",
+        icon: PendingActions,
+        iconColor: "#F97316",
+        iconBg: "rgba(249, 115, 22, 0.16)",
+      },
+    ],
+    [totalBorrowed, currentlyBorrowed, pendingDisplayValue, pendingCardLabel, finesEnabled],
+  );
+
   const handleCancelRequest = async (transactionId) => {
     if (!transactionId) return;
-    const confirmed = window.confirm('Are you sure you want to cancel this request?');
+    const confirmed = window.confirm("Are you sure you want to cancel this request?");
     if (!confirmed) return;
 
     try {
       setCancelingId(transactionId);
       const response = await transactionsAPI.cancelRequest(transactionId);
-      toast.success(response?.data?.message || 'Request cancelled');
+      toast.success(response?.data?.message || "Request cancelled");
       setTransactions((prev) =>
         prev.map((entry) => {
           const entryId = resolveTransactionId(entry);
@@ -153,26 +324,26 @@ const StudentDashboard = () => {
           }
           return {
             ...entry,
-            status: 'cancelled',
-            cancelledAt: new Date().toISOString()
+            status: "cancelled",
+            cancelledAt: new Date().toISOString(),
           };
-        })
+        }),
       );
     } catch (error) {
-      console.error('Failed to cancel request', error);
-      toast.error(error?.response?.data?.message || 'Failed to cancel request');
+      console.error("Failed to cancel request", error);
+      toast.error(error?.response?.data?.message || "Failed to cancel request");
     } finally {
       setCancelingId(null);
     }
   };
 
   return (
-    <Box>
-      <Typography variant="h1" sx={{ mb: 3, fontSize: "1.5rem", fontWeight: 600, color: "white" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Typography variant="h1" sx={{ fontSize: "1.5rem", fontWeight: 600, color: "white" }}>
         Student Dashboard
       </Typography>
       {showWelcomeCard ? (
-        <Paper sx={{ p: 3, mb: 3, position: "relative" }}>
+        <Paper sx={{ p: 3, position: "relative", borderRadius: 3, boxShadow: 4 }}>
           <IconButton
             size="small"
             aria-label="Dismiss welcome message"
@@ -189,11 +360,9 @@ const StudentDashboard = () => {
         </Paper>
       ) : null}
 
-      {/* Student details card (polished layout) */}
       <Paper
         sx={{
           p: { xs: 2.5, sm: 3 },
-          mb: 3,
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'divider',
@@ -319,129 +488,144 @@ const StudentDashboard = () => {
         </Grid>
       </Paper>
 
-      {/* Stat cards + quick actions */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={8}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} lg={8}>
           <Grid container spacing={2}>
-            <Grid item xs={6} sm={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle2" color="textSecondary">Total Borrowed</Typography>
-                  <Typography variant="h5">{totalBorrowed}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={6} sm={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle2" color="textSecondary">Currently Borrowed</Typography>
-                  <Typography variant="h5">{currentlyBorrowed}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={6} sm={4}>
-              <Card>
-                <CardContent>
-                  <Typography variant="subtitle2" color="textSecondary">{pendingCardLabel}</Typography>
-                  <Typography variant="h5">{pendingDisplayValue}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+            {statCards.map((card) => (
+              <Grid item xs={12} sm={6} md={4} key={card.title}>
+                <StatCard {...card} />
+              </Grid>
+            ))}
           </Grid>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="subtitle2" color="textSecondary">Quick Actions</Typography>
+        <Grid item xs={12} lg={4}>
+          <Card
+            sx={{
+              height: '100%',
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 14px 30px rgba(15, 23, 42, 0.12)',
+            }}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  letterSpacing: '0.08em',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Quick Actions
+              </Typography>
+              <Typography variant="h6" sx={{ color: '#0F172A', fontWeight: 700, mt: 0.5 }}>
+                Stay productive
+              </Typography>
               <Box mt={2} display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
-                <Button variant="contained" color="primary" onClick={() => navigate('/transactions/request')}>Request Borrow</Button>
-                <Button variant="outlined" onClick={() => navigate('/books')}>Browse Books</Button>
+                <Button variant="contained" color="primary" onClick={() => navigate('/transactions/request')} sx={{ flex: 1, width: '100%' }}>
+                  Request Borrow
+                </Button>
+                <Button variant="outlined" onClick={() => navigate('/books')} sx={{ flex: 1, width: '100%' }}>
+                  Browse Books
+                </Button>
               </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      <Box mb={3}>
-        <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>Current Borrows</Typography>
-        <Paper>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
+      <SectionCard title="Current Borrows" subtitle="Items you currently have checked out">
+        <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Transaction ID</TableCell>
+                <TableCell>Book</TableCell>
+                <TableCell>Borrow Date</TableCell>
+                <TableCell>Due Date</TableCell>
+                <TableCell>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {currentBorrows.length === 0 ? (
                 <TableRow>
-                  <TableCell>Transaction ID</TableCell>
-                  <TableCell>Book</TableCell>
-                  <TableCell>Borrow Date</TableCell>
-                  <TableCell>Due Date</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell colSpan={5} align="center">
+                    {loading ? 'Loading...' : 'No current borrows'}
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {currentBorrows.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} align="center">{loading ? 'Loading...' : 'No current borrows'}</TableCell></TableRow>
-                ) : (
-                  currentBorrows.map(tx => (
-                    <TableRow key={tx.id || tx._id || tx.transactionId}>
-                      <TableCell>{tx.id || tx.transactionId || tx._id}</TableCell>
-                      <TableCell>{(tx.items && tx.items[0]) ? (tx.items[0].title || tx.items[0].bookTitle || tx.items[0].bookId) : (tx.bookTitle || '')}</TableCell>
-                      <TableCell>{tx.borrowDate ? new Date(tx.borrowDate).toLocaleDateString() : ''}</TableCell>
-                      <TableCell>{tx.dueDate ? new Date(tx.dueDate).toLocaleDateString() : ''}</TableCell>
-                      <TableCell><Chip label={String(tx.status).toUpperCase()} size="small" /></TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Box>
+              ) : (
+                currentBorrows.map((tx) => (
+                  <TableRow key={tx.id || tx._id || tx.transactionId}>
+                    <TableCell>{tx.id || tx.transactionId || tx._id}</TableCell>
+                    <TableCell>
+                      {(tx.items && tx.items[0])
+                        ? (tx.items[0].title || tx.items[0].bookTitle || tx.items[0].bookId)
+                        : (tx.bookTitle || '')}
+                    </TableCell>
+                    <TableCell>{tx.borrowDate ? new Date(tx.borrowDate).toLocaleDateString() : ''}</TableCell>
+                    <TableCell>{tx.dueDate ? new Date(tx.dueDate).toLocaleDateString() : ''}</TableCell>
+                    <TableCell>
+                      <Chip label={String(tx.status).toUpperCase()} size="small" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </SectionCard>
 
-      <Box>
-        <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>Pending Requests</Typography>
-        <Paper>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
+      <SectionCard title="Pending Requests" subtitle="Awaiting librarian review">
+        <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Request ID</TableCell>
+                <TableCell>Items</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {requests.length === 0 ? (
                 <TableRow>
-                  <TableCell>Request ID</TableCell>
-                  <TableCell>Items</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Action</TableCell>
+                  <TableCell colSpan={5} align="center">
+                    No pending requests
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {requests.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} align="center">No pending requests</TableCell></TableRow>
-                ) : (
-                  requests.map(tx => {
-                    const transactionId = resolveTransactionId(tx);
-                    return (
-                      <TableRow key={transactionId}>
-                        <TableCell>{transactionId}</TableCell>
+              ) : (
+                requests.map((tx) => {
+                  const transactionId = resolveTransactionId(tx);
+                  return (
+                    <TableRow key={transactionId}>
+                      <TableCell>{transactionId}</TableCell>
                       <TableCell>{(tx.items || []).length}</TableCell>
                       <TableCell>{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : ''}</TableCell>
-                        <TableCell><Chip label={String(tx.status).toUpperCase()} size="small" /></TableCell>
-                        <TableCell align="right">
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            onClick={() => handleCancelRequest(transactionId)}
-                            disabled={cancelingId === transactionId}
-                          >
-                            {cancelingId === transactionId ? 'Cancelling...' : 'Cancel Request'}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Box>
+                      <TableCell>
+                        <Chip label={String(tx.status).toUpperCase()} size="small" />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleCancelRequest(transactionId)}
+                          disabled={cancelingId === transactionId}
+                        >
+                          {cancelingId === transactionId ? 'Cancelling...' : 'Cancel Request'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </SectionCard>
     </Box>
   );
 };
