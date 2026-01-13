@@ -26,9 +26,9 @@
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2026-01-13T08:00:01.495Z",
-    "lastLoginAt": "2026-01-13T04:20:21.804Z",
-    "lastActivityAt": "2026-01-13T08:00:01.493Z",
+    "updatedAt": "2026-01-13T09:31:24.294Z",
+    "lastLoginAt": "2026-01-13T09:27:33.735Z",
+    "lastActivityAt": "2026-01-13T09:31:24.293Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -215,13 +215,13 @@
     },
     "_id": "mhiohn4smj18h",
     "createdAt": "2025-11-03T05:07:14.908Z",
-    "updatedAt": "2026-01-13T09:26:39.800Z",
+    "updatedAt": "2026-01-13T09:27:25.413Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
     "lastLoginAt": "2026-01-13T08:42:39.170Z",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2026-01-13T09:26:39.799Z",
+    "lastActivityAt": "2026-01-13T09:27:25.412Z",
     "preferences": {
       "studentDashboard": {
         "welcomeDismissed": true
