@@ -435,6 +435,24 @@ export const settingsAPI = {
   updateMultiple: (settings) => api.put("/settings/bulk", { settings }),
   getUserAttributes: () => api.get("/settings/user-attributes"),
   updateUserAttributes: (data) => api.put("/settings/user-attributes", data),
+  uploadBrandingAsset: (slot, file, onProgress) => {
+    const normalizedSlot = (slot || "logo").toLowerCase();
+    const formData = new FormData();
+    formData.append("slot", normalizedSlot);
+    formData.append("brandingAsset", file);
+
+    return api.post("/settings/library/branding/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (event) => {
+        if (onProgress && event.total) {
+          const percent = Math.round((event.loaded * 100) / event.total);
+          onProgress(percent);
+        }
+      },
+    });
+  },
 };
 
 export const auditAPI = {

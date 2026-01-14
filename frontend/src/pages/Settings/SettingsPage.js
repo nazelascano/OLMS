@@ -37,6 +37,7 @@ import {
   Add,
   Schedule,
   Group,
+  CloudUpload,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api, settingsAPI } from "../../utils/api";
@@ -116,6 +117,14 @@ const getAutoSaveColor = (status) => {
   }
   return "text.secondary";
 };
+
+const BRANDING_FIELD_BY_SLOT = {
+  logo: "loginLogoUrl",
+  background: "loginBackgroundUrl",
+};
+
+const sanitizeBrandingSlotName = (value) =>
+  value === "background" ? "background" : "logo";
 
 const useAutoSaveSetting = ({
   data,
@@ -214,6 +223,9 @@ const createDefaultLibrarySettings = () => ({
   libraryEmail: "",
   website: "",
   description: "",
+  loginLogoUrl: "",
+  loginMotto: "",
+  loginBackgroundUrl: "",
   openingTime: "08:00",
   closingTime: "17:00",
   operatingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
@@ -227,6 +239,9 @@ const mergeLibrarySettings = (data = {}) => ({
   libraryEmail: data.libraryEmail || "",
   website: data.website || "",
   description: data.description || "",
+  loginLogoUrl: data.loginLogoUrl || "",
+  loginMotto: data.loginMotto || "",
+  loginBackgroundUrl: data.loginBackgroundUrl || "",
   openingTime: data.openingTime || "08:00",
   closingTime: data.closingTime || "17:00",
   operatingDays: Array.isArray(data.operatingDays) ? data.operatingDays : ["monday", "tuesday", "wednesday", "thursday", "friday"],
@@ -409,6 +424,10 @@ const SettingsPage = () => {
   const [newCurriculum, setNewCurriculum] = useState("");
   const [newGradeLevel, setNewGradeLevel] = useState("");
   const [sectionDrafts, setSectionDrafts] = useState({});
+  const [brandingUploads, setBrandingUploads] = useState({
+    logo: { loading: false, message: "", error: false },
+    background: { loading: false, message: "", error: false },
+  });
 
   useEffect(() => {
     fetchAllSettings();
@@ -690,6 +709,71 @@ const SettingsPage = () => {
     }
   };
 
+  const updateBrandingUploadState = (slot, nextState) => {
+    const normalizedSlot = sanitizeBrandingSlotName(slot);
+    setBrandingUploads((prev) => ({
+      ...prev,
+      [normalizedSlot]: {
+        ...prev[normalizedSlot],
+        ...nextState,
+      },
+    }));
+  };
+
+  const handleBrandingUpload = async (file, slot) => {
+    if (!file) {
+      return;
+    }
+
+    const normalizedSlot = sanitizeBrandingSlotName(slot);
+    updateBrandingUploadState(normalizedSlot, {
+      loading: true,
+      message: "Uploading...",
+      error: false,
+    });
+
+    try {
+      const response = await settingsAPI.uploadBrandingAsset(normalizedSlot, file);
+      const uploadedUrl = response?.data?.url || "";
+      const returnedSlot = sanitizeBrandingSlotName(response?.data?.slot || normalizedSlot);
+      const targetField = BRANDING_FIELD_BY_SLOT[returnedSlot];
+
+      if (uploadedUrl && targetField) {
+        setLibrarySettings((prev) => ({
+          ...prev,
+          [targetField]: uploadedUrl,
+        }));
+      }
+
+      updateBrandingUploadState(normalizedSlot, {
+        loading: false,
+        message: "Upload complete. URL saved automatically.",
+        error: false,
+      });
+    } catch (error) {
+      console.error("Branding upload failed:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Upload failed. Please try again.";
+      updateBrandingUploadState(normalizedSlot, {
+        loading: false,
+        message,
+        error: true,
+      });
+    }
+  };
+
+  const handleBrandingFileInputChange = (event, slot) => {
+    const file = event?.target?.files?.[0];
+    if (file) {
+      handleBrandingUpload(file, slot);
+    }
+    if (event?.target) {
+      event.target.value = "";
+    }
+  };
+
   const { status: libraryAutoSaveStatus, error: libraryAutoSaveError } =
     useAutoSaveSetting({
       data: librarySettings,
@@ -962,6 +1046,141 @@ const SettingsPage = () => {
                         })
                       }
                     />
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12}>
+              <Card elevation={1}>
+                <CardHeader
+                  title="Login Branding"
+                  subheader="Control what appears on the public login page"
+                />
+                <CardContent>
+                  <Stack spacing={3}>
+                    <Stack spacing={1}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        alignItems={{ sm: "flex-end" }}
+                      >
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Login Logo URL"
+                          placeholder="https://example.com/logo.png"
+                          value={librarySettings.loginLogoUrl}
+                          onChange={(e) =>
+                            setLibrarySettings({
+                              ...librarySettings,
+                              loginLogoUrl: e.target.value,
+                            })
+                          }
+                          helperText="PNG, JPG, or SVG links. Leave blank to use the built-in logo."
+                          sx={{ flexGrow: 1 }}
+                        />
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          startIcon={<CloudUpload />}
+                          disabled={brandingUploads.logo.loading}
+                          sx={{ alignSelf: { xs: "stretch", sm: "flex-end" } }}
+                        >
+                          {brandingUploads.logo.loading ? "Uploading..." : "Upload Logo"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(event) =>
+                              handleBrandingFileInputChange(event, "logo")
+                            }
+                          />
+                        </Button>
+                      </Stack>
+                      {brandingUploads.logo.message && (
+                        <Typography
+                          variant="caption"
+                          color={
+                            brandingUploads.logo.error
+                              ? "error.main"
+                              : brandingUploads.logo.loading
+                                ? "text.secondary"
+                                : "success.main"
+                          }
+                        >
+                          {brandingUploads.logo.message}
+                        </Typography>
+                      )}
+                    </Stack>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="School Motto / Tagline"
+                      value={librarySettings.loginMotto}
+                      onChange={(e) =>
+                        setLibrarySettings({
+                          ...librarySettings,
+                          loginMotto: e.target.value,
+                        })
+                      }
+                      helperText="Shown on both desktop and mobile login screens."
+                    />
+                    <Stack spacing={1}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        alignItems={{ sm: "flex-end" }}
+                      >
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Login Background Image URL"
+                          placeholder="https://example.com/background.jpg"
+                          value={librarySettings.loginBackgroundUrl}
+                          onChange={(e) =>
+                            setLibrarySettings({
+                              ...librarySettings,
+                              loginBackgroundUrl: e.target.value,
+                            })
+                          }
+                          helperText="Wide landscape images work best. Uses the default artwork when empty."
+                          sx={{ flexGrow: 1 }}
+                        />
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          startIcon={<CloudUpload />}
+                          disabled={brandingUploads.background.loading}
+                          sx={{ alignSelf: { xs: "stretch", sm: "flex-end" } }}
+                        >
+                          {brandingUploads.background.loading
+                            ? "Uploading..."
+                            : "Upload Background"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(event) =>
+                              handleBrandingFileInputChange(event, "background")
+                            }
+                          />
+                        </Button>
+                      </Stack>
+                      {brandingUploads.background.message && (
+                        <Typography
+                          variant="caption"
+                          color={
+                            brandingUploads.background.error
+                              ? "error.main"
+                              : brandingUploads.background.loading
+                                ? "text.secondary"
+                                : "success.main"
+                          }
+                        >
+                          {brandingUploads.background.message}
+                        </Typography>
+                      )}
+                    </Stack>
                   </Stack>
                 </CardContent>
               </Card>

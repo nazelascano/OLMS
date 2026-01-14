@@ -6,7 +6,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:04:32.962Z",
-    "updatedAt": "2026-01-13T05:45:43.218Z",
+    "updatedAt": "2026-01-13T10:40:14.143Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqchqec9nul"
@@ -18,7 +18,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.385Z",
-    "updatedAt": "2026-01-13T05:45:43.169Z",
+    "updatedAt": "2026-01-13T10:40:14.115Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6kzg3l5j"
@@ -30,7 +30,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.391Z",
-    "updatedAt": "2026-01-13T05:45:43.192Z",
+    "updatedAt": "2026-01-13T10:40:14.122Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l4oogud"
@@ -42,7 +42,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.396Z",
-    "updatedAt": "2026-01-13T05:45:43.199Z",
+    "updatedAt": "2026-01-13T10:40:14.128Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l94ztt2"
@@ -54,7 +54,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.400Z",
-    "updatedAt": "2026-01-13T05:45:43.206Z",
+    "updatedAt": "2026-01-13T10:40:14.133Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ld6m03t"
@@ -66,10 +66,46 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.405Z",
-    "updatedAt": "2026-01-13T05:45:43.213Z",
+    "updatedAt": "2026-01-13T10:40:14.138Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ljoql14"
+  },
+  {
+    "id": "LIBRARY_LOGIN_LOGO",
+    "value": "",
+    "type": "string",
+    "category": "library",
+    "description": "Custom logo URL used on the login screen",
+    "createdAt": "2026-01-13T05:45:43.260Z",
+    "updatedAt": "2026-01-13T05:45:43.260Z",
+    "createdBy": "system",
+    "updatedBy": "system",
+    "_id": "mibqo6luloginlogo"
+  },
+  {
+    "id": "LIBRARY_LOGIN_MOTTO",
+    "value": "The School of Choice",
+    "type": "string",
+    "category": "library",
+    "description": "Hero text shown on the login screen",
+    "createdAt": "2026-01-13T05:45:43.261Z",
+    "updatedAt": "2026-01-13T10:40:14.175Z",
+    "createdBy": "system",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mibqo6lumotto"
+  },
+  {
+    "id": "LIBRARY_LOGIN_BACKGROUND",
+    "value": "",
+    "type": "string",
+    "category": "library",
+    "description": "Background image URL layered behind the login form",
+    "createdAt": "2026-01-13T05:45:43.262Z",
+    "updatedAt": "2026-01-13T05:45:43.262Z",
+    "createdBy": "system",
+    "updatedBy": "system",
+    "_id": "mibqo6lubg"
   },
   {
     "id": "MAX_BOOKS_PER_TRANSACTION",
@@ -329,7 +365,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.460Z",
-    "updatedAt": "2026-01-13T05:45:43.226Z",
+    "updatedAt": "2026-01-13T10:40:14.149Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atb1oh0ll"
@@ -341,7 +377,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.465Z",
-    "updatedAt": "2026-01-13T05:45:43.234Z",
+    "updatedAt": "2026-01-13T10:40:14.156Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atb686r04"
@@ -361,7 +397,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.471Z",
-    "updatedAt": "2026-01-13T05:45:43.240Z",
+    "updatedAt": "2026-01-13T10:40:14.161Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atbc3onl7"
@@ -373,7 +409,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.475Z",
-    "updatedAt": "2026-01-13T05:45:43.249Z",
+    "updatedAt": "2026-01-13T10:40:14.167Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atbhcsa2w"
@@ -446,5 +482,65 @@
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj5af6douzyj4"
+  },
+  {
+    "id": "LIBRARY_LOGIN_HERO_TITLE",
+    "value": "",
+    "type": "string",
+    "category": "library",
+    "description": "",
+    "createdAt": "2026-01-13T10:39:55.682Z",
+    "updatedAt": "2026-01-13T10:40:14.182Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mkcgmyarbi6n9"
+  },
+  {
+    "id": "LIBRARY_LOGIN_HERO_SUBTITLE",
+    "value": "",
+    "type": "string",
+    "category": "library",
+    "description": "",
+    "createdAt": "2026-01-13T10:39:55.689Z",
+    "updatedAt": "2026-01-13T10:40:14.188Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mkcgmyayj1ogl"
+  },
+  {
+    "id": "LIBRARY_LOGIN_LOGO_URL",
+    "value": "",
+    "type": "string",
+    "category": "library",
+    "description": "",
+    "createdAt": "2026-01-13T10:39:55.696Z",
+    "updatedAt": "2026-01-13T10:40:14.196Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mkcgmyb5w0nti"
+  },
+  {
+    "id": "LIBRARY_LOGIN_BACKGROUND_URL",
+    "value": "",
+    "type": "string",
+    "category": "library",
+    "description": "",
+    "createdAt": "2026-01-13T10:39:55.702Z",
+    "updatedAt": "2026-01-13T10:40:14.202Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mkcgmybb57gdn"
+  },
+  {
+    "id": "LIBRARY_LOGIN_ACCENT_COLOR",
+    "value": "#305FB7",
+    "type": "string",
+    "category": "library",
+    "description": "",
+    "createdAt": "2026-01-13T10:39:55.709Z",
+    "updatedAt": "2026-01-13T10:40:14.209Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "updatedBy": "mgnhicbwhxfy9",
+    "_id": "mkcgmybi8qa1l"
   }
 ]

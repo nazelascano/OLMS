@@ -1,408 +1,192 @@
-# OLMS - Online Library Management System
+olms-online-library-management/
+# OLMS – Online Library Management System
 
-A comprehensive library management system built with React.js, Node.js, Express.js, and MongoDB.
+A full-stack library circulation platform for schools and campuses. OLMS combines a React UI, an Express/Mongo API, and an offline JSON adapter so you can demo or deploy anywhere—from a single laptop to Render + Vercel.
 
-## 🚀 Quick Start
+## Contents
+- [Why OLMS](#why-olms)
+- [Architecture Snapshot](#architecture-snapshot)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Setup in 10 Minutes](#setup-in-10-minutes)
+- [Configuration Quick Reference](#configuration-quick-reference)
+- [Data Modes (Mongo vs Offline)](#data-modes-mongo-vs-offline)
+- [Runbook](#runbook)
+- [Default Accounts & Sample Data](#default-accounts--sample-data)
+- [Deployment Playbook](#deployment-playbook)
+- [Testing & QA](#testing--qa)
+- [Troubleshooting Cheatsheet](#troubleshooting-cheatsheet)
+- [Documentation & Support](#documentation--support)
+- [Contributing](#contributing)
+- [License](#license)
 
-### One-Click Startup
-Run the entire system with a single command:
+## Why OLMS
+- **Role-aware workflows** – Admin, librarian, staff, and student experiences, each with scoped permissions.
+- **Copy-level tracking** – Every physical book copy carries its own ID, barcode/QR, and status.
+- **Multi-book transactions** – Borrow, approve, return, and reject multiple titles in one request.
+- **Audit-ready** – Receipts, notifications, and audit logs keep every action traceable.
+- **Offline-first option** – Switch to JSON data with one flag when MongoDB is unavailable.
 
-**Option 1: Using Node.js**
-```bash
-npm start
+## Architecture Snapshot
+```
+React (frontend/src)
+   │  REST over HTTPS
+   ▼
+Express API (backend/server.js)
+   ├─ MongoAdapter  -> MongoDB/Atlas
+   └─ OfflineAdapter -> backend/data/*.json
+```
+Supporting utilities include QR/receipt generators, email hooks, and a keep-alive pinger for hosted APIs.
+
+## Project Structure
+```
+ONHS OLMS - mongodb/
+├── backend/              # Express API, adapters, routes, scripts
+├── frontend/             # React app (CRACO + MUI)
+├── docs/                 # Guides (installation, modules, compositions)
+├── scripts/              # Keep-alive helper and misc tooling
+├── START_OLMS.bat        # Windows launcher for dev mode
+├── render.yaml           # Render blueprint for backend deploys
+├── vercel.json           # Vercel config for frontend deploys
+└── README.md             # You are here
 ```
 
-**Option 2: Windows Batch File**
-```bash
-start.bat
-```
+## Prerequisites
+| Requirement | Minimum | Notes |
+| --- | --- | --- |
+| OS | Windows 10/11, macOS 13+, Ubuntu 22.04 | Guide examples use Windows. |
+| Node.js + npm | Node 18 LTS (npm 9+) | Verify with `node -v` / `npm -v`. |
+| Git | v2.30+ | Optional if you received a ZIP. |
+| MongoDB | v6+ (local or Atlas) | Skip if you plan to use offline JSON mode. |
+| Terminal | PowerShell 5.1+ or Bash | Needed for npm scripts. |
 
-**Option 3: PowerShell Script**
-```powershell
-.\start.ps1
-```
+## Setup in 10 Minutes
+For illustrated, beginner-friendly instructions, follow [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md). The TL;DR version:
 
-### 👤 Default Login
-- **Username:** `admin`
-- **Password:** `admin123456`
-- **⚠️ Change password after first login!**
+1. **Install tooling** – Node.js LTS, Git, VS Code, optional MongoDB.
+2. **Get the code** – `git clone <repo>` or extract the ZIP, then open the folder in VS Code.
+3. **Install dependencies** – `npm run install:all` from the project root (installs root, frontend, backend packages).
+4. **Create environment files** – Copy the templates in [Configuration Quick Reference](#configuration-quick-reference) into `backend/.env` and `frontend/.env`.
+5. **Pick a data mode** – Set `USE_OFFLINE_DB=true` for JSON storage or configure `MONGODB_URI` for MongoDB/Atlas.
+6. **Seed data (optional)** – Run the seeding script for Mongo or the offline reset command for JSON files.
+7. **Start everything** – `npm run dev` (or double-click `START_OLMS.bat` on Windows) and log in at http://localhost:3001.
 
-### 🌐 Access URLs
-- **Frontend:** http://localhost:3001
-- **Backend API:** http://localhost:5001
+Set aside about 45 minutes the first time; subsequent setups take <10 minutes.
 
-## 🚀 Features
+## Configuration Quick Reference
+Create the following files:
 
-### Core Features
-- **Username-based Login**: Simple username/password authentication
-- **Role-based Access Control**: Admin, Librarian, Staff, and Student roles
-- **User Management**: Complete CRUD operations with role permissions
-- **Book Management**: Add, edit, delete books with copy-level tracking
-- **Multi-book Transactions**: Borrow/return multiple books in single transaction
-- **Annual Borrowing**: Special handling for textbook borrowing
-- **Receipt Generation**: QR code and barcode support for transactions
-- **Comprehensive Reporting**: Analytics and audit logging
-- **Settings Management**: Configurable library rules and parameters
-
-### Advanced Features
-- **Copy-level Tracking**: Each physical book copy has unique ID
-- **Barcode/QR Code Support**: For easy book and transaction tracking
-- **Fine Management**: Automatic calculation of overdue fines
-- **Audit Logging**: Complete system action tracking
-- **Responsive Design**: Works on desktop, tablet, and mobile
-
-## 🛠️ Technology Stack
-
-### Frontend
-- **React 18** – Component-driven SPA framework
-- **Material UI (MUI)** – UI component system and theming
-- **React Router** – Client-side routing
-- **React Query** – Data fetching and caching
-- **React Hook Form** – Form state management
-- **Axios** – HTTP client abstraction
-- **Recharts & Day.js** – Data visualization and date utilities
-
-### Backend
-- **Node.js + Express.js** – REST API foundation
-- **MongoDB + Mongoose** – Document database and ODM
-- **JSON Web Tokens (JWT)** – Authentication and authorization
-- **Multer, pdf-lib, qrcode** – File uploads, receipt generation, QR/barcode support
-- **csv-parser, papaparse** – Bulk import utilities
-
-### Tooling
-- **Concurrently** – Orchestrated frontend/backed dev servers
-- **Nodemon** – Hot reloading for the API
-- **React Scripts** – Frontend build tooling
-
-## 📋 Prerequisites
-
-Before running this project, make sure you have:
-
-- **Node.js** (v16 or higher)
-- **npm** or **yarn**
-- **MongoDB** (local or cloud instance)
-
-## 🔧 Installation & Setup
-
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
-cd olms-online-library-management
-```
-
-### 2. Install Dependencies
-```bash
-# Install root dependencies
-npm install
-
-# Install backend dependencies
-cd backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
-```
-
-### 3. Environment Configuration
-
-#### Backend Environment (.env)
-Create `backend/.env` file with the following variables:
+### backend/.env
 ```env
-# Server Configuration
 NODE_ENV=development
 PORT=5001
 FRONTEND_URL=http://localhost:3001
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-
-# Database Configuration
 MONGODB_URI=mongodb://localhost:27017/olms
 MONGO_DB_NAME=olms
 USE_OFFLINE_DB=false
-
-# JWT Configuration
-JWT_SECRET=your-super-secure-jwt-secret-key-here
+JWT_SECRET=change-me-to-a-long-random-string
 JWT_EXPIRE=7d
-
-# File Upload Configuration
 MAX_FILE_SIZE=10485760
 UPLOAD_PATH=./uploads
-
-# Email Configuration (Optional)
 EMAIL_SERVICE=gmail
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-password
-
-# System Configuration
+EMAIL_USER=you@example.com
+EMAIL_PASS=app-password
 DEFAULT_BORROW_DAYS=14
 DEFAULT_FINE_PER_DAY=5
 AUTO_CLEANUP_DAYS=365
 ```
 
-> **Deployment tip:** In production set `FRONTEND_URL` and `CORS_ORIGINS` to your live domain(s) (e.g., `https://olms-blush.vercel.app`). When `CORS_ORIGINS` is omitted, the backend falls back to `FRONTEND_URL` plus local dev origins, but explicitly listing production URLs avoids surprises.
-
-#### Frontend Environment (.env)
-Create `frontend/.env` file with the following variables:
+### frontend/.env
 ```env
-# API Configuration
 REACT_APP_API_URL=http://localhost:5001/api
-
-# Application Configuration
 REACT_APP_NAME=OLMS - Online Library Management System
 REACT_APP_VERSION=1.0.0
 ```
+Restart dev servers whenever you change either file.
 
-### 4. MongoDB Setup
+## Data Modes (Mongo vs Offline)
+| Mode | When to use | How |
+| --- | --- | --- |
+| **MongoDB (local)** | Day-to-day development with full feature parity. | Install MongoDB Community, keep `USE_OFFLINE_DB=false`, leave `MONGODB_URI` pointed at localhost. |
+| **MongoDB Atlas** | Cloud dev/prod. | Create a cluster, allow your IP, paste the SRV URI into `MONGODB_URI`. |
+| **Offline JSON** | Demos, hackathons, travel without MongoDB. | Set `USE_OFFLINE_DB=true`; data lives in [backend/data](backend/data). |
 
-#### Local MongoDB
-```bash
-# Install MongoDB locally or use MongoDB Atlas
-# Make sure MongoDB is running on localhost:27017
-```
+Switching modes only requires toggling `USE_OFFLINE_DB` and (optionally) changing `MONGODB_URI`.
 
-#### MongoDB Atlas (Cloud)
-1. Create account at [https://www.mongodb.com/atlas](https://www.mongodb.com/atlas)
-2. Create cluster and get connection string
-3. Update MONGODB_URI in backend/.env
+## Runbook
+| Task | Command | Location |
+| --- | --- | --- |
+| Install all dependencies | `npm run install:all` | project root |
+| Start frontend + backend (Mongo) | `npm run dev` | project root |
+| Start frontend + backend (offline) | `npm run dev:offline` | project root |
+| Backend only (hot reload) | `npm run server:dev` | project root |
+| Frontend only (React dev server) | `npm run client:dev` | project root |
+| Seed Mongo sample data | `node scripts/reset-and-seed-mongo.js` | backend |
+| Reset offline JSON data | `npm run offline:reset` | backend |
+| Build frontend for deployment | `npm run build` | project root |
+| Start backend in production mode | `npm run server:start` | project root |
+| Keep hosted backend awake | `npm run keep-alive` | project root |
 
-## 🚀 Running the Application
+Shortcut: Windows users can launch `START_OLMS.bat` to run `npm run dev` with PowerShell-friendly defaults.
 
-### Development Mode
-```bash
-# From root directory - runs both frontend and backend
-npm run dev
+## Default Accounts & Sample Data
+- Mongo seed script (Section 7 of the installation guide) creates:
+  - Admin `admin / admin123456`
+  - Librarian `librarian.jane / librarian123!`
+  - Staff `staff.mike / staff123!`
+- Offline reset generates at least one admin and prints the password to the console (override via `ADMIN_PASSWORD`).
+- Student usernames follow the pattern `firstInitial + lastName` with the LRN as the password unless changed.
 
-# Or run separately:
-# Backend only
-npm run server:dev
+Always change the admin password after first login in production environments.
 
-# Frontend only
-npm run client:dev
-```
+## Deployment Playbook
+1. **Backend on Render**
+   - Import the repo using [render.yaml](render.yaml).
+   - Configure environment variables: `MONGODB_URI`, `MONGO_DB_NAME`, `JWT_SECRET`, `FRONTEND_URL`, `CORS_ORIGINS`, plus any email settings.
+   - Verify the API with `https://<render-app>/health`.
+2. **Frontend on Vercel**
+   - Vercel uses [vercel.json](vercel.json) to build inside `frontend/`.
+   - Set `REACT_APP_API_URL` to the Render backend URL (include `/api`).
+   - After deployment, copy the Vercel domain back into Render’s `FRONTEND_URL` and `CORS_ORIGINS`.
+3. **Keep the backend warm**
+   - Run `npm run keep-alive` locally, on a lightweight VM, or via GitHub Actions so free Render dynos do not sleep.
+   - Override `KEEP_ALIVE_URL`, `KEEP_ALIVE_INTERVAL_MS`, or `KEEP_ALIVE_TIMEOUT_MS` as needed (see [scripts/keep-alive.js](scripts/keep-alive.js)).
+4. **Checklist**
+   - Seed Atlas data (locally or via a scheduled job) before announcing the environment.
+   - Validate login, borrowing workflows, notifications, and audit logs on the hosted URLs.
+   - Configure custom domains and HTTPS if required (Render and Vercel handle certificates automatically).
 
-### Offline Development
+## Testing & QA
+| Scope | Command | Notes |
+| --- | --- | --- |
+| Frontend unit tests | `npm test` (inside frontend) | Runs `craco test` with watch mode by default. |
+| Backend API tests | `npm test` (inside backend) | Uses Jest with `USE_OFFLINE_DB=true` so MongoDB is not required. |
+| Manual smoke test | — | 1) Hit `http://localhost:5001/health`; 2) Log in at `http://localhost:3001`; 3) Create/borrow/return a book; 4) Check notifications and audit logs. |
 
-This project includes an offline mode that uses local JSON files (no MongoDB required). The offline adapter stores data under `backend/data` and will seed a default admin user automatically.
+## Troubleshooting Cheatsheet
+| Symptom | Likely Cause | Fix |
+| --- | --- | --- |
+| PowerShell says `npm` is not recognized | Node.js not installed or PATH not updated | Reinstall Node LTS, reopen the terminal. |
+| `ECONNREFUSED` on API startup | MongoDB unreachable | Ensure the Mongo service is running, verify `MONGODB_URI`, or temporarily set `USE_OFFLINE_DB=true`. |
+| Browser CORS errors | Backend does not trust the frontend origin | Update `FRONTEND_URL` and `CORS_ORIGINS` in [backend/.env](backend/.env) with the actual URL (scheme + port). |
+| Ports 3001/5001 already in use | Another process is bound to the same port | Stop the other app or change the ports via `.env` / CLI overrides. |
+| Forgot admin password | Seeds not applied or password changed | Re-run the seed/reset scripts from [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md#7-load-sample-data-optional-but-recommended). |
+| Render cold start delays | Free plan sleeps the dyno | Run `npm run keep-alive` somewhere reliable to ping `/health`. |
 
-Recommended way (cross-platform):
+## Documentation & Support
+- **Installation walkthrough**: [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)
+- **Composition overview**: [docs/COMPOSITION.md](docs/COMPOSITION.md)
+- **Module/program matrix**: [docs/MODULE_PROGRAMS_TABLE.md](docs/MODULE_PROGRAMS_TABLE.md)
+- **Issue tracking & Q&A**: open a ticket in this repository or contact your tech lead.
 
-- From the repository root (starts frontend + backend in offline mode):
-```
-npm run dev:offline
-```
+## Contributing
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/my-change`).
+3. Commit with a descriptive message.
+4. Push and open a pull request. Include screenshots or API samples when relevant.
 
-- Backend only (offline):
-```
-cd backend
-npm run dev:offline
-```
+Please run linting/tests before submitting and keep documentation up to date with user-facing changes.
 
-PowerShell alternative (temporarily sets env for the current shell):
-```
-$env:USE_OFFLINE_DB = 'true'; npm run server:dev
-```
-
-Notes:
-- Default admin credentials: `admin` / `admin123456`.
-- Offline data files are in `backend/data` (users.json, books.json, transactions.json, etc.).
-- If you want to switch back to MongoDB mode, set `MONGODB_URI` (or `MONGO_URI`) in `backend/.env` and unset `USE_OFFLINE_DB`.
-
-
-### Production Mode
-```bash
-# Build frontend
-npm run build
-
-# Start backend
-npm run server:start
-```
-
-## 🌍 Deployment (Render + Vercel)
-
-### 1. Backend on Render
-- Create a new Web Service from this repository and choose the **render.yaml** blueprint.
-- Render will detect the `backend` directory, run `npm install`, then `npm start` with Node 18.
-- Set the following environment variables in the Render dashboard:
-   - `MONGODB_URI` – connection string to your MongoDB Atlas cluster.
-   - `MONGO_DB_NAME` – database name (e.g., `olms`).
-   - `JWT_SECRET` – long random string for token signing.
-   - `EMAIL_USER`/`EMAIL_PASS` or other SMTP credentials if email is needed.
-   - `FRONTEND_URL` – Vercel URL (update once the frontend is live).
-   - `CORS_ORIGINS` – comma-separated list of allowed origins (supports wildcards such as `https://*.vercel.app`).
-   - Leave `USE_OFFLINE_DB` as `false` so the Mongo adapter is used.
-- After the first deploy, visit `/health` on the Render URL to confirm the API is healthy.
-
-### 2. Frontend on Vercel
-- Import the repository into Vercel and select the **Create React App** framework.
-- Because this is a monorepo, Vercel will use `vercel.json` to:
-   - run `npm install` and `npm run build` inside `frontend/`.
-   - publish the compiled app from `frontend/build`.
-- Define environment variables in the Vercel project:
-   - `REACT_APP_API_URL` – the full HTTPS URL of the Render backend (e.g., `https://olms-backend.onrender.com/api`).
-- Trigger a deployment; once live, note the Vercel domain and copy it back into Render's `FRONTEND_URL` for accurate CORS.
-
-### 3. Post-Deployment Checklist
-- Create at least one admin user or seed the database via `backend/scripts/reset-and-seed-mongo.js` (run locally pointing to Atlas credentials or add a Render job).
-- Verify login, dashboard metrics, transactions, and settings through the hosted URLs.
-- Configure custom domains on both platforms if desired, and enable HTTPS (Render & Vercel handle certificates automatically).
-- Keep environment variables in sync between staging/production.
-
-### 4. Keep the Render backend warm
-Render free plans put inactive services to sleep after a few minutes, which causes the first login/data fetch to stall while the container wakes up. To keep the API responsive you can run the built-in keep-alive pinger anywhere with outbound internet access (local machine, a tiny VM, GitHub Actions schedule, etc.):
-
-```bash
-npm run keep-alive
-```
-
-By default it pings `https://olms-backend.onrender.com/health` every five minutes. Customize it with environment variables:
-
-- `KEEP_ALIVE_URL` – full URL to ping (include `https://` and optionally `?key=value`).
-- `KEEP_ALIVE_INTERVAL_MS` – interval in milliseconds (default `300000`).
-- `KEEP_ALIVE_TIMEOUT_MS` – request timeout in milliseconds (default `10000`).
-
-Example (PowerShell):
-
-```powershell
-$env:KEEP_ALIVE_URL='https://olms-backend.onrender.com/health'; $env:KEEP_ALIVE_INTERVAL_MS='180000'; npm run keep-alive
-```
-
-Leave the process running (or schedule it) and Render will stay awake, giving your deployed frontend instant responses.
-
-## 📁 Project Structure
-
-```
-olms-online-library-management/
-├── backend/                 # Backend API
-│   ├── middleware/         # Auth and logging middleware
-│   ├── models/            # MongoDB schemas
-│   ├── routes/            # API routes
-│   ├── uploads/           # File uploads directory
-│   ├── server.js          # Express server
-│   └── package.json
-├── frontend/              # React frontend
-│   ├── public/           # Static files
-│   ├── src/              # Source code
-│   │   ├── components/   # Reusable components
-│   │   ├── contexts/     # React contexts
-│   │   ├── pages/        # Page components
-│   │   ├── utils/        # Utility functions
-│   │   ├── App.js        # Main app component
-│   │   └── index.js      # Entry point
-│   └── package.json
-├── .github/              # GitHub configuration
-│   └── copilot-instructions.md
-├── package.json          # Root package.json
-└── README.md            # This file
-```
-
-## 🔐 Default Login Credentials
-
-After initial setup, you'll need to create users through the admin interface or database seeding.
-
-### Student Login Format:
-- **Username**: First letter of first name + surname (e.g., "jdelacruz")
-- **Password**: Student LRN
-
-### Staff/Admin Login:
-- **Email**: Registered email address
-- **Password**: Set during account creation
-
-## 📊 Features Overview
-
-### User Management
-- Create students, staff, librarians, and admins
-- Role-based permissions and access control
-- Bulk student import via CSV
-- Automatic username generation for students
-- Account cleanup for inactive users
-
-### Book Management
-- Add books with detailed information
-- Track individual copies with unique IDs
-- Support for barcodes and copy status
-- Bulk book import via CSV
-- Categories and search functionality
-
-### Transaction Management
-- Multi-book borrowing in single transaction
-- Copy-level tracking and availability
-- Return workflows (full or partial)
-- Receipt generation with QR codes
-- Annual borrowing for textbooks
-- Fine calculation and management
-
-### Reporting & Analytics
-- Dashboard with key statistics
-- Most borrowed books reports
-- Overdue transactions monitoring
-- Audit logs for all system actions
-- Export capabilities (CSV, PDF)
-
-### Settings & Configuration
-- Library rules and parameters
-- Receipt customization
-- Fine management settings
-- School year configuration
-- System cleanup settings
-
-## 🔧 Development
-
-### Adding New Features
-1. Create backend routes in `backend/routes/`
-2. Add corresponding frontend API calls in `frontend/src/utils/api.js`
-3. Create React components in appropriate directories
-4. Update navigation in `Sidebar.js` and `App.js`
-
-### Database Schema
-- **Users**: Student, staff, librarian, admin accounts
-- **Books**: Book information and metadata
-- **BookCopies**: Individual physical copies
-- **Transactions**: Borrowing records with multiple books
-- **Settings**: System configuration
-- **AuditLogs**: System action tracking
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **MongoDB Connection Failed**
-   - Check MongoDB URI format
-   - Verify MongoDB is running
-   - Check network connectivity for cloud instances
-
-2. **Port Already in Use**
-   - Change PORT in backend/.env
-   - Kill existing processes on ports 3000/5000
-
-3. **Build Errors**
-   - Clear node_modules and reinstall
-   - Check for missing dependencies
-   - Verify all import paths
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in the repository
-- Check the documentation
-- Review the troubleshooting guide
-
-## 🎯 Roadmap
-
-- [ ] Mobile app development
-- [ ] Advanced reporting features
-- [ ] Email notifications
-- [ ] Inventory management
-- [ ] Book recommendation system
-- [ ] Multi-library support
+## License
+This project is released under the MIT License. See [LICENSE](LICENSE) for details.

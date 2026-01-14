@@ -20,6 +20,7 @@ import {
   History,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import logo from "../../assets/images/logo.png";
 
 const ACTIVE_TAB_BACKGROUND = "linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%)";
@@ -30,6 +31,7 @@ const Sidebar = ({ onItemClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { libraryTagline } = useSettings();
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -168,8 +170,7 @@ const Sidebar = ({ onItemClick }) => {
               variant="body2"
               sx={{ color: "#64748B", fontSize: "0.75rem", opacity: 0.8 }}
             >
-              {" "}
-              The School of Choice{" "}
+              {libraryTagline}
             </Typography>{" "}
           </Box>{" "}
         </Box>{" "}

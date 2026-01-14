@@ -11,6 +11,7 @@ import { useAuth } from "./AuthContext";
 
 export const SETTINGS_UPDATED_EVENT = "olms-settings-updated";
 const SettingsContext = createContext(null);
+const FALLBACK_TAGLINE = "The School of Choice";
 
 const getBoolean = (value, fallback = true) => {
   if (value === undefined || value === null) {
@@ -36,6 +37,9 @@ export const SettingsProvider = ({ children }) => {
   const [borrowingRules, setBorrowingRules] = useState(null);
   const [borrowingRulesLoading, setBorrowingRulesLoading] = useState(false);
   const [borrowingRulesError, setBorrowingRulesError] = useState("");
+  const [librarySettings, setLibrarySettings] = useState(null);
+  const [librarySettingsLoading, setLibrarySettingsLoading] = useState(false);
+  const [librarySettingsError, setLibrarySettingsError] = useState("");
 
   const loadBorrowingRules = useCallback(async () => {
     setBorrowingRulesLoading(true);
@@ -54,6 +58,23 @@ export const SettingsProvider = ({ children }) => {
     }
   }, []);
 
+  const loadLibrarySettings = useCallback(async () => {
+    setLibrarySettingsLoading(true);
+    setLibrarySettingsError("");
+    try {
+      const response = await api.get("/settings/library");
+      setLibrarySettings(response.data || null);
+    } catch (error) {
+      console.error("Failed to load library settings", error);
+      setLibrarySettings(null);
+      setLibrarySettingsError(
+        error?.response?.data?.message || "Unable to load library settings",
+      );
+    } finally {
+      setLibrarySettingsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authLoading) {
       return;
@@ -68,6 +89,10 @@ export const SettingsProvider = ({ children }) => {
   }, [authLoading, user, loadBorrowingRules]);
 
   useEffect(() => {
+    loadLibrarySettings();
+  }, [loadLibrarySettings]);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return undefined;
     }
@@ -77,24 +102,42 @@ export const SettingsProvider = ({ children }) => {
       if (!category || category === "borrowing" || category === "borrowing-rules" || category === "all") {
         loadBorrowingRules();
       }
+      if (!category || category === "library" || category === "all") {
+        loadLibrarySettings();
+      }
     };
 
     window.addEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
     return () => {
       window.removeEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
     };
-  }, [loadBorrowingRules]);
+  }, [loadBorrowingRules, loadLibrarySettings]);
 
   const value = useMemo(() => {
     const finesEnabled = getBoolean(borrowingRules?.enableFines, true);
+    const libraryTagline = (librarySettings?.loginMotto || "").trim() || FALLBACK_TAGLINE;
     return {
       borrowingRules,
       borrowingRulesLoading,
       borrowingRulesError,
       refreshBorrowingRules: loadBorrowingRules,
       finesEnabled,
+      librarySettings,
+      librarySettingsLoading,
+      librarySettingsError,
+      refreshLibrarySettings: loadLibrarySettings,
+      libraryTagline,
     };
-  }, [borrowingRules, borrowingRulesLoading, borrowingRulesError, loadBorrowingRules]);
+  }, [
+    borrowingRules,
+    borrowingRulesLoading,
+    borrowingRulesError,
+    loadBorrowingRules,
+    librarySettings,
+    librarySettingsLoading,
+    librarySettingsError,
+    loadLibrarySettings,
+  ]);
 
   return (
     <SettingsContext.Provider value={value}>

@@ -1,4 +1,7 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { verifyToken, requireLibrarian, logAction, setAuditContext } = require('../middleware/customAuth');
 const { invalidateSettingsCache } = require('../utils/settingsCache');
 const {
@@ -16,6 +19,73 @@ const SYSTEM_CATEGORY = 'system';
 const NOTIFICATION_CATEGORY = 'notifications';
 const USER_CATEGORY = 'user';
 const DEFAULT_LIBRARY_TIMEZONE = process.env.LIBRARY_TIMEZONE || 'Asia/Manila';
+const BRANDING_STORAGE_DIR = path.join(__dirname, '..', 'uploads', 'branding');
+const ALLOWED_BRANDING_MIME_TYPES = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+    'image/svg+xml': '.svg'
+};
+const BRANDING_FILE_FIELD = 'brandingAsset';
+const MAX_BRANDING_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+const ensureDirectory = async(dirPath) => {
+    try {
+        await fs.promises.mkdir(dirPath, { recursive: true });
+    } catch (error) {
+        if (error.code !== 'EEXIST') {
+            throw error;
+        }
+    }
+};
+
+const sanitizeBrandingSlot = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'background') {
+        return 'background';
+    }
+    return 'logo';
+};
+
+const brandingStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        ensureDirectory(BRANDING_STORAGE_DIR)
+            .then(() => cb(null, BRANDING_STORAGE_DIR))
+            .catch((error) => cb(error));
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const randomSuffix = Math.round(Math.random() * 1e9);
+        const extensionFromMime = ALLOWED_BRANDING_MIME_TYPES[file.mimetype];
+        const extensionFromName = path.extname(file.originalname || '').toLowerCase();
+        const allowedExtensions = new Set(Object.values(ALLOWED_BRANDING_MIME_TYPES));
+        const resolvedExtension = extensionFromMime || (allowedExtensions.has(extensionFromName) ? extensionFromName : '.png');
+        cb(null, `branding-${timestamp}-${randomSuffix}${resolvedExtension}`);
+    }
+});
+
+const brandingFileFilter = (req, file, cb) => {
+    if (ALLOWED_BRANDING_MIME_TYPES[file.mimetype]) {
+        return cb(null, true);
+    }
+    return cb(new Error('Unsupported file type. Please upload a JPG, PNG, GIF, WEBP, or SVG image.'));
+};
+
+const brandingUpload = multer({
+    storage: brandingStorage,
+    fileFilter: brandingFileFilter,
+    limits: {
+        fileSize: MAX_BRANDING_SIZE_BYTES
+    }
+});
+
+const BRANDING_UPLOAD_ERROR_LIMIT_MESSAGE = 'Image is too large. Maximum allowed size is 5 MB.';
+
+const buildBrandingUrl = (filename = '') => {
+    const safeName = path.basename(filename);
+    return path.posix.join('/uploads/branding', safeName);
+};
 
 const toBoolean = (value, fallback = false) => {
     if (typeof value === 'boolean') {
@@ -129,6 +199,9 @@ router.get('/library', async(req, res) => {
             closingTime: index.LIBRARY_CLOSING_TIME || '17:00',
             operatingDays: Array.isArray(index.LIBRARY_OPERATING_DAYS) ? index.LIBRARY_OPERATING_DAYS : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             timezone: index.LIBRARY_TIMEZONE || DEFAULT_LIBRARY_TIMEZONE,
+            loginLogoUrl: index.LIBRARY_LOGIN_LOGO || '',
+            loginMotto: index.LIBRARY_LOGIN_MOTTO || '',
+            loginBackgroundUrl: index.LIBRARY_LOGIN_BACKGROUND || '',
         };
 
         res.json(response);
@@ -265,6 +338,9 @@ router.put('/library', verifyToken, requireLibrarian, logAction('UPDATE', 'setti
             closingTime = '17:00',
             operatingDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             timezone = DEFAULT_LIBRARY_TIMEZONE,
+            loginLogoUrl = '',
+            loginMotto = '',
+            loginBackgroundUrl = '',
         } = req.body || {};
 
         const updates = [
@@ -278,6 +354,9 @@ router.put('/library', verifyToken, requireLibrarian, logAction('UPDATE', 'setti
             { id: 'LIBRARY_CLOSING_TIME', value: closingTime, type: 'string', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_OPERATING_DAYS', value: Array.isArray(operatingDays) ? operatingDays : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], type: 'array', category: LIBRARY_CATEGORY },
             { id: 'LIBRARY_TIMEZONE', value: timezone, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_LOGIN_LOGO', value: loginLogoUrl, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_LOGIN_MOTTO', value: loginMotto, type: 'string', category: LIBRARY_CATEGORY },
+            { id: 'LIBRARY_LOGIN_BACKGROUND', value: loginBackgroundUrl, type: 'string', category: LIBRARY_CATEGORY },
         ];
 
         await applySettingsUpdates(req.dbAdapter, req.user.id, updates);
@@ -300,6 +379,60 @@ router.put('/library', verifyToken, requireLibrarian, logAction('UPDATE', 'setti
         });
         res.status(500).json({ message: 'Failed to save library settings' });
     }
+});
+
+const resolveBrandingUploadErrorMessage = (error) => {
+    if (!error) {
+        return 'Failed to upload branding image.';
+    }
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return BRANDING_UPLOAD_ERROR_LIMIT_MESSAGE;
+        }
+        return error.message || 'Upload failed due to an unexpected upload error.';
+    }
+    return error.message || 'Failed to upload branding image.';
+};
+
+router.post('/library/branding/upload', verifyToken, requireLibrarian, logAction('UPLOAD', 'settings-library-branding'), (req, res) => {
+    brandingUpload.single(BRANDING_FILE_FIELD)(req, res, (uploadError) => {
+        if (uploadError) {
+            const message = resolveBrandingUploadErrorMessage(uploadError);
+            setAuditContext(req, {
+                success: false,
+                status: 'Error',
+                description: `Branding upload failed: ${message}`
+            });
+            return res.status(400).json({ message });
+        }
+
+        const uploadedFile = req.file;
+
+        if (!uploadedFile) {
+            setAuditContext(req, {
+                success: false,
+                status: 'Error',
+                description: 'Branding upload failed: no file provided'
+            });
+            return res.status(400).json({ message: `Please provide an image file using the "${BRANDING_FILE_FIELD}" field.` });
+        }
+
+        const resolvedSlot = sanitizeBrandingSlot(req.body?.slot);
+        const relativeUrl = buildBrandingUrl(uploadedFile.filename);
+
+        setAuditContext(req, {
+            success: true,
+            status: 'Uploaded',
+            description: `Uploaded login branding asset for ${resolvedSlot}`
+        });
+
+        return res.json({
+            message: 'Branding image uploaded successfully',
+            url: relativeUrl,
+            filename: uploadedFile.filename,
+            slot: resolvedSlot
+        });
+    });
 });
 
 router.put('/borrowing-rules', verifyToken, requireLibrarian, logAction('UPDATE', 'settings-borrowing'), async(req, res) => {

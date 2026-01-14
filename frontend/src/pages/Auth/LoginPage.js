@@ -13,8 +13,31 @@ import {
 import { Visibility, VisibilityOff, Person, Lock } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
+import { resolveApiOrigin } from "../../utils/media";
 import logo from "../../assets/images/logo.png";
 import loginBg from "../../assets/images/login_bg.jpg";
+
+const ABSOLUTE_URL_PATTERN = /^https?:\/\//i;
+const DATA_URL_PATTERN = /^data:/i;
+
+const toAbsoluteAssetUrl = (value) => {
+  const raw = (value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  if (ABSOLUTE_URL_PATTERN.test(raw) || DATA_URL_PATTERN.test(raw)) {
+    return raw;
+  }
+
+  const origin = resolveApiOrigin();
+  if (!origin) {
+    return raw;
+  }
+
+  const normalizedPath = raw.startsWith("/") ? raw : `/${raw}`;
+  return `${origin}${normalizedPath}`;
+};
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -27,7 +50,10 @@ const LoginPage = () => {
     libraryPhone: '',
     libraryEmail: '',
     website: '',
-    description: ''
+    description: '',
+    loginLogoUrl: '',
+    loginMotto: '',
+    loginBackgroundUrl: ''
   });
 
   useEffect(() => {
@@ -55,6 +81,12 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+
+  const configuredLogo = toAbsoluteAssetUrl(libraryInfo.loginLogoUrl);
+  const configuredBackground = toAbsoluteAssetUrl(libraryInfo.loginBackgroundUrl);
+  const displayLogo = configuredLogo || logo;
+  const displayBackground = configuredBackground || loginBg;
+  const displayMotto = (libraryInfo.loginMotto || '').trim() || "The School of Choice";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -165,7 +197,7 @@ const LoginPage = () => {
           {/* School Logo */}{" "}
           <Box
             component="img"
-            src={logo}
+            src={displayLogo}
             alt="ONHS School Library Management System Logo"
             sx={{
               width: { md: 280, lg: 320 },
@@ -185,7 +217,7 @@ const LoginPage = () => {
               fontSize: { md: "1.5rem", lg: "1.8rem" },
             }}
           >
-            The School of Choice{" "}
+            {displayMotto}
           </Typography>{" "}
           {/* Library Info */}
           <Box sx={{ mt: 4, textAlign: 'center', maxWidth: 320 }}>
@@ -230,7 +262,7 @@ const LoginPage = () => {
             backgroundColor: { xs: "transparent", md: "#FFFFFF00" },
             backgroundImage: {
               xs: 'none',
-              md: `linear-gradient(90deg, rgba(53, 53, 53, 1) 0%, rgba(236, 236, 236, 0) 20%, rgba(255, 255, 255, 0) 100%), url(${loginBg})`
+              md: `linear-gradient(90deg, rgba(53, 53, 53, 1) 0%, rgba(236, 236, 236, 0) 20%, rgba(255, 255, 255, 0) 100%), url(${displayBackground})`
             },
             backgroundSize: { xs: 'auto', md: 'cover' },
             backgroundPosition: { xs: 'center', md: 'center' },
@@ -276,7 +308,7 @@ const LoginPage = () => {
           >
             <Box
               component="img"
-              src={logo}
+              src={displayLogo}
               alt="ONHS Library Management System Logo"
               sx={{
                 width: 115,
@@ -290,7 +322,7 @@ const LoginPage = () => {
                 letterSpacing: "0.02em",
               }}
             >
-              The School of Choice
+              {displayMotto}
             </Typography>
           </Box>
           <Box
