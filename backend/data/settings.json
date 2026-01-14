@@ -6,7 +6,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:04:32.962Z",
-    "updatedAt": "2026-01-13T10:40:14.143Z",
+    "updatedAt": "2026-01-14T02:50:18.451Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqchqec9nul"
@@ -18,7 +18,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.385Z",
-    "updatedAt": "2026-01-13T10:40:14.115Z",
+    "updatedAt": "2026-01-14T02:50:18.423Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6kzg3l5j"
@@ -30,7 +30,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.391Z",
-    "updatedAt": "2026-01-13T10:40:14.122Z",
+    "updatedAt": "2026-01-14T02:50:18.428Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l4oogud"
@@ -42,7 +42,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.396Z",
-    "updatedAt": "2026-01-13T10:40:14.128Z",
+    "updatedAt": "2026-01-14T02:50:18.435Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6l94ztt2"
@@ -54,7 +54,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.400Z",
-    "updatedAt": "2026-01-13T10:40:14.133Z",
+    "updatedAt": "2026-01-14T02:50:18.439Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ld6m03t"
@@ -66,7 +66,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-11-23T13:13:38.405Z",
-    "updatedAt": "2026-01-13T10:40:14.138Z",
+    "updatedAt": "2026-01-14T02:50:18.444Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6ljoql14"
@@ -78,9 +78,9 @@
     "category": "library",
     "description": "Custom logo URL used on the login screen",
     "createdAt": "2026-01-13T05:45:43.260Z",
-    "updatedAt": "2026-01-13T05:45:43.260Z",
+    "updatedAt": "2026-01-14T02:50:18.483Z",
     "createdBy": "system",
-    "updatedBy": "system",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6luloginlogo"
   },
   {
@@ -90,7 +90,7 @@
     "category": "library",
     "description": "Hero text shown on the login screen",
     "createdAt": "2026-01-13T05:45:43.261Z",
-    "updatedAt": "2026-01-13T10:40:14.175Z",
+    "updatedAt": "2026-01-14T02:50:18.488Z",
     "createdBy": "system",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6lumotto"
@@ -102,9 +102,9 @@
     "category": "library",
     "description": "Background image URL layered behind the login form",
     "createdAt": "2026-01-13T05:45:43.262Z",
-    "updatedAt": "2026-01-13T05:45:43.262Z",
+    "updatedAt": "2026-01-14T02:50:18.493Z",
     "createdBy": "system",
-    "updatedBy": "system",
+    "updatedBy": "mgnhicbwhxfy9",
     "_id": "mibqo6lubg"
   },
   {
@@ -365,7 +365,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.460Z",
-    "updatedAt": "2026-01-13T10:40:14.149Z",
+    "updatedAt": "2026-01-14T02:50:18.458Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atb1oh0ll"
@@ -377,7 +377,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.465Z",
-    "updatedAt": "2026-01-13T10:40:14.156Z",
+    "updatedAt": "2026-01-14T02:50:18.466Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atb686r04"
@@ -397,7 +397,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.471Z",
-    "updatedAt": "2026-01-13T10:40:14.161Z",
+    "updatedAt": "2026-01-14T02:50:18.471Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atbc3onl7"
@@ -409,7 +409,7 @@
     "category": "library",
     "description": "",
     "createdAt": "2025-12-14T05:00:26.475Z",
-    "updatedAt": "2026-01-13T10:40:14.167Z",
+    "updatedAt": "2026-01-14T02:50:18.477Z",
     "createdBy": "mgnhicbwhxfy9",
     "updatedBy": "mgnhicbwhxfy9",
     "_id": "mj59atbhcsa2w"

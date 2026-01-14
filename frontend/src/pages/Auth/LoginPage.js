@@ -13,31 +13,9 @@ import {
 import { Visibility, VisibilityOff, Person, Lock } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../utils/api";
-import { resolveApiOrigin } from "../../utils/media";
+import { resolveAssetUrl } from "../../utils/media";
 import logo from "../../assets/images/logo.png";
 import loginBg from "../../assets/images/login_bg.jpg";
-
-const ABSOLUTE_URL_PATTERN = /^https?:\/\//i;
-const DATA_URL_PATTERN = /^data:/i;
-
-const toAbsoluteAssetUrl = (value) => {
-  const raw = (value || "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  if (ABSOLUTE_URL_PATTERN.test(raw) || DATA_URL_PATTERN.test(raw)) {
-    return raw;
-  }
-
-  const origin = resolveApiOrigin();
-  if (!origin) {
-    return raw;
-  }
-
-  const normalizedPath = raw.startsWith("/") ? raw : `/${raw}`;
-  return `${origin}${normalizedPath}`;
-};
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -82,8 +60,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const configuredLogo = toAbsoluteAssetUrl(libraryInfo.loginLogoUrl);
-  const configuredBackground = toAbsoluteAssetUrl(libraryInfo.loginBackgroundUrl);
+  const configuredLogo = resolveAssetUrl(libraryInfo.loginLogoUrl);
+  const configuredBackground = resolveAssetUrl(libraryInfo.loginBackgroundUrl);
   const displayLogo = configuredLogo || logo;
   const displayBackground = configuredBackground || loginBg;
   const displayMotto = (libraryInfo.loginMotto || '').trim() || "The School of Choice";

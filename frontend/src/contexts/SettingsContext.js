@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import { api } from "../utils/api";
+import { resolveAssetUrl } from "../utils/media";
 import { useAuth } from "./AuthContext";
 
 export const SETTINGS_UPDATED_EVENT = "olms-settings-updated";
@@ -116,6 +117,7 @@ export const SettingsProvider = ({ children }) => {
   const value = useMemo(() => {
     const finesEnabled = getBoolean(borrowingRules?.enableFines, true);
     const libraryTagline = (librarySettings?.loginMotto || "").trim() || FALLBACK_TAGLINE;
+    const libraryLogoUrl = resolveAssetUrl(librarySettings?.loginLogoUrl || "");
     return {
       borrowingRules,
       borrowingRulesLoading,
@@ -127,6 +129,7 @@ export const SettingsProvider = ({ children }) => {
       librarySettingsError,
       refreshLibrarySettings: loadLibrarySettings,
       libraryTagline,
+      libraryLogoUrl,
     };
   }, [
     borrowingRules,

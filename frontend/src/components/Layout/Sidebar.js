@@ -31,7 +31,8 @@ const Sidebar = ({ onItemClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { libraryTagline } = useSettings();
+  const { libraryTagline, libraryLogoUrl } = useSettings();
+  const displayLogo = libraryLogoUrl || logo;
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -144,7 +145,7 @@ const Sidebar = ({ onItemClick }) => {
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <img
-            src={logo}
+            src={displayLogo}
             alt="ONHS Library Management System Logo - Navigate to Dashboard"
             style={{
               width: "32px",

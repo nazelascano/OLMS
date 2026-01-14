@@ -36,6 +36,25 @@ export const resolveApiOrigin = () => {
   return "";
 };
 
+export const resolveAssetUrl = (value) => {
+  const raw = (value || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  if (absoluteUrlPattern.test(raw) || dataUrlPattern.test(raw)) {
+    return raw;
+  }
+
+  const origin = resolveApiOrigin();
+  if (!origin) {
+    return raw;
+  }
+
+  const normalizedPath = raw.startsWith("/") ? raw : `/${raw}`;
+  return `${origin}${normalizedPath}`;
+};
+
 export const resolveEntityAvatar = (entity) => {
   if (!entity || typeof entity !== "object") {
     return "";
@@ -68,15 +87,5 @@ export const resolveEntityAvatar = (entity) => {
 
   const trimmed = raw.trim();
 
-  if (absoluteUrlPattern.test(trimmed) || dataUrlPattern.test(trimmed)) {
-    return trimmed;
-  }
-
-  const origin = resolveApiOrigin();
-  if (!origin) {
-    return trimmed;
-  }
-
-  const normalizedPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return `${origin}${normalizedPath}`;
+  return resolveAssetUrl(trimmed);
 };

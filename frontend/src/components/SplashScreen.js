@@ -1,8 +1,12 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import logo from '../assets/images/logo.png';
+import { useSettings } from '../contexts/SettingsContext';
 
 const SplashScreen = () => {
+  const { libraryTagline, libraryLogoUrl } = useSettings();
+  const displayLogo = libraryLogoUrl || logo;
+
   return (
     <Box
       sx={{
@@ -17,7 +21,7 @@ const SplashScreen = () => {
     >
       <Box
         component="img"
-        src={logo}
+        src={displayLogo}
         alt="ONHS Library Management System Logo"
         sx={{
           width: 200,
@@ -26,7 +30,7 @@ const SplashScreen = () => {
         }}
       />
       <Typography variant="h5" sx={{ fontFamily: 'Inknut Antiqua, serif' }}>
-        The School of Choice
+        {libraryTagline}
       </Typography>
     </Box>
   );
