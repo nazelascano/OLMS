@@ -42,6 +42,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { api, searchAPI, notificationsAPI } from "../../utils/api";
 import Sidebar from "./Sidebar";
+import MobileNavBar from "./MobileNavBar";
 import MobileScanButton from "../MobileScanButton";
 import MobileScanDialog from "../MobileScanDialog";
 import { SCAN_EVENT, dispatchScanEvent } from "../../utils/scanEvents";
@@ -418,8 +419,9 @@ const isValidAnchorElement = (node) => {
 
 const Layout = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  const showMobileNav = isSmall;
   const navigate = useNavigate();
   const location = useLocation();
   const { user, authToken, logout } = useAuth();
@@ -1378,7 +1380,8 @@ const Layout = () => {
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", width: "100%" }}>
+    <>
+      <Box sx={{ display: "flex", minHeight: "100vh", width: "100%" }}>
       {/* Skip Links */}
       <a 
         href="#main-content" 
@@ -1443,6 +1446,7 @@ const Layout = () => {
           minHeight: "100vh",
           minWidth: 0,
           backgroundColor: "#305FB7",
+          pb: showMobileNav ? "96px" : 0,
         }}
       >
         {/* Header */}
@@ -2022,11 +2026,19 @@ const Layout = () => {
         </div>
         
         {/* Page Content */}
-        <Box sx={{ p: { xs: 2, sm: 3, lg: 4 }, backgroundColor: "transparent" }}>
+        <Box
+          sx={{
+            p: { xs: 2, sm: 3, lg: 4 },
+            pb: showMobileNav ? 12 : { xs: 2, sm: 3, lg: 4 },
+            backgroundColor: "transparent",
+          }}
+        >
           <Outlet />
         </Box>
       </Box>
     </Box>
+    {showMobileNav && <MobileNavBar onNavigate={() => setMobileOpen(false)} />}
+    </>
   );
 };
 
