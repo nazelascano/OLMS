@@ -129,7 +129,7 @@
   {
     "id": "book_1760074423678_t4wrz3dro",
     "title": "1984haslkdaskjadsjldas",
-    "author": "George Orwellakjshkasndkjas, Jela Fetalver, George Orwellakjshkasndkjas, Jela Fetalver, niel",
+    "author": "George Orwellakjshkasndkjas, Jela Fetalver, niel",
     "isbn": "978-0451524935",
     "publisher": "/asljdhaskjdbaskjldbaskjdbask",
     "publishedYear": null,
@@ -146,9 +146,9 @@
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-10T05:33:43.678Z",
-        "updatedAt": "2026-01-09T05:16:44.979Z",
+        "updatedAt": "2026-01-30T07:10:58.119Z",
         "createdBy": "mgex1wgwp3019",
-        "updatedBy": "mhildatik9wdo"
+        "updatedBy": "mkqgw2dxq5a5w"
       },
       {
         "copyId": "APPROVE-1",
@@ -157,8 +157,8 @@
         "status": "available",
         "condition": "good",
         "location": "main-library",
-        "updatedAt": "2026-01-09T05:23:57.572Z",
-        "updatedBy": "mhildatik9wdo"
+        "updatedAt": "2026-01-30T07:10:58.119Z",
+        "updatedBy": "mkqgw2dxq5a5w"
       },
       {
         "copyId": "APPROVE-2",
@@ -167,8 +167,8 @@
         "status": "available",
         "condition": "good",
         "location": "main-library",
-        "updatedAt": "2026-01-09T05:16:44.979Z",
-        "updatedBy": "mhildatik9wdo"
+        "updatedAt": "2026-01-30T07:10:58.119Z",
+        "updatedBy": "mkqgw2dxq5a5w"
       },
       {
         "copyId": "APPROVE-3",
@@ -177,20 +177,19 @@
         "status": "available",
         "condition": "good",
         "location": "main-library",
-        "updatedAt": "2026-01-09T05:16:44.979Z",
-        "updatedBy": "mhildatik9wdo"
+        "updatedAt": "2026-01-30T07:10:58.119Z",
+        "updatedBy": "mkqgw2dxq5a5w"
       }
     ],
     "createdAt": "2025-10-10T05:33:43.678Z",
-    "updatedAt": "2026-01-09T05:23:57.573Z",
+    "updatedAt": "2026-01-30T07:10:58.122Z",
     "createdBy": "mgex1wgwp3019",
     "_id": "mgkev91a2j3oq",
-    "updatedBy": "mhildatik9wdo",
+    "updatedBy": "mkqgw2dxq5a5w",
     "publicationDate": null,
     "authors": [
       "George Orwellakjshkasndkjas",
       "Jela Fetalver",
-      "George Orwellakjshkasndkjas, Jela Fetalver",
       "niel"
     ]
   },
@@ -557,8 +556,9 @@
         "condition": "good",
         "location": "main-library",
         "createdAt": "2025-10-16T00:35:27.178Z",
-        "updatedAt": "2025-10-16T00:35:27.178Z",
-        "createdBy": "mgnhicbwhxfy9"
+        "updatedAt": "2026-01-23T06:36:36.811Z",
+        "createdBy": "mgnhicbwhxfy9",
+        "updatedBy": "mkqgw2dxq5a5w"
       },
       {
         "copyId": "978-0201616224-MGSPMW0U-G8Y2",
@@ -724,7 +724,7 @@
       }
     ],
     "createdAt": "2025-10-16T00:35:27.178Z",
-    "updatedAt": "2026-01-09T05:46:22.274Z",
+    "updatedAt": "2026-01-23T06:36:36.814Z",
     "createdBy": "mgnhicbwhxfy9",
     "_id": "mgsous0bcn99t",
     "updatedBy": "mgnhicbwhxfy9"
@@ -754,11 +754,10 @@
     "copies": [
       {
         "copyId": "APPROVE-COPY-1",
-        "status": "available",
+        "status": "borrowed",
         "location": "Main",
-        "updatedAt": "2026-01-09T06:27:17.097Z",
-        "updatedBy": "mhildatik9wdo",
-        "condition": "good"
+        "updatedAt": "2026-01-23T06:42:59.601Z",
+        "updatedBy": "mkqgw2dxq5a5w"
       },
       {
         "copyId": "APPROVE-COPY-2",
@@ -766,10 +765,10 @@
         "location": "Main"
       }
     ],
-    "availableCopies": 2,
+    "availableCopies": 1,
     "_id": "mhfkvgnso61c7",
     "createdAt": "2025-11-01T01:02:42.712Z",
-    "updatedAt": "2026-01-09T06:27:17.098Z",
+    "updatedAt": "2026-01-23T06:42:59.602Z",
     "updatedBy": "mhildatik9wdo",
     "category": "Religion",
     "authors": [
@@ -1882,5 +1881,50 @@
     "_id": "mjpa3qu63c3wc",
     "createdAt": "2025-12-28T05:18:19.806Z",
     "updatedAt": "2025-12-28T05:18:19.806Z"
+  },
+  {
+    "id": "book_1769757270446_rv45t5j5k",
+    "title": "book 1",
+    "author": "jela fetalver",
+    "authors": [
+      "jela fetalver"
+    ],
+    "isbn": "ISBN-APPROVE-2",
+    "publisher": "Signet Classicjgcfkhgclghc",
+    "publishedYear": 2026,
+    "category": "Philosophy",
+    "description": "asdfghjk",
+    "coverImage": "",
+    "status": "active",
+    "language": "English",
+    "pages": 10,
+    "deweyDecimal": "",
+    "publicationDate": "2026-01-07",
+    "totalCopies": 2,
+    "availableCopies": 2,
+    "copies": [
+      {
+        "copyId": "ISBN-APPROVE-2-ML0JS9F2-VD9Z",
+        "status": "available",
+        "condition": "good",
+        "location": "b1",
+        "createdAt": "2026-01-30T07:14:30.446Z",
+        "updatedAt": "2026-01-30T07:14:30.446Z",
+        "createdBy": "mkqgw2dxq5a5w"
+      },
+      {
+        "copyId": "ISBN-APPROVE-2-ML0JS9F2-QF32",
+        "status": "available",
+        "condition": "good",
+        "location": "b1",
+        "createdAt": "2026-01-30T07:14:30.446Z",
+        "updatedAt": "2026-01-30T07:14:30.446Z",
+        "createdBy": "mkqgw2dxq5a5w"
+      }
+    ],
+    "createdAt": "2026-01-30T07:14:30.446Z",
+    "updatedAt": "2026-01-30T07:14:30.448Z",
+    "createdBy": "mkqgw2dxq5a5w",
+    "_id": "ml0js9f49rfry"
   }
 ]

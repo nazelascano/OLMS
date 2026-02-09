@@ -26,9 +26,9 @@
       "totalReturned": 1
     },
     "createdAt": "2025-10-12T09:10:58.796Z",
-    "updatedAt": "2026-01-18T07:13:42.992Z",
-    "lastLoginAt": "2026-01-18T07:12:42.742Z",
-    "lastActivityAt": "2026-01-18T07:13:42.990Z",
+    "updatedAt": "2026-01-30T07:27:18.701Z",
+    "lastLoginAt": "2026-01-30T07:26:45.365Z",
+    "lastActivityAt": "2026-01-30T07:27:18.697Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1762655472557-1723603.png",
       "filename": "avatar-1762655472557-1723603.png",
@@ -73,15 +73,15 @@
     "password": "$2b$10$aHwwcdlhGetHuibADO8LPeZYX9i9orVvTpqMP91FqwezO.HZYyEPq",
     "_id": "mgniuxw0uslme",
     "createdAt": "2025-10-12T09:48:46.260Z",
-    "updatedAt": "2026-01-13T06:44:48.038Z",
+    "updatedAt": "2026-01-23T05:51:02.988Z",
     "lastLoginAt": "2025-10-12T09:49:31.891Z",
     "lastActivityAt": "2025-10-12T09:49:52.776Z",
     "mustChangePassword": true,
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
-    "failedLoginAttempts": 3,
-    "lastFailedLoginAt": "2025-12-16T06:21:26.796Z",
-    "lockedUntil": null,
+    "failedLoginAttempts": 7,
+    "lastFailedLoginAt": "2026-01-23T05:51:02.988Z",
+    "lockedUntil": "2026-01-23T06:06:02.988Z",
     "streetAddress": "",
     "barangayCode": "",
     "municipalityCode": "",
@@ -108,16 +108,20 @@
     "role": "student",
     "isActive": true,
     "borrowingStats": {
-      "totalBorrowed": 0,
-      "currentlyBorrowed": 0,
+      "totalBorrowed": 5,
+      "currentlyBorrowed": 1,
       "totalFines": 0,
-      "totalReturned": 0
+      "totalReturned": 4
     },
     "_id": "mhfjcfgjt9dw4",
     "createdAt": "2025-11-01T00:19:55.075Z",
-    "updatedAt": "2025-11-26T12:34:15.798Z",
+    "updatedAt": "2026-01-23T06:43:45.394Z",
     "schoolYear": "2025-2026",
-    "academicYear": "2025-2026"
+    "academicYear": "2025-2026",
+    "lastLoginAt": "2026-01-23T06:43:22.117Z",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "lastActivityAt": "2026-01-23T06:43:45.392Z"
   },
   {
     "firstName": "Mary17",
@@ -266,13 +270,13 @@
     },
     "_id": "mhiohn87n1w6u",
     "createdAt": "2025-11-03T05:07:15.031Z",
-    "updatedAt": "2026-01-13T08:42:33.868Z",
+    "updatedAt": "2026-01-23T05:52:17.413Z",
     "schoolYear": "2025-2026",
     "academicYear": "2025-2026",
     "lastLoginAt": "2025-12-14T06:54:35.461Z",
     "lastActivityAt": "2025-12-14T07:30:12.298Z",
-    "failedLoginAttempts": 5,
-    "lockedUntil": "2026-01-13T08:57:33.867Z",
+    "failedLoginAttempts": 7,
+    "lockedUntil": "2026-01-23T06:07:17.412Z",
     "avatar": {
       "url": "/uploads/avatars/avatar-1765167450651-207326744.jpg",
       "filename": "avatar-1765167450651-207326744.jpg",
@@ -286,7 +290,7 @@
         "welcomeDismissed": true
       }
     },
-    "lastFailedLoginAt": "2026-01-13T08:42:33.867Z"
+    "lastFailedLoginAt": "2026-01-23T05:52:17.412Z"
   },
   {
     "firstName": "Mary2",
@@ -817,9 +821,9 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-12-14T05:24:23.901Z",
-    "updatedAt": "2026-01-13T05:47:56.839Z",
+    "updatedAt": "2026-01-30T07:27:48.940Z",
     "createdBy": "mgnhicbwhxfy9",
-    "lastLoginAt": "2026-01-13T05:47:56.410Z",
+    "lastLoginAt": "2026-01-30T07:27:23.475Z",
     "profile": {
       "phone": "",
       "address": "",
@@ -840,7 +844,7 @@
     "_id": "mj5a5mg4ts8iv",
     "failedLoginAttempts": 0,
     "lockedUntil": null,
-    "lastActivityAt": "2026-01-13T05:47:56.837Z",
+    "lastActivityAt": "2026-01-30T07:27:48.934Z",
     "lastFailedLoginAt": "2025-12-16T06:22:14.153Z"
   },
   {
@@ -854,7 +858,7 @@
     "gradeLevel": null,
     "isActive": true,
     "createdAt": "2025-12-14T07:16:10.068Z",
-    "updatedAt": "2026-01-09T05:15:10.324Z",
+    "updatedAt": "2026-01-23T05:54:51.584Z",
     "createdBy": "mgnhicbwhxfy9",
     "lastLoginAt": "2025-12-14T07:24:01.317Z",
     "profile": {
@@ -875,10 +879,11 @@
       "totalFines": 0
     },
     "_id": "mj5e5cydi651b",
-    "failedLoginAttempts": 20,
-    "lockedUntil": "2026-01-09T05:30:10.323Z",
+    "failedLoginAttempts": 24,
+    "lockedUntil": "2026-01-23T06:09:51.582Z",
     "lastActivityAt": "2025-12-14T07:28:57.635Z",
-    "lastFailedLoginAt": "2026-01-09T05:15:10.323Z"
+    "lastFailedLoginAt": "2026-01-23T05:54:51.582Z",
+    "updatedBy": "mgnhicbwhxfy9"
   },
   {
     "libraryCardNumber": "LIB-25-0040",
@@ -951,5 +956,77 @@
     "_id": "mk6fforrpn8l9",
     "createdAt": "2026-01-09T05:19:40.071Z",
     "updatedAt": "2026-01-09T05:19:40.071Z"
+  },
+  {
+    "username": "libniel",
+    "email": null,
+    "password": "$2b$10$czn3P3ATFZeZK.5jFIdAduFkJX/8G.M.9Ae9EQCVX57XVy82NiKka",
+    "firstName": "niel",
+    "lastName": "insigne",
+    "role": "librarian",
+    "curriculum": null,
+    "gradeLevel": null,
+    "isActive": true,
+    "createdAt": "2026-01-23T05:55:47.348Z",
+    "updatedAt": "2026-01-30T07:32:48.303Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "lastLoginAt": "2026-01-30T07:27:54.102Z",
+    "profile": {
+      "phone": "",
+      "address": "",
+      "dateOfBirth": null
+    },
+    "library": {
+      "cardNumber": "libniel",
+      "membershipDate": "2026-01-23T05:55:47.348Z",
+      "borrowingLimit": 10,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalReturned": 0,
+      "totalFines": 0
+    },
+    "_id": "mkqgw2dxq5a5w",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "lastActivityAt": "2026-01-30T07:32:48.301Z"
+  },
+  {
+    "username": "nazelascano",
+    "email": null,
+    "password": "$2b$10$06cBX9HK48il8aH5uyHAsuaecgaNEdkhjByGjJxqGB1Y/uRoLR.bS",
+    "firstName": "as'dihaskld",
+    "lastName": "as'dlkkasd'laskh",
+    "role": "librarian",
+    "curriculum": null,
+    "gradeLevel": null,
+    "isActive": true,
+    "createdAt": "2026-01-29T02:14:41.920Z",
+    "updatedAt": "2026-01-29T02:16:57.811Z",
+    "createdBy": "mgnhicbwhxfy9",
+    "lastLoginAt": "2026-01-29T02:14:56.688Z",
+    "profile": {
+      "phone": "",
+      "address": "",
+      "dateOfBirth": null
+    },
+    "library": {
+      "cardNumber": "nazelascano",
+      "membershipDate": "2026-01-29T02:14:41.920Z",
+      "borrowingLimit": 10,
+      "fineBalance": 0
+    },
+    "borrowingStats": {
+      "totalBorrowed": 0,
+      "currentlyBorrowed": 0,
+      "totalReturned": 0,
+      "totalFines": 0
+    },
+    "_id": "mkytmupu2u41j",
+    "failedLoginAttempts": 0,
+    "lockedUntil": null,
+    "lastActivityAt": "2026-01-29T02:16:57.809Z"
   }
 ]

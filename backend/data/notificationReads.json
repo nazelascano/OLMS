@@ -102,5 +102,13 @@
     "_id": "mkcdgknc7dyvy",
     "createdAt": "2026-01-13T09:10:59.208Z",
     "updatedAt": "2026-01-13T09:10:59.208Z"
+  },
+  {
+    "userId": "mkqgw2dxq5a5w",
+    "notificationId": "missing-borrow_1767937550503_ume5ro",
+    "read": true,
+    "_id": "mkqh7d7iaeukl",
+    "createdAt": "2026-01-23T06:04:34.590Z",
+    "updatedAt": "2026-01-23T06:04:34.590Z"
   }
 ]

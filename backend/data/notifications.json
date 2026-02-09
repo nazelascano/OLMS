@@ -573,10 +573,10 @@
     "archived": true
   },
   {
-    "title": "Low book stock",
-    "message": "'Approve Test Book' only has 2 copies remain.",
+    "title": "Critical book stock",
+    "message": "'Approve Test Book' only has 1 copy remains.",
     "type": "inventory-level",
-    "severity": "medium",
+    "severity": "high",
     "recipients": [
       "staff",
       "librarian"
@@ -584,14 +584,17 @@
     "meta": {
       "bookId": "book-approve-test",
       "bookTitle": "Approve Test Book",
-      "availableCopies": 2,
+      "availableCopies": 1,
       "totalCopies": 2,
-      "level": "low"
+      "level": "critical",
+      "excludeRoles": [
+        "admin"
+      ]
     },
     "createdAt": "2025-12-14T16:50:11.067Z",
-    "updatedAt": "2026-01-13T02:21:57.641Z",
+    "updatedAt": "2026-01-29T02:13:44.167Z",
     "readBy": [
-      "mgnhicbwhxfy9"
+      "mkqgw2dxq5a5w"
     ],
     "link": "/books/book-approve-test",
     "fingerprint": "inventory-level:book-approve-test",
@@ -786,14 +789,15 @@
       "bookTitle": "1984haslkdaskjadsjldas",
       "availableCopies": 3,
       "totalCopies": 4,
-      "level": "low"
+      "level": "low",
+      "excludeRoles": [
+        "admin"
+      ]
     },
     "createdAt": "2025-12-16T06:08:35.046Z",
-    "updatedAt": "2026-01-09T05:48:25.361Z",
+    "updatedAt": "2026-01-30T07:30:42.025Z",
     "readBy": [
-      "mgnhicbwhxfy9",
-      "mhildatik9wdo",
-      "mj5a5mg4ts8iv"
+      "mkqgw2dxq5a5w"
     ],
     "link": "/books/book_1760074423678_t4wrz3dro",
     "fingerprint": "inventory-level:book_1760074423678_t4wrz3dro",
@@ -2128,11 +2132,12 @@
       "notesPreview": "Student request test"
     },
     "createdAt": "2025-12-25T23:28:30.538Z",
-    "updatedAt": "2026-01-09T05:17:13.637Z",
+    "updatedAt": "2026-01-23T06:04:34.670Z",
     "readBy": [
       "mgnhicbwhxfy9",
       "mj5a5mg4ts8iv",
-      "mhildatik9wdo"
+      "mhildatik9wdo",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mjm2q62zkycy4"
   },
@@ -2251,11 +2256,12 @@
       "notesPreview": "Missing copy test"
     },
     "createdAt": "2025-12-25T23:45:18.990Z",
-    "updatedAt": "2026-01-09T05:17:13.602Z",
+    "updatedAt": "2026-01-23T06:04:34.690Z",
     "readBy": [
       "mgnhicbwhxfy9",
       "mj5a5mg4ts8iv",
-      "mhildatik9wdo"
+      "mhildatik9wdo",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mjm3bs7ixrl9s"
   },
@@ -2299,11 +2305,12 @@
       "notesPreview": "Reject flow test"
     },
     "createdAt": "2025-12-25T23:45:19.643Z",
-    "updatedAt": "2026-01-09T05:17:13.528Z",
+    "updatedAt": "2026-01-29T02:13:44.224Z",
     "readBy": [
       "mgnhicbwhxfy9",
       "mj5a5mg4ts8iv",
-      "mhildatik9wdo"
+      "mhildatik9wdo",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mjm3bspongj4h"
   },
@@ -2553,11 +2560,12 @@
       "notesPreview": "Reject flow test"
     },
     "createdAt": "2025-12-28T05:18:19.823Z",
-    "updatedAt": "2026-01-09T05:24:57.877Z",
+    "updatedAt": "2026-01-23T06:04:34.629Z",
     "readBy": [
       "mj5a5mg4ts8iv",
       "mhildatik9wdo",
-      "mgnhicbwhxfy9"
+      "mgnhicbwhxfy9",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mjpa3quo6w6i4"
   },
@@ -2615,11 +2623,12 @@
       "notesPreview": "Student request test"
     },
     "createdAt": "2025-12-28T05:18:20.583Z",
-    "updatedAt": "2026-01-09T05:24:57.859Z",
+    "updatedAt": "2026-01-23T06:04:34.650Z",
     "readBy": [
       "mj5a5mg4ts8iv",
       "mhildatik9wdo",
-      "mgnhicbwhxfy9"
+      "mgnhicbwhxfy9",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mjpa3rfto0rgc"
   },
@@ -2805,10 +2814,11 @@
       "createdBy": "mgnhicbwhxfy9"
     },
     "createdAt": "2026-01-09T05:19:40.075Z",
-    "updatedAt": "2026-01-09T05:24:59.354Z",
+    "updatedAt": "2026-01-23T06:04:34.613Z",
     "readBy": [
       "mgnhicbwhxfy9",
-      "mhildatik9wdo"
+      "mhildatik9wdo",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mk6fforwbgc11"
   },
@@ -2835,9 +2845,10 @@
       "processedByName": "asdfghjk dfghjkl"
     },
     "createdAt": "2026-01-09T05:23:57.605Z",
-    "updatedAt": "2026-01-09T05:24:16.060Z",
+    "updatedAt": "2026-01-23T06:03:40.528Z",
     "readBy": [
-      "mhiohn4smj18h"
+      "mhiohn4smj18h",
+      "mhfjcfgjt9dw4"
     ],
     "_id": "mk6fl7hik5dmn"
   },
@@ -3095,9 +3106,10 @@
       "processedByName": "asdfghjk dfghjkl"
     },
     "createdAt": "2026-01-09T05:36:20.309Z",
-    "updatedAt": "2026-01-09T05:36:31.118Z",
+    "updatedAt": "2026-01-23T06:03:40.507Z",
     "readBy": [
-      "mhiohn4smj18h"
+      "mhiohn4smj18h",
+      "mhfjcfgjt9dw4"
     ],
     "_id": "mk6g14k71gr0y"
   },
@@ -3124,9 +3136,10 @@
       "processedByName": "asdfghjk dfghjkl"
     },
     "createdAt": "2026-01-09T05:37:12.630Z",
-    "updatedAt": "2026-01-09T05:41:50.130Z",
+    "updatedAt": "2026-01-23T06:03:40.453Z",
     "readBy": [
-      "mhiohn4smj18h"
+      "mhiohn4smj18h",
+      "mhfjcfgjt9dw4"
     ],
     "_id": "mk6g28xkcb6pf"
   },
@@ -3230,9 +3243,10 @@
       "processedByName": "asdfghjk dfghjkl"
     },
     "createdAt": "2026-01-09T05:42:20.990Z",
-    "updatedAt": "2026-01-09T05:46:17.744Z",
+    "updatedAt": "2026-01-23T06:03:40.432Z",
     "readBy": [
-      "mhiohn4smj18h"
+      "mhiohn4smj18h",
+      "mhfjcfgjt9dw4"
     ],
     "_id": "mk6g8uv357yoo"
   },
@@ -3415,9 +3429,10 @@
       "processedByName": "asdfghjk dfghjkl"
     },
     "createdAt": "2026-01-09T06:27:17.126Z",
-    "updatedAt": "2026-01-09T06:27:36.226Z",
+    "updatedAt": "2026-01-23T06:03:40.398Z",
     "readBy": [
-      "mhiohn4smj18h"
+      "mhiohn4smj18h",
+      "mhfjcfgjt9dw4"
     ],
     "_id": "mk6hun7szslbf"
   },
@@ -3465,10 +3480,430 @@
       "actorId": "mgnhicbwhxfy9"
     },
     "createdAt": "2026-01-13T06:44:48.047Z",
-    "updatedAt": "2026-01-13T07:37:06.606Z",
+    "updatedAt": "2026-01-23T06:04:34.477Z",
     "readBy": [
-      "mgnhicbwhxfy9"
+      "mgnhicbwhxfy9",
+      "mkqgw2dxq5a5w"
     ],
     "_id": "mkc88ks5rc2s7"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1769148174364_exja5c. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1769148174364_exja5c",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148174364_exja5c",
+      "itemCount": 2,
+      "status": "requested"
+    },
+    "createdAt": "2026-01-23T06:02:54.369Z",
+    "updatedAt": "2026-01-23T06:05:37.926Z",
+    "readBy": [
+      "mhfjcfgjt9dw4",
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqh57vphpcae",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary15 Cruz Smith submitted a borrow request (borrow_1769148174364_exja5c) for 2 books.",
+    "type": "request",
+    "transactionId": "borrow_1769148174364_exja5c",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148174364_exja5c",
+      "itemCount": 2,
+      "borrowerName": "Mary15 Cruz Smith",
+      "requestType": "regular",
+      "notesPreview": ""
+    },
+    "createdAt": "2026-01-23T06:02:54.377Z",
+    "updatedAt": "2026-01-23T06:05:37.931Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqh57vu2kq79",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1769148174364_exja5c has been approved by niel insigne. Please pick up your items by 2026-01-26. Items are due on 2026-02-06.",
+    "type": "request-approved",
+    "transactionId": "borrow_1769148174364_exja5c",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148174364_exja5c",
+      "dueDate": "2026-02-06T06:05:37.907Z",
+      "reservationExpiresAt": "2026-01-26T06:05:37.907Z",
+      "itemCount": 2,
+      "status": "borrowed",
+      "approvedBy": "mkqgw2dxq5a5w",
+      "approvedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:05:37.917Z",
+    "updatedAt": "2026-01-23T06:05:37.936Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqh8q2nagl0m",
+    "archived": true
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1769148391840_q1v7wv. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1769148391840_q1v7wv",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148391840_q1v7wv",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2026-01-23T06:06:31.843Z",
+    "updatedAt": "2026-01-23T06:25:57.758Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqh9vokjzl84",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary15 Cruz Smith submitted a borrow request (borrow_1769148391840_q1v7wv) for 1 book.",
+    "type": "request",
+    "transactionId": "borrow_1769148391840_q1v7wv",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148391840_q1v7wv",
+      "itemCount": 1,
+      "borrowerName": "Mary15 Cruz Smith",
+      "requestType": "regular",
+      "notesPreview": ""
+    },
+    "createdAt": "2026-01-23T06:06:31.846Z",
+    "updatedAt": "2026-01-23T06:25:57.762Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqh9vonq7t1n",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1769148391840_q1v7wv has been approved by niel insigne. Please pick up your items by 2026-01-26. Items are due on 2026-02-06.",
+    "type": "request-approved",
+    "transactionId": "borrow_1769148391840_q1v7wv",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148391840_q1v7wv",
+      "dueDate": "2026-02-06T06:25:57.739Z",
+      "reservationExpiresAt": "2026-01-26T06:25:57.739Z",
+      "itemCount": 1,
+      "status": "borrowed",
+      "approvedBy": "mkqgw2dxq5a5w",
+      "approvedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:25:57.749Z",
+    "updatedAt": "2026-01-23T06:25:57.766Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqhyvaw6pded",
+    "archived": true
+  },
+  {
+    "title": "Items returned",
+    "message": "We recorded the return of 1 item for transaction borrow_1769148391840_q1v7wv. All items on this transaction are now returned. Processed by niel insigne. No fines were added.",
+    "type": "return-processed",
+    "transactionId": "borrow_1769148391840_q1v7wv",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148391840_q1v7wv",
+      "borrowerName": "Mary15 Cruz Smith",
+      "returnedItems": 1,
+      "fineAmount": 0,
+      "hasOutstandingItems": false,
+      "returnDate": "2026-01-23T06:33:10.446Z",
+      "daysOverdue": 0,
+      "processedBy": "mkqgw2dxq5a5w",
+      "processedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:33:43.614Z",
+    "updatedAt": "2026-01-23T06:33:43.616Z",
+    "readBy": [],
+    "_id": "mkqi8urkg5n3a"
+  },
+  {
+    "title": "Items returned",
+    "message": "We recorded the return of 2 items for transaction borrow_1769148174364_exja5c. All items on this transaction are now returned. Processed by niel insigne. No fines were added.",
+    "type": "return-processed",
+    "transactionId": "borrow_1769148174364_exja5c",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769148174364_exja5c",
+      "borrowerName": "Mary15 Cruz Smith",
+      "returnedItems": 2,
+      "fineAmount": 0,
+      "hasOutstandingItems": false,
+      "returnDate": "2026-01-23T06:36:36.789Z",
+      "daysOverdue": 0,
+      "processedBy": "mkqgw2dxq5a5w",
+      "processedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:36:36.837Z",
+    "updatedAt": "2026-01-23T06:36:36.841Z",
+    "readBy": [],
+    "_id": "mkqickfc57ii3"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1769150233983_vvhjvw. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1769150233983_vvhjvw",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150233983_vvhjvw",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2026-01-23T06:37:13.988Z",
+    "updatedAt": "2026-01-23T06:39:52.753Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqidd3afg46v",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary15 Cruz Smith submitted a borrow request (borrow_1769150233983_vvhjvw) for 1 book.",
+    "type": "request",
+    "transactionId": "borrow_1769150233983_vvhjvw",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150233983_vvhjvw",
+      "itemCount": 1,
+      "borrowerName": "Mary15 Cruz Smith",
+      "requestType": "regular",
+      "notesPreview": ""
+    },
+    "createdAt": "2026-01-23T06:37:13.997Z",
+    "updatedAt": "2026-01-23T06:39:52.762Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqidd3kmumze",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1769150233983_vvhjvw has been approved by niel insigne. Please pick up your items by 2026-01-26. Items are due on 2026-02-06.",
+    "type": "request-approved",
+    "transactionId": "borrow_1769150233983_vvhjvw",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150233983_vvhjvw",
+      "dueDate": "2026-02-06T06:39:52.721Z",
+      "reservationExpiresAt": "2026-01-26T06:39:52.721Z",
+      "itemCount": 1,
+      "status": "borrowed",
+      "approvedBy": "mkqgw2dxq5a5w",
+      "approvedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:39:52.738Z",
+    "updatedAt": "2026-01-23T06:39:52.770Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqigrl14jaka",
+    "archived": true
+  },
+  {
+    "title": "Items returned",
+    "message": "We recorded the return of 1 item for transaction borrow_1769150233983_vvhjvw. All items on this transaction are now returned. Processed by niel insigne. No fines were added.",
+    "type": "return-processed",
+    "transactionId": "borrow_1769150233983_vvhjvw",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150233983_vvhjvw",
+      "borrowerName": "Mary15 Cruz Smith",
+      "returnedItems": 1,
+      "fineAmount": 0,
+      "hasOutstandingItems": false,
+      "returnDate": "2026-01-23T06:41:26.697Z",
+      "daysOverdue": 0,
+      "processedBy": "mkqgw2dxq5a5w",
+      "processedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:41:26.733Z",
+    "updatedAt": "2026-01-23T06:41:26.737Z",
+    "readBy": [],
+    "_id": "mkqiis41omiuh"
+  },
+  {
+    "title": "Borrow request submitted",
+    "message": "We received your borrow request borrow_1769150551383_nx2k1o. A librarian will review it shortly.",
+    "type": "request-submitted",
+    "transactionId": "borrow_1769150551383_nx2k1o",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150551383_nx2k1o",
+      "itemCount": 1,
+      "status": "requested"
+    },
+    "createdAt": "2026-01-23T06:42:31.389Z",
+    "updatedAt": "2026-01-23T06:42:59.653Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqik600zm898",
+    "archived": true
+  },
+  {
+    "title": "New borrow request",
+    "message": "Mary15 Cruz Smith submitted a borrow request (borrow_1769150551383_nx2k1o) for 1 book.",
+    "type": "request",
+    "transactionId": "borrow_1769150551383_nx2k1o",
+    "recipients": [
+      "staff",
+      "librarian",
+      "admin"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150551383_nx2k1o",
+      "itemCount": 1,
+      "borrowerName": "Mary15 Cruz Smith",
+      "requestType": "regular",
+      "notesPreview": ""
+    },
+    "createdAt": "2026-01-23T06:42:31.408Z",
+    "updatedAt": "2026-01-23T06:42:59.662Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqik60kjzgi1",
+    "archived": true
+  },
+  {
+    "title": "Borrow request approved",
+    "message": "Your borrow request borrow_1769150551383_nx2k1o has been approved by niel insigne. Please pick up your items by 2026-01-26. Items are due on 2026-02-06.",
+    "type": "request-approved",
+    "transactionId": "borrow_1769150551383_nx2k1o",
+    "recipients": [
+      "mhfjcfgjt9dw4",
+      "LIB-25-0019",
+      "mary.smith@student.example.edu",
+      "123456789028"
+    ],
+    "meta": {
+      "transactionId": "borrow_1769150551383_nx2k1o",
+      "dueDate": "2026-02-06T06:42:59.618Z",
+      "reservationExpiresAt": "2026-01-26T06:42:59.618Z",
+      "itemCount": 1,
+      "status": "borrowed",
+      "approvedBy": "mkqgw2dxq5a5w",
+      "approvedByName": "niel insigne"
+    },
+    "createdAt": "2026-01-23T06:42:59.636Z",
+    "updatedAt": "2026-01-23T06:42:59.671Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "_id": "mkqikrso03t09",
+    "archived": true
+  },
+  {
+    "title": "Low book stock",
+    "message": "'book 1' only has 2 copies remain.",
+    "type": "inventory-level",
+    "severity": "medium",
+    "recipients": [
+      "staff",
+      "librarian"
+    ],
+    "meta": {
+      "bookId": "book_1769757270446_rv45t5j5k",
+      "bookTitle": "book 1",
+      "availableCopies": 2,
+      "totalCopies": 2,
+      "level": "low",
+      "excludeRoles": [
+        "admin"
+      ]
+    },
+    "createdAt": "2026-01-30T07:14:30.463Z",
+    "updatedAt": "2026-01-30T07:30:41.906Z",
+    "readBy": [
+      "mkqgw2dxq5a5w"
+    ],
+    "link": "/books/book_1769757270446_rv45t5j5k",
+    "fingerprint": "inventory-level:book_1769757270446_rv45t5j5k",
+    "source": "book-create",
+    "_id": "ml0js9fo0ntib"
   }
 ]

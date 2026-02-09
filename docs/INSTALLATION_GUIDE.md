@@ -7,8 +7,8 @@ For a technical deep dive, see [README.md](README.md). If you get stuck, search 
 ---
 
 ## 0. What You Will Do
-1. Install the free tools OLMS needs (Node.js, Git, VS Code, optional MongoDB).
-2. Download the OLMS project files.
+1. Install the free tools OLMS needs (Node.js, Git, optional MongoDB).
+2. Download the OLMS project files from https://github.com/nazelascano/OLMS.
 3. Let npm download everything else for you.
 4. Tell OLMS where to find its database (local JSON files or MongoDB).
 5. Start the website and sign in with a sample admin user.
@@ -21,7 +21,7 @@ Set aside about 45 minutes for the first run-through.
 
 | Item | Minimum | Tips |
 | --- | --- | --- |
-| Computer | Windows 10 or 11 | macOS/Linux also work, but this guide uses Windows screenshots/paths. |
+| Computer | Windows 10 or 11 | macOS/Linux also work, but this guide uses Windows paths. |
 | Disk space | 10 GB free | npm caches a lot of files. |
 | Internet | Stable broadband | Needed for installing Node.js packages. |
 | Account permissions | Local admin | Required to install software. |
@@ -44,25 +44,62 @@ Do these in order. Keep the installer defaults unless noted.
    ```
    Seeing versions (for example `v18.19.1` and `9.6.7`) means Node.js and npm installed correctly.
 
-### 2.2 Git (gets the project files)
+### 2.2 Git (gets the project files) — optional
+If you do **not** want to install Git, skip to Section 3 and use the ZIP method.
 1. Download from https://git-scm.com/downloads.
-2. Install with the defaults (VS Code as the default editor is fine).
+2. Install with the defaults.
 3. Verify in PowerShell:
    ```powershell
    git --version
    ```
 
-### 2.3 Visual Studio Code (editor)
-1. Download from https://code.visualstudio.com.
-2. Install and launch it once so Windows registers the app.
-
-### 2.4 MongoDB (only if you do **not** want offline mode)
+### 2.3 MongoDB (only if you do **not** want offline mode)
 You can skip MongoDB entirely by using OLMS’s built-in JSON datastore. If you want the “real” database:
 1. Go to https://www.mongodb.com/try/download/community.
 2. Choose “msi”, run the installer, and keep “Complete” setup.
 3. Leave “Install MongoDB as a Service” checked so MongoDB starts automatically.
 
 ⚠️ If you skip MongoDB now, you can always add it later—just remember to flip the `USE_OFFLINE_DB` setting back to `false` when you do.
+
+### 2.4 Offline Installation (No Internet on the Target PC)
+Use this if the OLMS computer has **no internet at all**. You will prepare everything on a second computer that *does* have internet, then copy it by USB.
+
+#### 2.4.1 What You Need on the Online Computer
+Download these installers (save them to a USB drive):
+- Node.js LTS installer (Windows .msi)
+- (Optional) Git installer
+- (Optional) MongoDB Community installer
+
+Also download the OLMS project (Git clone or ZIP), as explained in Section 3.
+
+#### 2.4.2 Pre-Install Dependencies on the Online Computer
+This step bundles all npm packages so the offline PC won’t need to download anything.
+
+1. Open PowerShell.
+2. Go to the project folder and run:
+   ```powershell
+   cd "C:\Users\<you>\Downloads\ONHS OLMS - mongodb"
+   npm run install:all
+   ```
+3. Confirm these folders now exist:
+   - `node_modules` (project root)
+   - [frontend/node_modules](frontend/node_modules)
+   - [backend/node_modules](backend/node_modules)
+
+#### 2.4.3 Copy to the Offline PC
+1. Copy the **entire** `ONHS OLMS - mongodb` folder to a USB drive.
+2. Move that folder to the offline PC (for example `C:\Users\<you>\Downloads`).
+3. Install Node.js using the offline installer you saved.
+
+#### 2.4.4 Start in Offline Mode
+1. Open PowerShell and go to the project folder.
+2. Make sure `USE_OFFLINE_DB=true` in [backend/.env](backend/.env).
+3. Run:
+   ```powershell
+   npm run dev:offline
+   ```
+
+⚠️ Important: The offline PC must use the **same Windows version and Node.js version** as the online PC used for the pre-install. This prevents native module errors.
 
 ---
 
@@ -73,16 +110,16 @@ Pick the option that matches how you received the code.
 ### Option A – Git Clone (best for updates)
 ```powershell
 cd ~\Downloads
-git clone <repository-url>
+git clone https://github.com/nazelascano/OLMS.git
 cd "ONHS OLMS - mongodb"
 ```
 
-### Option B – ZIP File
-1. Download the ZIP archive from the project source.
+### Option B – ZIP File (recommended if you skipped Git)
+1. Download the ZIP archive from https://github.com/nazelascano/OLMS.
 2. Right-click the ZIP → “Extract All…” → choose `C:\Users\<you>\Downloads`.
 3. Rename the extracted folder to `ONHS OLMS - mongodb` if it has a long auto-generated name.
 
-Open the folder in VS Code (`File → Open Folder...`). You should see subfolders like `frontend`, `backend`, and `docs` in the Explorer pane.
+Open the folder in File Explorer to confirm you see subfolders like `frontend`, `backend`, and `docs`.
 
 ---
 
@@ -90,8 +127,11 @@ Open the folder in VS Code (`File → Open Folder...`). You should see subfolder
 
 Dependencies are the reusable building blocks OLMS relies on. The project provides an “install everything” helper.
 
-1. In VS Code, press ``Ctrl+` `` to open the built-in terminal (PowerShell).
-2. Make sure the terminal prompt ends with `ONHS OLMS - mongodb`.
+1. Open PowerShell.
+2. Go to the project folder:
+   ```powershell
+   cd "C:\Users\<you>\Downloads\ONHS OLMS - mongodb"
+   ```
 3. Run:
    ```powershell
    npm run install:all
@@ -113,35 +153,54 @@ Prefer manual control? Run `npm install`, `cd frontend && npm install`, and `cd 
 You need two `.env` files—one for the backend API and one for the React app.
 
 ### 5.1 Backend (.env inside [backend](backend))
-1. In VS Code Explorer, right-click the `backend` folder → “New File” → name it `.env`.
-2. Paste the template below and customize the bold comments:
+1. In File Explorer, open the `backend` folder.
+2. Right-click empty space → “New” → “Text Document”.
+3. Rename it to `.env` (delete the `.txt` if shown). Accept the warning.
+4. Open the file in Notepad and paste the template below, then save.
    ```env
-   NODE_ENV=development
-   PORT=5001
-   FRONTEND_URL=http://localhost:3001
-   CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-   MONGODB_URI=mongodb://localhost:27017/olms   # change if using Atlas
-   MONGO_DB_NAME=olms
-   USE_OFFLINE_DB=false                         # set to true to skip MongoDB
-   JWT_SECRET=please-change-me-to-a-long-random-string
-   JWT_EXPIRE=7d
-   MAX_FILE_SIZE=10485760
-   UPLOAD_PATH=./uploads
-   EMAIL_SERVICE=gmail
-   EMAIL_USER=you@example.com                   # used for email alerts; safe to leave blank in dev
-   EMAIL_PASS=app-password                      # app password if you enable email
-   DEFAULT_BORROW_DAYS=14
-   DEFAULT_FINE_PER_DAY=5
-   AUTO_CLEANUP_DAYS=365
+# Server Configuration
+NODE_ENV=development
+PORT=5001
+FRONTEND_URL=http://localhost:3001
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/olms
+MONGO_DB_NAME=olms
+USE_OFFLINE_DB=true
+
+# JWT Configuration
+JWT_SECRET=your-super-secure-jwt-secret-key-here-please-change-this-in-production
+JWT_EXPIRES_IN=7d
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+
+# Email Configuration (Optional)
+EMAIL_SERVICE=gmail
+EMAIL_USER=email@example.com
+EMAIL_PASS="123456789"
+
+# System Configuration
+DEFAULT_BORROW_DAYS=14
+DEFAULT_FINE_PER_DAY=0
+AUTO_CLEANUP_DAYS=365
    ```
 
+⚠️ If you plan to use MongoDB (local or Atlas), set `USE_OFFLINE_DB=false` and replace `MONGODB_URI` accordingly.
+
 ### 5.2 Frontend (.env inside [frontend](frontend))
-1. Right-click the `frontend` folder → “New File” → `.env`.
-2. Paste:
+1. In File Explorer, open the `frontend` folder.
+2. Create a new file named `.env` (same steps as above).
+3. Paste in Notepad and save:
    ```env
-   REACT_APP_API_URL=http://localhost:5001/api
-   REACT_APP_NAME=OLMS - Online Library Management System
-   REACT_APP_VERSION=1.0.0
+# API Configuration
+REACT_APP_API_URL=http://localhost:5001/api
+
+# Application Configuration
+REACT_APP_NAME=OLMS - Online Library Management System
+REACT_APP_VERSION=1.0.0
    ```
 
 ⚠️ Anytime you edit a `.env` file, stop the running dev servers (if any) and start them again so changes take effect.
@@ -158,7 +217,7 @@ OLMS works with either MongoDB (preferred for production) or lightweight JSON fi
 3. Data is stored in [backend/data](backend/data) as JSON files you can inspect.
 
 ### Option 2 – Local MongoDB Server
-1. Install MongoDB Community Edition (Section 2.4).
+1. Install MongoDB Community Edition (Section 2.3).
 2. Ensure the Windows service `MongoDB` is running (search “Services” → Start if needed).
 3. Keep `USE_OFFLINE_DB=false` and `MONGODB_URI=mongodb://localhost:27017/olms`.
 
@@ -241,10 +300,23 @@ On Windows you can also double-click [START_OLMS.bat](START_OLMS.bat) or run it 
    ```powershell
    npm run server:start
    ```
-3. Deploy following the “Deployment” section in [README.md](README.md). Common targets:
-   - **Render** for the backend. Set environment variables like `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL`, and `CORS_ORIGINS`.
-   - **Vercel** for the frontend. Set `REACT_APP_API_URL` to point at the Render backend.
-4. Keep free Render instances awake by running `npm run keep-alive` (script lives at [scripts/keep-alive.js](scripts/keep-alive.js)). Override `KEEP_ALIVE_URL`, `KEEP_ALIVE_INTERVAL_MS`, and `KEEP_ALIVE_TIMEOUT_MS` as needed.
+3. Deploy on any frontend and backend deployment platform. Example using Render (backend) and Vercel (frontend):
+   - Backend on Render
+     - Import the repo using [render.yaml](render.yaml).
+     - Configure environment variables: `MONGODB_URI`, `MONGO_DB_NAME`, `JWT_SECRET`, `FRONTEND_URL`, `CORS_ORIGINS`, plus any email settings.
+     - Verify the API with `https://<render-app>/health`.
+   - Frontend on Vercel
+     - Import the repo to Vercel.
+     - Vercel uses [vercel.json](vercel.json) to build inside `frontend/`.
+     - Set `REACT_APP_API_URL` to the Render backend URL (include `/api`).
+     - After deployment, copy the Vercel domain back into Render’s `FRONTEND_URL` and `CORS_ORIGINS`.
+   - Keep the backend warm
+     - Run `npm run keep-alive` locally, on a lightweight VM, or via GitHub Actions so free Render instances do not sleep.
+     - Override `KEEP_ALIVE_URL`, `KEEP_ALIVE_INTERVAL_MS`, or `KEEP_ALIVE_TIMEOUT_MS` as needed (see [scripts/keep-alive.js](scripts/keep-alive.js)).
+   - Checklist
+     - Seed MongoDB data (locally or via a scheduled job) before announcing the environment.
+     - Validate login, borrowing workflows, notifications, and audit logs on the hosted URLs.
+     - Configure custom domains and HTTPS if required (Render and Vercel handle certificates automatically).
 
 ---
 

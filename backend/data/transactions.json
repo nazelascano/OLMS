@@ -133,5 +133,119 @@
     "fineAmount": 0,
     "returnNotes": "",
     "returnedBy": "mhildatik9wdo"
+  },
+  {
+    "id": "borrow_1769148174364_exja5c",
+    "userId": "mhfjcfgjt9dw4",
+    "items": [
+      {
+        "requestItemId": "borrow_1769148174364_exja5c_item_1",
+        "copyId": "APPROVE-COPY-1",
+        "bookId": "book-approve-test",
+        "status": "returned",
+        "returnedAt": "2026-01-23T06:36:36.789Z"
+      },
+      {
+        "requestItemId": "borrow_1769148174364_exja5c_item_2",
+        "copyId": "978-0201616224-MGSOUS0A-KHMY",
+        "bookId": "book_1760574927177_vhnin6uky",
+        "status": "returned",
+        "returnedAt": "2026-01-23T06:36:36.789Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "createdAt": "2026-01-23T06:02:54.364Z",
+    "updatedAt": "2026-01-23T06:36:36.823Z",
+    "createdBy": "mhfjcfgjt9dw4",
+    "notes": "",
+    "_id": "mkqh57vhzh5gu",
+    "borrowDate": "2026-01-23T06:05:37.907Z",
+    "dueDate": "2026-02-06T06:05:37.907Z",
+    "reservationExpiresAt": "2026-01-26T06:05:37.907Z",
+    "updatedBy": "mkqgw2dxq5a5w",
+    "returnDate": "2026-01-23T06:36:36.789Z",
+    "fineAmount": 0,
+    "returnNotes": "",
+    "returnedBy": "mkqgw2dxq5a5w"
+  },
+  {
+    "id": "borrow_1769148391840_q1v7wv",
+    "userId": "mhfjcfgjt9dw4",
+    "items": [
+      {
+        "requestItemId": "borrow_1769148391840_q1v7wv_item_1",
+        "copyId": "APPROVE-COPY-2",
+        "bookId": "book-approve-test",
+        "status": "returned",
+        "returnedAt": "2026-01-23T06:33:10.446Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "createdAt": "2026-01-23T06:06:31.840Z",
+    "updatedAt": "2026-01-23T06:33:43.601Z",
+    "createdBy": "mhfjcfgjt9dw4",
+    "notes": "",
+    "_id": "mkqh9vohfjxpj",
+    "borrowDate": "2026-01-23T06:25:57.739Z",
+    "dueDate": "2026-02-06T06:25:57.739Z",
+    "reservationExpiresAt": "2026-01-26T06:25:57.739Z",
+    "updatedBy": "mkqgw2dxq5a5w",
+    "returnDate": "2026-01-23T06:33:10.446Z",
+    "fineAmount": 0,
+    "returnNotes": "",
+    "returnedBy": "mkqgw2dxq5a5w"
+  },
+  {
+    "id": "borrow_1769150233983_vvhjvw",
+    "userId": "mhfjcfgjt9dw4",
+    "items": [
+      {
+        "requestItemId": "borrow_1769150233983_vvhjvw_item_1",
+        "copyId": "APPROVE-COPY-1",
+        "bookId": "book-approve-test",
+        "status": "returned",
+        "returnedAt": "2026-01-23T06:41:26.697Z"
+      }
+    ],
+    "type": "regular",
+    "status": "returned",
+    "createdAt": "2026-01-23T06:37:13.983Z",
+    "updatedAt": "2026-01-23T06:41:26.718Z",
+    "createdBy": "mhfjcfgjt9dw4",
+    "notes": "",
+    "_id": "mkqidd34fnkhl",
+    "borrowDate": "2026-01-23T06:39:52.721Z",
+    "dueDate": "2026-02-06T06:39:52.721Z",
+    "reservationExpiresAt": "2026-01-26T06:39:52.721Z",
+    "updatedBy": "mkqgw2dxq5a5w",
+    "returnDate": "2026-01-23T06:41:26.697Z",
+    "fineAmount": 0,
+    "returnNotes": "",
+    "returnedBy": "mkqgw2dxq5a5w"
+  },
+  {
+    "id": "borrow_1769150551383_nx2k1o",
+    "userId": "mhfjcfgjt9dw4",
+    "items": [
+      {
+        "requestItemId": "borrow_1769150551383_nx2k1o_item_1",
+        "copyId": "APPROVE-COPY-1",
+        "bookId": "book-approve-test",
+        "status": "borrowed"
+      }
+    ],
+    "type": "regular",
+    "status": "borrowed",
+    "createdAt": "2026-01-23T06:42:31.383Z",
+    "updatedAt": "2026-01-23T06:42:59.620Z",
+    "createdBy": "mhfjcfgjt9dw4",
+    "notes": "",
+    "_id": "mkqik5zsjygfu",
+    "borrowDate": "2026-01-23T06:42:59.618Z",
+    "dueDate": "2026-02-06T06:42:59.618Z",
+    "reservationExpiresAt": "2026-01-26T06:42:59.618Z",
+    "updatedBy": "mkqgw2dxq5a5w"
   }
 ]
